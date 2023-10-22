@@ -1,6 +1,6 @@
 # Summarize videos and texts in Google Colab 
 
-![](https://github.com/martinopiaggi/summarize/assets/72280379/d07418d3-a893-45ec-9857-4b32401f4fb7)
+![summarize_image](https://github.com/martinopiaggi/summarize/assets/72280379/7d636d34-1c34-4cc0-8aa4-bebba0ca14a7)
 
 Effortlessly summarize videos and texts in Google Colab (free GPU tier) using state-of-the-art AI models [Faster Whisper](https://github.com/guillaumekln/faster-whisper) and [bart-large-cnn](https://huggingface.co/facebook/bart-large-cnn). 
 
