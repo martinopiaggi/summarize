@@ -11,3 +11,7 @@ Effortlessly summarize videos and texts in Google Colab (free GPU tier) using st
 - You need to quickly summarize a long article or blog post for better comprehension and retention. 
 
 ### Benchmarks in Google Colab Free Tier with T4 gpu
+
+
+
+![test](summarize_videos.ipynb)
