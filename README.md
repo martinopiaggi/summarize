@@ -14,4 +14,4 @@ Effortlessly summarize videos and texts in Google Colab (free GPU tier) using st
 
 
 
-![test](summarize_videos.ipynb)
+![test](test.md)
