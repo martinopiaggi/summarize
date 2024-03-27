@@ -1,17 +1,30 @@
-# Summarize videos and texts in Google Colab 
+# Summarize videos for free in Google Colab 
 
-![summarize_image](https://github.com/martinopiaggi/summarize/assets/72280379/7d636d34-1c34-4cc0-8aa4-bebba0ca14a7)
-
-Effortlessly summarize videos and texts in Google Colab (free GPU tier) using state-of-the-art AI models [Faster Whisper](https://github.com/guillaumekln/faster-whisper) and [bart-large-cnn](https://huggingface.co/facebook/bart-large-cnn). 
+Effortlessly summarize videos from multiple sources (youtube, dropbox and google drive) in Google Colab (free GPU tier) using state-of-the-art AI models [Faster Whisper](https://github.com/guillaumekln/faster-whisper) and **Mixtral 8x7b** for **free** through [Groq cloud API](https://wow.groq.com/). 
 
 ### Use cases 
 
-- You are unsure about watching a lengthy video podcast and want a summary with timestamps to get an overview of the content.
-- To efficiently take notes on a video, relying on a summary that captures key points.
-- You need to quickly summarize a long article or blog post for better comprehension and retention. 
+- You don't want to watch a lengthy video podcast and want a summary with timestamps to get a precise overview of the content.
+- To efficiently take notes on a video, relying on a summary that captures key points with timestamps. 
 
-### Benchmarks in Google Colab Free Tier with T4 gpu
+This project offers a free alternative to [summarize.tech](https://www.summarize.tech/) for unlimited video summaries. However, summarize.tech and its 5 free daily videos remains faster for quick overviews. 
+Said this, this notebook provides:
+
+- Not limited to YouTube videos (dropbox and gdrive links)
+- More precise and complete results
+- Original transcript
+
+
+### Results in Google Colab Free Tier with T4 gpu
+
+| Video source | Time needed to summary | Result |
+|:--:|:--:|:---:|  
+| [3h podcast](https://www.youtube.com/watch?v=p4ZfkezDTXQ) | 10 minutes | [Summary](Video%20summaries%20examples/Dr%20Cal%20Newport%20How%20to%20Enhance%20Focus%20and%20Improve%20Productivity_SUMMARY.txt)
 
 
 
-![test](test.md)
+### Use 
+
+Just go https://console.groq.com/login create an account and just create an API key and paste it into the notebook at the start. That's it.
+
+
