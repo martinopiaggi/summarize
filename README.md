@@ -1,5 +1,10 @@
 ## Video Summarization with AI on Google Colab
 
+<a href="https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb" target="_parent">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+
+
 Effortlessly summarize videos from multiple sources (YouTube, Dropbox, and Google Drive) in Google Colab using state-of-the-art AI models (free Groq cloud api).
 
 ![example](https://github.com/martinopiaggi/summarize/assets/72280379/14daff90-e472-4a72-8059-50a4c6f7eeb9)
