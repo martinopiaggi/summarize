@@ -1,6 +1,6 @@
 ## Video Summarization with AI on Google Colab
 
-<a href="https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb" target="_parent">
+<a href="https://colab.research.google.com/drive/1rD86ndlEc0c0Yp_1rfKVerSEeKAUH9A4" target="_parent">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
