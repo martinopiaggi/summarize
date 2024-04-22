@@ -1,30 +1,27 @@
-# Summarize videos for free in Google Colab 
+## Video Summarization with AI on Google Colab
 
-Effortlessly summarize videos from multiple sources (youtube, dropbox and google drive) in Google Colab (free GPU tier) using state-of-the-art AI models [Faster Whisper](https://github.com/guillaumekln/faster-whisper) and **Mixtral 8x7b** for **free** through [Groq cloud API](https://wow.groq.com/). 
+Effortlessly summarize videos from multiple sources (YouTube, Dropbox, and Google Drive) in Google Colab using state-of-the-art AI models (free Groq cloud api).
 
-### Use cases 
+## Features
 
-- You don't want to watch a lengthy video podcast and want a summary with timestamps to get a precise overview of the content.
-- To efficiently take notes on a video, relying on a summary that captures key points with timestamps. 
+- Provides a summary with timestamps for a precise overview of the content + original transcript
+- Summarize videos from YouTube, Dropbox, and Google Drive.
+- **Llama3-8b** AI models via the **free** Groq cloud API, or opt for OpenAI's GPT-3.5 without hitting Groq usage caps.
+- Summaries based on auto generated captions for YouTube videos, and supports **Faster Whisper** for other sources or when captions are not available.
+    
+## Use Cases
 
-This project offers a free alternative to [summarize.tech](https://www.summarize.tech/) for unlimited video summaries. However, summarize.tech and its 5 free daily videos remains faster for quick overviews. 
-Said this, this notebook provides:
+- Get a quick summary of a lengthy video with timestamps
+- Efficiently take notes on a video with a summary that captures key points
+- Have a grammarly correct transcript of the video
 
-- Not limited to YouTube videos (dropbox and gdrive links)
-- More precise and complete results
-- Original transcript
+## Usage
 
-
-### Results in Google Colab Free Tier with T4 gpu
-
-| Video source | Time needed to summary | Result |
-|:--:|:--:|:---:|  
-| [3h podcast](https://www.youtube.com/watch?v=p4ZfkezDTXQ) | 10 minutes | [Summary](Video%20summaries%20examples/Dr%20Cal%20Newport%20How%20to%20Enhance%20Focus%20and%20Improve%20Productivity_SUMMARY.txt)
-
-
-
-### Use 
-
-Just go https://console.groq.com/login create an account and just create an API key and paste it into the notebook at the start. That's it.
+1. Sign up or log into Groq Console or use OpenAI's ChatGPT for API access.
+2. Obtain your unique API key from either service and input it into the Colab.
+4. *Remember the Colab notebook settings to utilize a T4 GPU if using Faster Whisper (basically when the source is Dropbox or GDrive video link)*
+5. Input the video URL selecting correct video source type
+6. Run the needed cells
+7. Summaries and transcripts can be downloaded or read directly in the browser using the colab file-explorer pane on the left.
 
 
