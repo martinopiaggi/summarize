@@ -18,6 +18,8 @@ Effortlessly summarize videos from multiple sources (YouTube, Dropbox, and Googl
 - Efficiently take notes on a video with a summary that captures key points
 - Have a grammarly correct transcript of the video
 
+[Example of summary](Video%20summaries%20examples/ngvOyccUzzY_captions_FINAL.md)
+
 ## Usage
 
 1. Sign up or log into Groq Console or use OpenAI's ChatGPT for API access.
