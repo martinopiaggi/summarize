@@ -13,7 +13,7 @@ Effortlessly summarize videos from multiple sources (YouTube, Dropbox, and Googl
 
 - Provides a summary with timestamps for a precise overview of the content + original transcript
 - Summarize videos from YouTube, Dropbox, and Google Drive.
-- **Llama3-8b** AI models via the **free** Groq cloud API, or opt for OpenAI's GPT-3.5 without hitting Groq usage caps.
+- **Llama3-8b** model via the **free** Groq cloud API, or opt for OpenAI's GPT-3.5 without hitting Groq usage caps.
 - Summaries based on auto generated captions for YouTube videos, and supports **Faster Whisper** for other sources or when captions are not available.
     
 ## Use Cases
