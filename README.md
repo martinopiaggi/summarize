@@ -5,7 +5,7 @@
 </a>
 
 
-Effortlessly summarize videos from multiple sources (YouTube, Dropbox, and Google Drive) in Google Colab or locally, using state-of-the-art AI models (free Groq cloud api, OpenAI or any local model).
+Effortlessly summarize videos from multiple sources (YouTube, Dropbox, Google Drive, local files) in Google Colab or locally, using state-of-the-art AI models (free Groq cloud api, OpenAI or any local model).
 
 [](https://github.com/martinopiaggi/summarize/assets/72280379/f65eca0b-f61e-4aed-864f-8f86cc1722cf)
 
