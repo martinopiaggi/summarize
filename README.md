@@ -1,11 +1,11 @@
-## Video Summarization with AI
+## Video Transcript Summarization with AI
 
 <a href="https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb" target="_parent">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
 
-Effortlessly summarize videos from multiple sources (YouTube, Dropbox, Google Drive, local files) in Google Colab or locally, using state-of-the-art AI models (free Groq cloud api, OpenAI or any local model).
+Effortlessly transcribe and summarize videos from multiple sources (YouTube, Dropbox, Google Drive, local files) in Google Colab or locally, using state-of-the-art AI models (free Groq cloud api, OpenAI or any local model).
 
 [](https://github.com/martinopiaggi/summarize/assets/72280379/f65eca0b-f61e-4aed-864f-8f86cc1722cf)
 
