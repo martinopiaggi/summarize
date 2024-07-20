@@ -13,7 +13,7 @@ Effortlessly transcribe and summarize videos from multiple sources (YouTube, Dro
 
 - Provides a summary with timestamps for a precise overview of the content + original transcript
 - Summarize videos from YouTube, Dropbox, Google Drive or local files.
-- **Llama3-8b** model via the **free** Groq cloud API, OpenAI's GPT-3.5 or local model (tested with LM Studio)
+- **Llama3-8b** model via the **free** Groq cloud API, OpenAI's models or any custom "local" model (tested with LM Studio)
 - Summaries based on auto generated captions for YouTube videos, and supports **Whisper** for other sources or when captions are not available.
     
 ## Use Cases
@@ -30,7 +30,10 @@ Effortlessly transcribe and summarize videos from multiple sources (YouTube, Dro
 2. Obtain your unique API key from either service and input it into the Colab.
 4. *Remember the Colab notebook settings to utilize a T4 GPU if using Faster Whisper (basically when the source is Dropbox or GDrive video link)*
 5. Input the video URL selecting correct video source type
+    - In case of a GDrive video, insert the path relative to the root of your "My Drive"
+    - In case of Dropbox video, insert the "sharing link" (it must be public)   
 6. Run the needed cells
+    - In case of youtube videos, don't run Whisper cell (so that it uses directly yt subtitles)
 7. Summaries and transcripts can be downloaded or read directly in the browser using the colab file-explorer pane on the left.
 
 
