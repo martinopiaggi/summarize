@@ -3,7 +3,8 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb)
 
 Transcribe and summarize videos from multiple sources using state-of-the-art AI models in Google Colab or locally.
-
+It addresses the problem of too much content and too little time, helping to remember the stuff you watch or listen to.
+ 
 https://github.com/user-attachments/assets/db89ec4e-90f1-46b3-a944-f65e78f66496
 
 ## Features
@@ -14,10 +15,10 @@ https://github.com/user-attachments/assets/db89ec4e-90f1-46b3-a944-f65e78f66496
 - Support auto-generated captions (YouTube) and Whisper transcription
 
 ## Use Cases
-
 - Quick summaries of lengthy videos with timestamps
 - Efficient note-taking with key point capture
 - Grammatically correct video transcripts
+- Extracts wisdom from any video content that can be translated into text
 
 [Example Summary](Video%20summaries%20examples/ngvOyccUzzY_captions_FINAL.md)
 
