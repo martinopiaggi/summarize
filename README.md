@@ -1,39 +1,56 @@
 ## Video Transcript Summarization with AI
 
-<a href="https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb" target="_parent">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-</a>
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb)
 
-
-Effortlessly transcribe and summarize videos from multiple sources (YouTube, Dropbox, Google Drive, local files) in Google Colab or locally, using state-of-the-art AI models (free Groq cloud api, OpenAI or any local model).
-
-[](https://github.com/martinopiaggi/summarize/assets/72280379/f65eca0b-f61e-4aed-864f-8f86cc1722cf)
+Transcribe and summarize videos from multiple sources using state-of-the-art AI models in Google Colab or locally.
 
 ## Features
 
-- Provides a summary with timestamps for a precise overview of the content + original transcript
-- Summarize videos from YouTube, Dropbox, Google Drive or local files.
-- **Llama3-8b** model via the **free** Groq cloud API, OpenAI's models or any custom "local" model (tested with LM Studio)
-- Summaries based on auto generated captions for YouTube videos, and supports **Whisper** for other sources or when captions are not available.
-    
+- Summarize videos from YouTube, Dropbox, Google Drive, or local files
+- Provide summaries with timestamps and original transcripts
+- Use various AI models via Groq (free), OpenAI, or custom local models
+- Support auto-generated captions (YouTube) and Whisper transcription
+
 ## Use Cases
 
-- Get a quick summary of a lengthy video with timestamps
-- Efficiently take notes on a video with a summary that captures key points
-- Have a grammarly correct transcript of the video
+- Quick summaries of lengthy videos with timestamps
+- Efficient note-taking with key point capture
+- Grammatically correct video transcripts
 
-[Example of summary](Video%20summaries%20examples/ngvOyccUzzY_captions_FINAL.md)
+[Example Summary](Video%20summaries%20examples/ngvOyccUzzY_captions_FINAL.md)
 
-## Colab usage
+## Colab Usage
 
-1. Sign up or log into Groq Console or use OpenAI's ChatGPT for API access.
-2. Obtain your unique API key from either service and input it into the Colab.
-4. *Remember the Colab notebook settings to utilize a T4 GPU if using Faster Whisper (basically when the source is Dropbox or GDrive video link)*
-5. Input the video URL selecting correct video source type
-    - In case of a GDrive video, insert the path relative to the root of your "My Drive"
-    - In case of Dropbox video, insert the "sharing link" (it must be public)   
-6. Run the needed cells
-    - In case of youtube videos, don't run Whisper cell (so that it uses directly yt subtitles)
-7. Summaries and transcripts can be downloaded or read directly in the browser using the colab file-explorer pane on the left.
+1. Obtain API key from Groq or OpenAI
+2. Input API key into Colab Secrets 🗝️
+3. Use T4 GPU for Faster Whisper
+4. Input video URL and select source type
+5. Run required cells
+6. Access summaries and transcripts via Colab file explorer
+
+Note: For Google Drive, use path relative to "My Drive". For Dropbox, use public sharing link.
 
 
+```mermaid
+graph TD
+    B{Choose Video Source}
+    B -->|YouTube| C{Use YouTube Captions?}
+    B -->|Google Drive| D[Convert to Audio]
+    B -->|Dropbox| D
+    B -->|Local File| D
+    C -->|Yes| E[Download YouTube Captions]
+    C -->|No| D
+    D --> F[Whisper Transcription]
+    E --> G{Choose Prompt Type}
+    F --> G
+    G -->|Summarization| H[Summarize Content]
+    G -->|Grammar Correction| I[Correct captions]
+    G -->|Distill Wisdom| J[Extract Key Insights]
+    H --> K[Generate Final Summary]
+    I --> K
+    J --> K
+    K --> L[End]
+
+    style C fill:#f9f,stroke:#333,stroke-width:2px
+    style G fill:#bbf,stroke:#333,stroke-width:2px
+```
