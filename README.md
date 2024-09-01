@@ -4,6 +4,8 @@
 
 Transcribe and summarize videos from multiple sources using state-of-the-art AI models in Google Colab or locally.
 
+https://github.com/user-attachments/assets/db89ec4e-90f1-46b3-a944-f65e78f66496
+
 ## Features
 
 - Summarize videos from YouTube, Dropbox, Google Drive, or local files
