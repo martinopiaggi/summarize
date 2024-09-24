@@ -1,6 +1,6 @@
 ## Video Transcript Summarization with AI
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](your_colab_notebook_link_here)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16sLs1fJ7inP1wKw90zgk7Q_88N4sFU1v?usp=sharing)
 
 Transcribe and summarize videos from multiple sources using state-of-the-art AI models in Google Colab or locally. This tool addresses the problem of too much content and too little time, helping you remember the content you watch or listen to.
 
