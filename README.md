@@ -48,9 +48,13 @@ graph LR
     J --> K[Summarize Content]
     J --> L[Correct Captions]
     J --> M[Extract Key Insights]
+    J --> P[Questions and answers]
+    J --> Q[Essay Writing in Paul Graham Style]
     K --> O[Generate Final Summary]
     L --> O
     M --> O
+    P --> O
+    Q --> O
 
     %% Highlight important decision points
     style C fill:#f9f,stroke:#333,stroke-width:2px
@@ -70,8 +74,10 @@ graph LR
      - Go to **Runtime** > **Change runtime type** > Set **Hardware accelerator** to **GPU**.
 3. **Input Video Source**:
    - Input the video URL or file path.
-   - Select the source type (YouTube Video, Google Drive Video Link, Dropbox Video Link, Local File).
-   - If source is a Youtube video, it's recommended to use the available YouTube captions to save on transcription time and API usage.
+    - Select the source type (YouTube Video, Google Drive Video Link, Dropbox Video Link, Local File):
+      - For Google Drive, use the path relative to "My Drive".
+      - For Dropbox, use the public sharing link. 
+      - For Youtube video, is recommended to use the available YouTube captions to save on transcription time and API usage.
 4. **Set Transcription Settings**:
    - **The transcription settings are applied only if you want to use Whisper transcription and not Youtube Captions.**
    - Choose between cloud (Groq endpoint) or local Whisper:
@@ -82,18 +88,13 @@ graph LR
        - Requires a GPU runtime.
    - **Language**: Specify the language code (ISO-639-1 format, e.g., "en" for English,"it" for Italian).
    - **Initial Prompt for Whisper**: (Optional) Provide an initial prompt to guide the transcription.
+    - Groq **Free** usage transcription limits using Whisper:
+
+      | Model ID                      | Requests per Day | Audio Minutes per Hour | Audio Minutes per Day |
+      |-------------------------------|------------------|------------------------|-----------------------|
+      | `distil-whisper-large-v3-en`  | 2,000            | 120                    | 480                   |
+      | `whisper-large-v3`            | 2,000            | 120                    | 480                   |
 
 5. **Set Summarization Settings**:
-   - **Prompt Type**: Choose from **Summarization**, **Grammar Correction**, or **Distill Wisdom**.
+   - **Prompt Type**: Choose from **Summarization**, **Grammar Correction**, **Distill Wisdom**, **Questions and answers** or **Essay Writing in Paul Graham Style**.
    - Configure other settings such as **Parallel API Calls** (mind rate limits), **Chunk Size**, and **Max Output Tokens**.
-
-**Note**:
-
-- For **Google Drive**, use the path relative to "My Drive".
-- For **Dropbox**, use a public sharing link.
-- Groq **Free** usage transcription limits using Whisper:
-
-| Model ID                      | Requests per Day | Audio Minutes per Hour | Audio Minutes per Day |
-|-------------------------------|------------------|------------------------|-----------------------|
-| `distil-whisper-large-v3-en`  | 2,000            | 120                    | 480                   |
-| `whisper-large-v3`            | 2,000            | 120                    | 480                   |
