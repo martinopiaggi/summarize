@@ -1,100 +1,124 @@
-## Video Transcript Summarization with AI
+# Video Transcript Summarizer
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16sLs1fJ7inP1wKw90zgk7Q_88N4sFU1v?usp=sharing)
-
-Transcribe and summarize videos from multiple sources using state-of-the-art AI models in Google Colab or locally. This tool addresses the problem of too much content and too little time, helping you remember the content you watch or listen to.
-
-https://github.com/user-attachments/assets/db89ec4e-90f1-46b3-a944-f65e78f66496
+A tool to transcribe and summarize videos from various sources using AI. Supports YouTube, Google Drive, Dropbox, and local files.
 
 ## Features
 
-- **Versatile Video Sources**: Summarize videos from YouTube, Dropbox, Google Drive, or local files.
-- **Efficient Transcription**:
-  - Use existing YouTube captions when available to save time and resources.
-  - Transcribe audio using **Cloud Whisper** (via Groq API) or **Local Whisper**.
-- **Customizable Summarization**:
-  - Choose from different prompt types: **Summarization**, **Grammar Correction**, or **Distill Wisdom** to extract key insights.
-- **Flexible API Integration**:
-  - Use various AI models via Groq (free), OpenAI, or custom local models for summarization.
-- **Output Features**:
-  - Generate summaries with timestamps and include original transcripts.
+- **Multiple Video Sources**:
+  - YouTube (with automatic caption support)
+  - Google Drive
+  - Dropbox
+  - Local files
 
-## Use Cases
+- **Flexible API Support**:
+  - Works with any OpenAI-compatible API endpoint
+  - Configurable models and parameters
 
-- **Quick Summaries**: Get concise summaries of lengthy videos with timestamps.
-- **Note-Taking**: Capture key points efficiently.
-- **Transcription Correction**: Obtain grammatically correct video transcripts.
-- **Wisdom Extraction**: Extract key insights and wisdom from any video content.
+- **Smart Processing**:
+  - Uses YouTube captions when available (faster & free)
+  - Falls back to audio download & transcription if needed
+  - Processes multiple videos in one command
 
-[Example Summary](Video%20summaries%20examples/ngvOyccUzzY_captions_FINAL.md)
+- **Output Options**:
+  - Automatic saving to markdown files
+  - Customizable output directory
+  - Timestamped summaries
 
-## Usage
+## Installation
 
-```mermaid
-graph LR
-    B{Choose Video Source}
-    B -->|YouTube| C{Use YouTube Captions?}
-    B -->|Google Drive| D[Convert to Audio]
-    B -->|Dropbox| D
-    B -->|Local File| D
-    C -->|Yes| E[Download YouTube Captions]
-    C -->|No| D
-    E --> J{Choose Prompt Type}
-    D --> G{Choose Transcription Method}
-    G -->|Cloud Whisper| H[Transcribe with Groq API endpoint Whisper]
-    G -->|Local Whisper| I[Transcribe with Local Whisper]
-    H --> J{Choose Prompt Type}
-    I --> J{Choose Prompt Type}
-    J --> K[Summarize Content]
-    J --> L[Correct Captions]
-    J --> M[Extract Key Insights]
-    J --> P[Questions and answers]
-    J --> Q[Essay Writing in Paul Graham Style]
-    K --> O[Generate Final Summary]
-    L --> O
-    M --> O
-    P --> O
-    Q --> O
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/summarize.git
+cd summarize
 
-    %% Highlight important decision points
-    style C fill:#f9f,stroke:#333,stroke-width:2px
-    style G fill:#f9f,stroke:#333,stroke-width:2px
-    style J fill:#bbf,stroke:#333,stroke-width:2px
+# Install the package
+pip install -e .
 ```
 
-1. **API stuff**:
-     - Set `api_endpoint` to **Groq**, **OpenAI**, or **Custom**.
-     - Ensure `api_key` is set accordingly.
-     - **Groq API Key** (`api_key_groq`): Required for **cloud Whisper** transcription.
-     - If you plan to use Whisper API endpoint (only Groq endpoint is supported for now) you have to specify your Groq API key in api_key_groq.
-     - Why use `api_key_groq` and `api_key` ? So that you can use a different API for summarization (e.g., OpenAI).
-2. **Configure Runtime Environment**:
-   - If using **Local Whisper** on Google Colab:
-     - Switch the runtime type to a GPU instance (e.g., T4).
-     - Go to **Runtime** > **Change runtime type** > Set **Hardware accelerator** to **GPU**.
-3. **Input Video Source**:
-   - Input the video URL or file path.
-    - Select the source type (YouTube Video, Google Drive Video Link, Dropbox Video Link, Local File):
-      - For Google Drive, use the path relative to "My Drive".
-      - For Dropbox, use the public sharing link. 
-      - For Youtube video, is recommended to use the available YouTube captions to save on transcription time and API usage.
-4. **Set Transcription Settings**:
-   - **The transcription settings are applied only if you want to use Whisper transcription and not Youtube Captions.**
-   - Choose between cloud (Groq endpoint) or local Whisper:
-     - **Cloud Whisper**:
-       - Only supported via the **Groq** endpoint.
-       - Requires `api_key_groq`.
-     - **Local Whisper**:
-       - Requires a GPU runtime.
-   - **Language**: Specify the language code (ISO-639-1 format, e.g., "en" for English,"it" for Italian).
-   - **Initial Prompt for Whisper**: (Optional) Provide an initial prompt to guide the transcription.
-    - Groq **Free** usage transcription limits using Whisper:
+## Usage Examples
 
-      | Model ID                      | Requests per Day | Audio Minutes per Hour | Audio Minutes per Day |
-      |-------------------------------|------------------|------------------------|-----------------------|
-      | `distil-whisper-large-v3-en`  | 2,000            | 120                    | 480                   |
-      | `whisper-large-v3`            | 2,000            | 120                    | 480                   |
+1. **Basic Usage** (using YouTube captions):
+```bash
+python -m summarizer \
+    --urls "https://www.youtube.com/watch?v=VIDEO_ID" \
+    --base-url "https://api.deepseek.com/v1" \
+    --model "deepseek-chat" \
+    --api-key "your-api-key"
+```
 
-5. **Set Summarization Settings**:
-   - **Prompt Type**: Choose from **Summarization**, **Grammar Correction**, **Distill Wisdom**, **Questions and answers** or **Essay Writing in Paul Graham Style**.
-   - Configure other settings such as **Parallel API Calls** (mind rate limits), **Chunk Size**, and **Max Output Tokens**.
+2. **Process Multiple Videos**:
+```bash
+python -m summarizer \
+    --urls "https://youtube.com/watch?v=ID1" "https://youtube.com/watch?v=ID2" \
+    --base-url "https://api.deepseek.com/v1" \
+    --model "deepseek-chat"
+```
+
+3. **Force Audio Download** (instead of captions):
+```bash
+python -m summarizer \
+    --urls "https://youtube.com/watch?v=VIDEO_ID" \
+    --base-url "https://api.deepseek.com/v1" \
+    --model "deepseek-chat" \
+    --force-download
+```
+
+4. **Custom Output Directory**:
+```bash
+python -m summarizer \
+    --urls "https://youtube.com/watch?v=VIDEO_ID" \
+    --base-url "https://api.deepseek.com/v1" \
+    --model "deepseek-chat" \
+    --output-dir "my_summaries"
+```
+
+5. **Different Summary Styles**:
+```bash
+python -m summarizer \
+    --urls "https://youtube.com/watch?v=VIDEO_ID" \
+    --base-url "https://api.deepseek.com/v1" \
+    --model "deepseek-chat" \
+    --prompt-type "Distill Wisdom"
+```
+
+## Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| --urls | One or more video URLs | Required |
+| --base-url | API endpoint URL | Required |
+| --model | Model to use | Required |
+| --api-key | API key (or use .env) | Optional |
+| --type | Source type | "YouTube Video" |
+| --force-download | Skip captions, use audio | False |
+| --output-dir | Save directory | "summaries" |
+| --no-save | Don't save to files | False |
+| --prompt-type | Summary style | "Questions and answers" |
+| --language | Language code | "auto" |
+| --chunk-size | Text chunk size | 10000 |
+| --parallel-calls | Parallel API calls | 30 |
+| --max-tokens | Max output tokens | 4096 |
+
+## Summary Styles
+
+1. **Summarization**: Concise overview
+2. **Grammar Correction**: Cleaned transcript
+3. **Distill Wisdom**: Key insights & quotes
+4. **Q&A**: Key questions & answers
+5. **Essay**: Paul Graham style essay
+
+## Environment Setup
+
+You can set default API keys in a `.env` file:
+```env
+api_key=your_default_api_key
+```
+
+Or provide them directly via --api-key parameter.
+
+## Notes
+
+- YouTube videos use captions by default (faster & free)
+- Summaries are automatically saved to markdown files
+- Each summary includes source URL and timestamp
+- Non-YouTube sources always use audio download
