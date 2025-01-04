@@ -314,77 +314,6 @@ def load_prompt_template(prompt_type: str) -> str:
     except Exception as e:
         raise Exception(f"Failed to load prompt template: {str(e)}")
 
-async def process_chunk(chunk: str, template: str, config: Dict) -> str:
-    """Process a single chunk using API."""
-    headers = {
-        "Authorization": f"Bearer {get_api_key(config)}",
-        "Content-Type": "application/json"
-    }
-    
-    data = {
-        "model": config["model"],
-        "messages": [
-            {"role": "system", "content": "You are a helpful assistant specializing in video content analysis."},
-            {"role": "user", "content": template.format(text=chunk)}
-        ],
-        "max_tokens": config["max_output_tokens"]
-    }
-    
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            f"{config['base_url']}/chat/completions",
-            headers=headers,
-            json=data
-        ) as response:
-            if response.status != 200:
-                raise Exception(f"API request failed: {await response.text()}")
-            result = await response.json()
-            return result["choices"][0]["message"]["content"]
-
-
-async def process_chunk(chunk: str, template: str, config: Dict) -> str:
-    """Process a single chunk using API."""
-    # Ensure chunk is not empty and contains actual content
-    if not chunk.strip():
-        return ""
-        
-    headers = {
-        "Authorization": f"Bearer {get_api_key(config)}",
-        "Content-Type": "application/json"
-    }
-    
-    processed_template = template.format(text=chunk.strip())
-    
-    data = {
-        "model": config["model"],
-        "messages": [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant specializing in video content analysis. Always provide direct responses based on the given transcript without asking for more content."
-            },
-            {
-                "role": "user",
-                "content": processed_template
-            }
-        ],
-        "max_tokens": config["max_output_tokens"]
-    }
-    
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            f"{config['base_url']}/chat/completions",
-            headers=headers,
-            json=data
-        ) as response:
-            if response.status != 200:
-                raise Exception(f"API request failed: {await response.text()}")
-            result = await response.json()
-            content = result["choices"][0]["message"]["content"].strip()
-            # Remove any "please provide text" responses
-            if "please provide" in content.lower() or "please share" in content.lower():
-                return ""
-            return content
-
 def chunk_text(text: str, chunk_size: int) -> List[str]:
     """Split text into chunks."""
     # Ensure minimum chunk size
@@ -430,49 +359,124 @@ def chunk_text(text: str, chunk_size: int) -> List[str]:
         
     return merged_chunks
 
+async def process_chunk(chunk: str, template: str, config: Dict) -> str:
+    """Process a single chunk using API."""
+    if not chunk.strip():
+        return ""
+        
+    headers = {
+        "Authorization": f"Bearer {get_api_key(config)}",
+        "Content-Type": "application/json"
+    }
+    
+    processed_template = template.replace("{TITLE}", "TITLE").format(text=chunk.strip())
+    
+    data = {
+        "model": config["model"],
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant specializing in video content analysis. Always provide direct responses based on the given transcript without asking for more content."
+            },
+            {
+                "role": "user",
+                "content": processed_template
+            }
+        ],
+        "max_tokens": config["max_output_tokens"]
+    }
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{config['base_url']}/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=aiohttp.ClientTimeout(total=60)  # Add timeout
+            ) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"API request failed: {error_text}")
+                result = await response.json()
+                content = result["choices"][0]["message"]["content"].strip()
+                if "please provide" in content.lower() or "please share" in content.lower():
+                    return ""
+                return content
+    except asyncio.CancelledError:
+        # Handle task cancellation gracefully
+        return ""
+    except Exception as e:
+        print(f"Error processing chunk: {str(e)}")
+        return ""
+
 async def process_chunks(chunks: List[str], template: str, config: Dict) -> List[str]:
-    """Process chunks in parallel."""
+    """Process chunks in parallel with better error handling."""
     tasks = []
+    semaphore = asyncio.Semaphore(config.get("parallel_api_calls", 5))  # Limit concurrent requests
+    
+    async def process_with_semaphore(chunk: str) -> str:
+        async with semaphore:
+            return await process_chunk(chunk, template, config)
+    
     for chunk in chunks:
-        if chunk.strip():  # Only process non-empty chunks
-            task = asyncio.create_task(process_chunk(chunk, template, config))
+        if chunk.strip():
+            task = asyncio.create_task(process_with_semaphore(chunk))
             tasks.append(task)
             
     if not tasks:
         raise Exception("No valid content chunks to process")
-        
-    results = await asyncio.gather(*tasks)
-    # Filter out empty results
-    return [r for r in results if r.strip()]
+    
+    try:
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        # Filter out errors and empty results
+        valid_results = []
+        for result in results:
+            if isinstance(result, Exception):
+                print(f"Chunk processing error: {result}")
+            elif result and result.strip():
+                valid_results.append(result)
+        return valid_results
+    except Exception as e:
+        print(f"Error in gather: {str(e)}")
+        return []
 
 def main(config: Dict) -> str:
     """Main processing function."""
     try:
-        # Get the transcript based on the source type
+        # Get transcript based on source type and configuration
         transcript = get_transcript(config)
         
-        if not transcript.strip():
+        if not transcript or not transcript.strip():
             raise Exception("No transcript content to process")
             
-        # Process the transcript in chunks
         chunks = chunk_text(transcript, config.get("chunk_size", 10000))
         if not chunks:
             raise Exception("Failed to create content chunks")
             
-        # Load the prompt template
         template = load_prompt_template(config.get("prompt_type", "Questions and answers"))
         
-        # Process chunks in parallel
+        # Use nest_asyncio if in notebook environment
+        try:
+            import nest_asyncio
+            nest_asyncio.apply()
+        except ImportError:
+            pass
+            
+        # Create new event loop for each run
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        
         try:
-            summaries = loop.run_until_complete(
-                process_chunks(chunks, template, config)
-            )
+            summaries = loop.run_until_complete(process_chunks(chunks, template, config))
             if not summaries:
                 raise Exception("No valid summaries generated")
             return "\n\n".join(summaries)
         finally:
+            # Clean up
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                task.cancel()
+            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
             loop.close()
             
     except Exception as e:
