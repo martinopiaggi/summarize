@@ -6,11 +6,13 @@ setup(
     packages=find_packages(),
     install_requires=[
         "python-dotenv>=1.0.0",
-        "youtube-transcript-api>=0.6.1",
+        "youtube-transcript-api>=0.6.1", 
         "pytubefix>=1.6.3",
         "openai-whisper>=20231117",
         "groq>=0.4.2",
-        "openai>=1.3.7"
+        "openai>=1.3.7",
+        "aiohttp>=3.9.0",
+        "requests>=2.31.0"
     ],
     entry_points={
         "console_scripts": [
