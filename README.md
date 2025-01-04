@@ -46,6 +46,10 @@ python -m summarizer \
     --api-key "your-api-key"
 ```
 
+```bash
+python -m summarizer --urls "./lecture.mp4" --type "Local File"  --base-url "https://api.deepseek.com/v1" --model "deepseek-chat"
+```
+
 2. **Process Multiple Videos**:
 ```bash
 python -m summarizer \
@@ -89,6 +93,8 @@ python -m summarizer --urls "https://www.youtube.com/watch?v=z5W74QC3v2I" --base
 python -m summarizer --urls "https://www.youtube.com/watch?v=z5W74QC3v2I" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat"
 
 python -m summarizer --urls "https://www.youtube.com/watch?v=z5W74QC3v2I" --base-url "https://api.hyperbolic.xyz/v1" --model "meta-llama/Llama-3.3-70B-Instruct"
+
+python -m summarizer --urls "./lecture.mp4" "./lecture2.mp4" "./lecture3.mp4" --type "Local File"  --base-url "https://api.deepseek.com/v1" --model "deepseek-chat"
 ```
 
 
