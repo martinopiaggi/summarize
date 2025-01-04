@@ -17,7 +17,8 @@ setup(
         "google-api-python-client>=2.0.0",
         "google-auth-httplib2>=0.1.0",
         "google-auth-oauthlib>=0.4.1",
-        "dropbox>=11.36.2"
+        "dropbox>=11.36.2",
+        "ffmpeg-python>=0.2.0"  # Added for audio processing
     ],
     entry_points={
         "console_scripts": [

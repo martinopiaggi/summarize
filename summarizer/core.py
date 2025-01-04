@@ -6,12 +6,123 @@ import json
 import tempfile
 import asyncio
 import aiohttp
+import subprocess
+from pathlib import Path
 from dotenv import load_dotenv
 from youtube_transcript_api import YouTubeTranscriptApi
 import pytubefix as pytube
 
 # Load environment variables
 load_dotenv()
+
+class VideoSourceHandler:
+    def __init__(self, source_path: str, temp_dir: Optional[str] = None):
+        self.source_path = source_path
+        self.temp_dir = temp_dir or tempfile.gettempdir()
+        
+    def get_processed_audio(self) -> Tuple[str, bool]:
+        """Returns tuple of (processed_audio_path, should_delete)"""
+        raise NotImplementedError
+        
+    def cleanup(self, file_path: str) -> None:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+def process_audio_file(input_path: str, output_path: str) -> None:
+    """Convert audio to MP3 with reduced quality for API limits."""
+    command = [
+        'ffmpeg', '-y', '-i', input_path,
+        '-ar', '8000',
+        '-ac', '1',
+        '-b:a', '16k',
+        output_path
+    ]
+    subprocess.run(command, check=True, capture_output=True)
+
+class LocalFileHandler(VideoSourceHandler):
+    def get_processed_audio(self) -> Tuple[str, bool]:
+        if not os.path.exists(self.source_path):
+            raise FileNotFoundError(f"Local file not found: {self.source_path}")
+            
+        temp_wav = os.path.join(self.temp_dir, "local_audio.wav")
+        processed_path = os.path.join(self.temp_dir, "local_processed.mp3")
+        
+        subprocess.run([
+            'ffmpeg', '-y', '-i', self.source_path,
+            '-vn', '-acodec', 'pcm_s16le',
+            '-ar', '16000', '-ac', '1',
+            temp_wav
+        ], check=True, capture_output=True)
+        
+        process_audio_file(temp_wav, processed_path)
+        self.cleanup(temp_wav)
+        
+        return processed_path, True
+
+class GoogleDriveHandler(VideoSourceHandler):
+    def get_processed_audio(self) -> Tuple[str, bool]:
+        try:
+            from google.colab import drive
+            drive.mount('/content/drive')
+        except ImportError:
+            raise ImportError("Google Drive operations require Google Colab environment")
+            
+        if not self.source_path.startswith('/content/drive'):
+            self.source_path = f"/content/drive/MyDrive/{self.source_path}"
+            
+        if not os.path.exists(self.source_path):
+            raise FileNotFoundError(f"File not found in Google Drive: {self.source_path}")
+            
+        temp_wav = os.path.join(self.temp_dir, "gdrive_audio.wav")
+        processed_path = os.path.join(self.temp_dir, "gdrive_processed.mp3")
+        
+        subprocess.run([
+            'ffmpeg', '-y', '-i', self.source_path,
+            '-vn', '-acodec', 'pcm_s16le',
+            '-ar', '16000', '-ac', '1',
+            temp_wav
+        ], check=True, capture_output=True)
+        
+        process_audio_file(temp_wav, processed_path)
+        self.cleanup(temp_wav)
+        
+        return processed_path, True
+
+class DropboxHandler(VideoSourceHandler):
+    def get_processed_audio(self) -> Tuple[str, bool]:
+        import wget
+        
+        temp_video = os.path.join(self.temp_dir, "dropbox_video.mp4")
+        wget.download(self.source_path, temp_video)
+        
+        temp_wav = os.path.join(self.temp_dir, "dropbox_audio.wav")
+        processed_path = os.path.join(self.temp_dir, "dropbox_processed.mp3")
+        
+        subprocess.run([
+            'ffmpeg', '-y', '-i', temp_video,
+            '-vn', '-acodec', 'pcm_s16le',
+            '-ar', '16000', '-ac', '1',
+            temp_wav
+        ], check=True, capture_output=True)
+        
+        process_audio_file(temp_wav, processed_path)
+        self.cleanup(temp_video)
+        self.cleanup(temp_wav)
+        
+        return processed_path, True
+
+def get_handler(source_type: str, source_path: str) -> VideoSourceHandler:
+    handlers = {
+        "Local File": LocalFileHandler,
+        "Google Drive Video Link": GoogleDriveHandler,
+        "Dropbox Video Link": DropboxHandler
+    }
+    
+    handler_class = handlers.get(source_type)
+    if not handler_class:
+        raise ValueError(f"Unsupported source type: {source_type}")
+        
+    return handler_class(source_path)
 
 # Default configuration
 CONFIG = {
@@ -61,11 +172,16 @@ def get_youtube_transcript(video_id: str, language: str = "en") -> str:
         if language == "auto":
             language = "en"
         transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
-        return "\n".join(f"{entry['text'].strip()}" for entry in transcript)
+        return "\n".join(f"{format_timestamp(entry['start'])} {entry['text'].strip()}" for entry in transcript)
     except Exception as e:
-        raise Exception(
-            f"Failed to get YouTube transcript. Try using --force-download instead. Error: {str(e)}"
-        )
+        raise Exception(f"Failed to get YouTube transcript. Try using --force-download instead. Error: {str(e)}")
+
+def format_timestamp(seconds: float) -> str:
+    """Convert seconds to HH:MM:SS format."""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = int(seconds % 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 def download_youtube_audio(url: str) -> str:
     """Download YouTube video audio."""
@@ -75,9 +191,13 @@ def download_youtube_audio(url: str) -> str:
         
         temp_dir = tempfile.gettempdir()
         temp_path = os.path.join(temp_dir, "audio.mp4")
+        processed_path = os.path.join(temp_dir, "audio_processed.mp3")
         
         stream.download(output_path=temp_dir, filename="audio.mp4")
-        return temp_path
+        process_audio_file(temp_path, processed_path)
+        os.remove(temp_path)
+        
+        return processed_path
     except Exception as e:
         raise Exception(f"Failed to download YouTube audio: {str(e)}")
 
@@ -85,17 +205,84 @@ def transcribe_audio(audio_path: str, method: str = "Cloud Whisper") -> str:
     """Transcribe audio file."""
     try:
         if method == "Cloud Whisper":
-            import openai
-            with open(audio_path, "rb") as f:
-                return openai.Audio.transcribe("whisper-1", f)["text"]
+            api_key = os.getenv("api_key_groq")
+            if not api_key:
+                raise ValueError("Groq API key not found in environment")
+            
+            from groq import Groq
+            groq_client = Groq(api_key=api_key)
+            
+            with open(audio_path, "rb") as audio_file:
+                print("Starting transcription with Groq API...")
+                # Use text format directly as it's more reliable
+                response = groq_client.audio.transcriptions.create(
+                    file=audio_file,
+                    model="whisper-large-v3",
+                    response_format="text",
+                    language="en",  # Explicitly set language
+                    temperature=0.0
+                )
+                
+                # Since we're using text format, add a timestamp at the start
+                timestamp = format_timestamp(0)
+                transcript = f"{timestamp} {response.strip()}\n"
+                
+                return transcript
+            
         elif method == "Local Whisper":
             import whisper
+            print("Loading Whisper model...")
             model = whisper.load_model("base")
-            return model.transcribe(audio_path)["text"]
+            print("Transcribing with local Whisper...")
+            result = model.transcribe(audio_path)
+            
+            transcript = ""
+            for segment in result["segments"]:
+                time = format_timestamp(segment["start"])
+                transcript += f"{time} {segment['text'].strip()}\n"
+                
+            return transcript
         else:
             raise ValueError(f"Unknown transcription method: {method}")
     except Exception as e:
         raise Exception(f"Transcription failed: {str(e)}")
+
+def get_transcript(config: dict) -> str:
+    """Get transcript based on source type and configuration."""
+    source_type = config.get("type_of_source")
+    source_path = config.get("source_url_or_path")
+    
+    if not source_type or not source_path:
+        raise ValueError("Source type and path/URL are required")
+    
+    if source_type == "YouTube Video":
+        if config.get("use_youtube_captions", True):
+            video_id = extract_youtube_id(source_path)
+            return get_youtube_transcript(
+                video_id,
+                config.get("language", "en")
+            )
+        else:
+            audio_path = download_youtube_audio(source_path)
+            transcript = transcribe_audio(
+                audio_path,
+                config.get("transcription_method", "Cloud Whisper")
+            )
+            os.remove(audio_path)
+            return transcript
+    else:
+        handler = get_handler(source_type, source_path)
+        try:
+            audio_path, should_delete = handler.get_processed_audio()
+            transcript = transcribe_audio(
+                audio_path,
+                config.get("transcription_method", "Cloud Whisper")
+            )
+            if should_delete:
+                os.remove(audio_path)
+            return transcript
+        except Exception as e:
+            raise Exception(f"Failed to process {source_type}: {str(e)}")
 
 def chunk_text(text: str, chunk_size: int) -> List[str]:
     """Split text into chunks."""
@@ -261,30 +448,21 @@ async def process_chunks(chunks: List[str], template: str, config: Dict) -> List
 def main(config: Dict) -> str:
     """Main processing function."""
     try:
-        if config["type_of_source"] == "YouTube Video":
-            video_id = extract_youtube_id(config["source_url_or_path"])
-            if config.get("use_youtube_captions", True):
-                transcript = get_youtube_transcript(
-                    video_id,
-                    config.get("language", "en")
-                )
-            else:
-                audio_path = download_youtube_audio(config["source_url_or_path"])
-                transcript = transcribe_audio(
-                    audio_path,
-                    config.get("transcription_method", "Cloud Whisper")
-                )
-                os.remove(audio_path)
-                
+        # Get the transcript based on the source type
+        transcript = get_transcript(config)
+        
         if not transcript.strip():
             raise Exception("No transcript content to process")
             
+        # Process the transcript in chunks
         chunks = chunk_text(transcript, config.get("chunk_size", 10000))
         if not chunks:
             raise Exception("Failed to create content chunks")
             
+        # Load the prompt template
         template = load_prompt_template(config.get("prompt_type", "Questions and answers"))
         
+        # Process chunks in parallel
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
