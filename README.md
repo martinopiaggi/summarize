@@ -81,6 +81,17 @@ python -m summarizer \
     --prompt-type "Distill Wisdom"
 ```
 
+## Other examples:
+
+```bash
+python -m summarizer --urls "https://www.youtube.com/watch?v=z5W74QC3v2I" --base-url "https://api.openai.com/v1" --model "gpt-4o"
+
+python -m summarizer --urls "https://www.youtube.com/watch?v=z5W74QC3v2I" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat"
+
+python -m summarizer --urls "https://www.youtube.com/watch?v=z5W74QC3v2I" --base-url "https://api.hyperbolic.xyz/v1" --model "meta-llama/Llama-3.3-70B-Instruct"
+```
+
+
 ## Configuration Options
 
 | Option | Description | Default |

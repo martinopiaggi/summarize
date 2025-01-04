@@ -30,8 +30,6 @@ def parse_args():
     # Output configuration
     parser.add_argument("--output-dir", default="summaries",
                        help="Directory to save summaries (default: summaries)")
-    parser.add_argument("--no-save", action="store_true",
-                       help="Don't save summaries to files")
     
     # Processing settings
     parser.add_argument("--prompt-type", 
@@ -57,7 +55,7 @@ def parse_args():
     
     return parser.parse_args()
 
-def process_url(url: str, base_config: dict, output_dir: str, no_save: bool) -> None:
+def process_url(url: str, base_config: dict, output_dir: str) -> None:
     """Process a single URL."""
     print(f"\nProcessing: {url}")
     
@@ -66,29 +64,23 @@ def process_url(url: str, base_config: dict, output_dir: str, no_save: bool) -> 
     
     try:
         summary = main(config)
+
+        # Create output directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
         
-        # Print summary
-        print("\nSummary:")
-        print(summary)
+        # Generate filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Clean URL for filename
+        clean_url = url.split("?")[0].split("/")[-1]
+        filename = f"{clean_url}_{timestamp}.md"
+        filepath = os.path.join(output_dir, filename)
         
-        # Save summary if requested
-        if not no_save:
-            # Create output directory if it doesn't exist
-            os.makedirs(output_dir, exist_ok=True)
-            
-            # Generate filename
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            # Clean URL for filename
-            clean_url = url.split("?")[0].split("/")[-1]
-            filename = f"{clean_url}_{timestamp}.md"
-            filepath = os.path.join(output_dir, filename)
-            
-            # Save summary
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(f"# Summary for: {url}\n\n")
-                f.write(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-                f.write(summary)
-            print(f"\nSummary saved to: {filepath}")
+        # Save summary
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(f"# Summary for: {url}\n\n")
+            f.write(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            f.write(summary)
+        print(f"\nSummary saved to: {filepath}")
             
     except Exception as e:
         print(f"Error processing {url}: {str(e)}")
@@ -117,7 +109,7 @@ def cli():
     
     # Process each URL
     for url in args.urls:
-        process_url(url, base_config, args.output_dir, args.no_save)
+        process_url(url, base_config, args.output_dir)
     
 if __name__ == "__main__":
     cli()
