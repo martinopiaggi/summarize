@@ -412,18 +412,45 @@ async def process_chunk(chunk: str, template: str, config: Dict) -> str:
         print(f"Error processing chunk: {str(e)}")
         return ""
 
-async def process_chunks(chunks: List[str], template: str, config: Dict) -> List[str]:
-    """Process chunks in parallel with better error handling."""
-    tasks = []
-    semaphore = asyncio.Semaphore(config.get("parallel_api_calls", 5))  # Limit concurrent requests
-    
-    async def process_with_semaphore(chunk: str) -> str:
-        async with semaphore:
-            return await process_chunk(chunk, template, config)
+def format_youtube_timestamp(timestamp: str, url: str) -> str:
+    """Convert timestamp to YouTube URL format."""
+    try:
+        hours, minutes, seconds = map(int, timestamp.split(':'))
+        total_seconds = hours * 3600 + minutes * 60 + seconds
+        return f"{timestamp} - {url}&t={total_seconds}"
+    except:
+        return timestamp
+
+def extract_and_clean_chunks(text: str, chunk_size: int) -> List[Tuple[str, str]]:
+    """Split text into chunks and extract timestamps."""
+    timestamp_pattern = re.compile(r'(\d{2}:\d{2}:\d{2})')
+    chunks = chunk_text(text, chunk_size)
+    chunk_data = []
     
     for chunk in chunks:
-        if chunk.strip():
-            task = asyncio.create_task(process_with_semaphore(chunk))
+        # Find first timestamp in chunk
+        match = timestamp_pattern.search(chunk)
+        timestamp = match.group(1) if match else ""
+        
+        # Store both timestamp and cleaned text
+        chunk_data.append((timestamp, chunk.strip()))
+        
+    return chunk_data
+
+async def process_chunks(chunks: List[Tuple[str, str]], template: str, config: Dict) -> List[Tuple[str, str]]:
+    """Process chunks and preserve timestamps."""
+    tasks = []
+    semaphore = asyncio.Semaphore(config.get("parallel_api_calls", 5))
+    
+    async def process_with_semaphore(chunk_data: Tuple[str, str]) -> Tuple[str, str]:
+        timestamp, chunk_text = chunk_data
+        async with semaphore:
+            summary = await process_chunk(chunk_text, template, config)
+            return timestamp, summary
+    
+    for chunk_data in chunks:
+        if chunk_data[1].strip():
+            task = asyncio.create_task(process_with_semaphore(chunk_data))
             tasks.append(task)
             
     if not tasks:
@@ -431,28 +458,44 @@ async def process_chunks(chunks: List[str], template: str, config: Dict) -> List
     
     try:
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        # Filter out errors and empty results
         valid_results = []
         for result in results:
             if isinstance(result, Exception):
                 print(f"Chunk processing error: {result}")
-            elif result and result.strip():
+            elif result[1] and result[1].strip():
                 valid_results.append(result)
         return valid_results
     except Exception as e:
         print(f"Error in gather: {str(e)}")
         return []
 
+def format_summary_with_timestamps(summaries: List[Tuple[str, str]], config: Dict) -> str:
+    """Format summaries with appropriate timestamp links."""
+    formatted_pieces = []
+    source_url = config.get("source_url_or_path", "")
+    is_youtube = config.get("type_of_source") == "YouTube Video"
+    
+    for timestamp, summary in summaries:
+        if timestamp:
+            if is_youtube:
+                timestamp_text = format_youtube_timestamp(timestamp, source_url)
+            else:
+                timestamp_text = timestamp
+            formatted_pieces.append(f"{timestamp_text}\n\n{summary}")
+        else:
+            formatted_pieces.append(summary)
+            
+    return "\n\n".join(formatted_pieces)
+
 def main(config: Dict) -> str:
     """Main processing function."""
     try:
-        # Get transcript based on source type and configuration
         transcript = get_transcript(config)
-        
         if not transcript or not transcript.strip():
             raise Exception("No transcript content to process")
             
-        chunks = chunk_text(transcript, config.get("chunk_size", 10000))
+        # Extract chunks with timestamps
+        chunks = extract_and_clean_chunks(transcript, config.get("chunk_size", 10000))
         if not chunks:
             raise Exception("Failed to create content chunks")
             
@@ -465,7 +508,6 @@ def main(config: Dict) -> str:
         except ImportError:
             pass
             
-        # Create new event loop for each run
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
@@ -473,9 +515,9 @@ def main(config: Dict) -> str:
             summaries = loop.run_until_complete(process_chunks(chunks, template, config))
             if not summaries:
                 raise Exception("No valid summaries generated")
-            return "\n\n".join(summaries)
+                
+            return format_summary_with_timestamps(summaries, config)
         finally:
-            # Clean up
             pending = asyncio.all_tasks(loop)
             for task in pending:
                 task.cancel()
