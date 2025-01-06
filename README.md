@@ -67,15 +67,6 @@ python -m summarizer \
     --force-download
 ```
 
-4. **Custom Output Directory**:
-```bash
-python -m summarizer \
-    --urls "https://youtube.com/watch?v=VIDEO_ID" \
-    --base-url "https://api.deepseek.com/v1" \
-    --model "deepseek-chat" \
-    --output-dir "my_summaries"
-```
-
 5. **Different Summary Styles**:
 ```bash
 python -m summarizer \
@@ -88,15 +79,16 @@ python -m summarizer \
 ## Other examples:
 
 ```bash
-python -m summarizer --urls "https://www.youtube.com/watch?v=z5W74QC3v2I" --base-url "https://api.openai.com/v1" --model "gpt-4o"
+python -m summarizer --urls "https://www.youtube.com/watch?v=VIDEO_ID" --base-url "https://api.openai.com/v1" --model "gpt-4o"
 
-python -m summarizer --urls "https://www.youtube.com/watch?v=z5W74QC3v2I" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat"
+python -m summarizer --urls "https://www.youtube.com/watch?v=VIDEO_ID" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat"
 
-python -m summarizer --urls "https://www.youtube.com/watch?v=z5W74QC3v2I" --base-url "https://api.hyperbolic.xyz/v1" --model "meta-llama/Llama-3.3-70B-Instruct"
+python -m summarizer --urls "https://www.youtube.com/watch?v=VIDEO_ID" --base-url "https://api.hyperbolic.xyz/v1" --model "meta-llama/Llama-3.3-70B-Instruct"
 
 python -m summarizer --urls "./lecture.mp4" "./lecture2.mp4" "./lecture3.mp4" --type "Local File"  --base-url "https://api.deepseek.com/v1" --model "deepseek-chat"
-```
 
+python -m summarizer --urls "https://www.youtube.com/watch?v=VIDEO_ID" --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.0-flash-exp" --chunk-size "28000"
+```
 
 ## Configuration Options
 
