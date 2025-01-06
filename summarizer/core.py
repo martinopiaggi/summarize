@@ -144,7 +144,9 @@ def get_api_key(cfg: Dict) -> str:
     key_map = {
         "deepseek": "deepseek_key",
         "groq": "api_key_groq",
-        "openai": "api_key_openai"
+        "generativelanguage": "api_key_generative_language",
+        "hyperbolic": "hyperbolic_key",
+        "openai": "api_key_openai"        # this must be latest otherwise it will override all other keys
     }
     
     for service, env_key in key_map.items():
@@ -157,6 +159,7 @@ def get_api_key(cfg: Dict) -> str:
     if not api_key:
         raise ValueError("API key not found in config or environment")
     return api_key
+
 
 def extract_youtube_id(url: str) -> str:
     """Extract YouTube video ID from URL."""
@@ -369,7 +372,7 @@ async def process_chunk(chunk: str, template: str, config: Dict) -> str:
         "Content-Type": "application/json"
     }
     
-    processed_template = template.replace("{TITLE}", "TITLE").format(text=chunk.strip())
+    processed_template = template.format(text=chunk.strip())
     
     data = {
         "model": config["model"],
