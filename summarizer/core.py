@@ -144,8 +144,9 @@ def get_api_key(cfg: Dict) -> str:
     key_map = {
         "deepseek": "deepseek_key",
         "groq": "api_key_groq",
-        "generativelanguage": "api_key_generative_language",
+        "generativelanguage": "generative_language_key",
         "hyperbolic": "hyperbolic_key",
+        "perplexity": "perplexity_key",
         "openai": "api_key_openai"        # this must be latest otherwise it will override all other keys
     }
     

@@ -90,7 +90,10 @@ python -m summarizer --type "Local File"  --base-url "https://api.deepseek.com/v
 python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.0-flash-exp" --chunk-size "28000" --urls "https://www.youtube.com/watch?v=VIDEO_ID" 
 
 python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.0-flash-exp" --prompt-type "Distill Wisdom" --urls "https://www.youtube.com/watch?v=VIDEO_ID"
+
+python -m summarizer --base-url "https://api.perplexity.ai" --model "sonar-pro" --chunk-size "20000" --urls "https://www.youtube.com/watch?v=VIDEO_ID" 
 ```
+
 
 ## Configuration Options
 

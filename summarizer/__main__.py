@@ -37,6 +37,7 @@ def parse_args():
                                "Only grammar correction with highlights",
                                "Distill Wisdom", 
                                "Questions and answers",
+                               "DNA Extractor",
                                "Essay Writing in Paul Graham Style"],
                        default="Questions and answers", 
                        help="Summary style")
