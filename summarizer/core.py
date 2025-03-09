@@ -138,7 +138,7 @@ CONFIG = {
 
 def get_api_key(cfg: Dict) -> str:
     """Get API key from config or environment."""
-    if "api_key" in cfg:
+    if "api_key" in cfg and cfg["api_key"]:
         return cfg["api_key"]
     
     key_map = {
@@ -147,18 +147,21 @@ def get_api_key(cfg: Dict) -> str:
         "generativelanguage": "generative_language_key",
         "hyperbolic": "hyperbolic_key",
         "perplexity": "perplexity_key",
-        "openai": "api_key_openai"        # this must be latest otherwise it will override all other keys
+        "openai": "api_key_openai"
     }
     
     for service, env_key in key_map.items():
-        if service in cfg["base_url"].lower():
+        if service in cfg.get("base_url", "").lower():
             api_key = os.getenv(env_key)
             if api_key:
+                print(f"Using API key from environment variable {env_key}")
                 return api_key
     
     api_key = os.getenv("api_key")
     if not api_key:
-        raise ValueError("API key not found in config or environment")
+        raise ValueError(f"API key not found for {cfg.get('base_url', 'unknown endpoint')}")
+    
+    print("Using default API key from environment variable 'api_key'")
     return api_key
 
 
