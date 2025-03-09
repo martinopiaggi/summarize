@@ -237,7 +237,11 @@ def transcribe_audio(audio_path: str, method: str = "Cloud Whisper") -> str:
                 return transcript
             
         elif method == "Local Whisper":
-            import whisper
+            try:
+                import whisper
+            except ImportError:
+                print("Local Whisper not available")
+            
             print("Loading Whisper model...")
             model = whisper.load_model("base")
             print("Transcribing with local Whisper...")
