@@ -9,7 +9,11 @@
     
     "Essay Writing in Paul Graham Style": "Write an essay on the given topic in the style of Paul Graham, known for concise, clear, and conversational writing. Follow these instructions:\n\n- Use simple language and sentence structure.\n- Avoid clichés, jargon, and journalistic phrases like \"In a world...\"\n- Do not include phrases like \"In conclusion\" or \"In closing.\"\n- The essay should be a maximum of 250 words.\n- Do not include warnings or notes—just the essay.\n\nHere is the input:\n{text}",
     
-    "DNA Extractor": "Extract this transcript segment into its purest form (max 200 words easy to remember and understandable) which contains the core truth, mental models used, pattern breaks, universal principles or unexpected connections. Write as pure thought - no introductions, no explanations, no conclusions - no meta description.\n\nHere is the transcript segment:\n{text}"
+    "Research": "Analyze and summarize the provided transcript, highlighting its core insights, themes, and notable quotes. Conduct deeper research to provide relevant context, background information, or connections to broader ideas or trends mentioned or implied by the transcript. Prioritize accuracy and depth in your analysis. Here is the transcript:\n{text}",
+
+    "DNA Extractor": "Extract this transcript segment into its purest form (max 200 words easy to remember and understandable) which contains the core truth, mental models used, pattern breaks, universal principles or unexpected connections. Write as pure thought - no introductions, no explanations, no conclusions - no meta description.\n\nHere is the transcript segment:\n{text}",
+
+    "Fact Checker": "Perform exhaustive research on the provided transcript, carefully identifying and evaluating all claims made within. Determine the factual accuracy of each claim, clearly labeling them as TRUE, FALSE, MISLEADING, or UNVERIFIABLE. For each claim, explain your reasoning and provide authoritative sources to support your assessment. Conclude with an overall evaluation highlighting the accuracy or potential misinformation present in the transcript. Here is the transcript:\n{text}"
 }
 
 
