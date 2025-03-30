@@ -136,3 +136,14 @@ Or provide them directly via --api-key parameter.
 - Summaries are automatically saved to markdown files
 - Each summary includes source URL and timestamp
 - Non-YouTube sources always use audio download
+
+This is an example of (**randomized api keys here**) of my `.env` : 
+
+```ini
+groq = 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
+openai = sk-proj-HaW8cZ_9er50L3f5Q0Nkavu3EyAb1B1EyAb1BXf5Q0Nkavr
+perplexity = pplx-Na7TCdZoKyEVqRpp2xWJtUmvh63HEyAb1BqnMWPYXsJg9
+generativelanguage = AIzaSyAl9bTw6XUPqKdAVFYZNXDOCPlERcTfGPk
+```
+
+keep in mind that you will always able to add new services and the program will pick the correct key (match based if for example the api url is ... the word must be present )
