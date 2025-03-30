@@ -1,5 +1,5 @@
 """Core functionality for video transcription and summarization."""
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import os
 import re
 import json
@@ -45,15 +45,8 @@ class LocalFileHandler(VideoSourceHandler):
             raise FileNotFoundError(f"Local file not found: {self.source_path}")
             
         temp_wav = os.path.join(self.temp_dir, "local_audio.wav")
+        convert_to_wav(self.source_path, temp_wav)
         processed_path = os.path.join(self.temp_dir, "local_processed.mp3")
-        
-        subprocess.run([
-            'ffmpeg', '-y', '-i', self.source_path,
-            '-vn', '-acodec', 'pcm_s16le',
-            '-ar', '16000', '-ac', '1',
-            temp_wav
-        ], check=True, capture_output=True)
-        
         process_audio_file(temp_wav, processed_path)
         self.cleanup(temp_wav)
         
@@ -74,14 +67,9 @@ class GoogleDriveHandler(VideoSourceHandler):
             raise FileNotFoundError(f"File not found in Google Drive: {self.source_path}")
             
         temp_wav = os.path.join(self.temp_dir, "gdrive_audio.wav")
+        convert_to_wav(self.source_path, temp_wav)
         processed_path = os.path.join(self.temp_dir, "gdrive_processed.mp3")
-        
-        subprocess.run([
-            'ffmpeg', '-y', '-i', self.source_path,
-            '-vn', '-acodec', 'pcm_s16le',
-            '-ar', '16000', '-ac', '1',
-            temp_wav
-        ], check=True, capture_output=True)
+        process_audio_file(temp_wav, processed_path)
         
         process_audio_file(temp_wav, processed_path)
         self.cleanup(temp_wav)
@@ -96,15 +84,8 @@ class DropboxHandler(VideoSourceHandler):
         wget.download(self.source_path, temp_video)
         
         temp_wav = os.path.join(self.temp_dir, "dropbox_audio.wav")
+        convert_to_wav(self.source_path, temp_wav)
         processed_path = os.path.join(self.temp_dir, "dropbox_processed.mp3")
-        
-        subprocess.run([
-            'ffmpeg', '-y', '-i', temp_video,
-            '-vn', '-acodec', 'pcm_s16le',
-            '-ar', '16000', '-ac', '1',
-            temp_wav
-        ], check=True, capture_output=True)
-        
         process_audio_file(temp_wav, processed_path)
         self.cleanup(temp_video)
         self.cleanup(temp_wav)
@@ -137,32 +118,22 @@ CONFIG = {
 }
 
 def get_api_key(cfg: Dict) -> str:
-    """Get API key from config or environment."""
-    if "api_key" in cfg and cfg["api_key"]:
-        return cfg["api_key"]
-    
-    key_map = {
-        "deepseek": "deepseek_key",
-        "groq": "api_key_groq",
-        "generativelanguage": "generative_language_key",
-        "hyperbolic": "hyperbolic_key",
-        "perplexity": "perplexity_key",
-        "openai": "api_key_openai"
-    }
-    
-    for service, env_key in key_map.items():
-        if service in cfg.get("base_url", "").lower():
-            api_key = os.getenv(env_key)
-            if api_key:
-                print(f"Using API key from environment variable {env_key}")
-                return api_key
-    
-    api_key = os.getenv("api_key")
-    if not api_key:
-        raise ValueError(f"API key not found for {cfg.get('base_url', 'unknown endpoint')}")
-    
-    print("Using default API key from environment variable 'api_key'")
-    return api_key
+    base_url = cfg.get("base_url", "").lower()
+    if "openai" in base_url:
+        key = os.getenv("openai")
+    elif "groq" in base_url:
+        key = os.getenv("groq")
+    elif "perplexity" in base_url:
+        key = os.getenv("perplexity")
+    elif "generativelanguage" in base_url:
+        key = os.getenv("generativelanguage")
+    else:
+        raise ValueError(f"No matching service found for base_url: {cfg.get('base_url')}")
+    if not key:
+        raise ValueError(f"API key not found in environment for base_url: {cfg.get('base_url')}")
+    print(f"Using API key from environment variable for service in base_url: {cfg.get('base_url')}")
+    return key
+
 
 
 def extract_youtube_id(url: str) -> str:
@@ -295,26 +266,15 @@ def get_transcript(config: dict) -> str:
         except Exception as e:
             raise Exception(f"Failed to process {source_type}: {str(e)}")
 
-def chunk_text(text: str, chunk_size: int) -> List[str]:
-    """Split text into chunks."""
-    words = text.split()
-    chunks = []
-    current_chunk = []
-    current_size = 0
-    
-    for word in words:
-        word_size = len(word) + 1
-        if current_size + word_size > chunk_size:
-            chunks.append(" ".join(current_chunk))
-            current_chunk = [word]
-            current_size = word_size
-        else:
-            current_chunk.append(word)
-            current_size += word_size
-            
-    if current_chunk:
-        chunks.append(" ".join(current_chunk))
-    return chunks
+def convert_to_wav(input_path: str, output_wav: str, ffmpeg_args: Optional[List[str]] = None) -> None:
+    args = ['ffmpeg', '-y', '-i', input_path, '-vn']
+    if ffmpeg_args:
+        args.extend(ffmpeg_args)
+    else:
+        args.extend(['-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1'])
+    args.append(output_wav)
+    subprocess.run(args, check=True, capture_output=True)
+
 
 def load_prompt_template(prompt_type: str) -> str:
     """Load prompt template."""
@@ -376,7 +336,7 @@ async def process_chunk(chunk: str, template: str, config: Dict) -> str:
         return ""
         
     headers = {
-        "Authorization": f"Bearer {get_api_key(config)}",
+        "Authorization": f"Bearer {config['api_key']}",
         "Content-Type": "application/json"
     }
     
@@ -403,22 +363,77 @@ async def process_chunk(chunk: str, template: str, config: Dict) -> str:
                 f"{config['base_url']}/chat/completions",
                 headers=headers,
                 json=data,
-                timeout=aiohttp.ClientTimeout(total=60)  # Add timeout
+                timeout=aiohttp.ClientTimeout(total=60)
             ) as response:
                 if response.status != 200:
                     error_text = await response.text()
                     raise Exception(f"API request failed: {error_text}")
                 result = await response.json()
-                content = result["choices"][0]["message"]["content"].strip()
-                if "please provide" in content.lower() or "please share" in content.lower():
-                    return ""
+                content = parse_response_content(result, config.get("base_url", ""))
                 return content
+
     except asyncio.CancelledError:
         # Handle task cancellation gracefully
         return ""
     except Exception as e:
         print(f"Error processing chunk: {str(e)}")
         return ""
+
+async def process_chunk(chunk: str, template: str, config: Dict) -> str:
+    if not chunk.strip():
+        return ""
+    headers = {
+        "Authorization": f"Bearer {config["api_key"]}",
+        "Content-Type": "application/json"
+    }
+    processed_template = template.format(text=chunk.strip())
+    data = {
+        "model": config["model"],
+        "messages": [
+            {
+                "role": "system",
+                "content": ("You are a helpful assistant specializing in video content analysis. "
+                            "Always provide direct responses based on the given transcript without asking for more content.")
+            },
+            {
+                "role": "user",
+                "content": processed_template
+            }
+        ],
+        "max_tokens": config["max_output_tokens"]
+    }
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{config['base_url']}/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=aiohttp.ClientTimeout(total=60)
+            ) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"API request failed: {error_text}")
+                result = await response.json()
+                
+                content = parse_response_content(result, config.get("base_url", ""))
+                
+                # Only for Perplexity models we need to append citation URLs 
+                citations = result.get("citations", [])
+                if citations:
+                    sources_text = "\n\nSources:\n"
+                    for idx, citation in enumerate(citations, start=1):
+                        sources_text += f"{idx}. {citation}\n"
+                    content += sources_text
+
+                if "please provide" in content.lower() or "please share" in content.lower():
+                    return ""
+                return content
+    except asyncio.CancelledError:
+        return ""
+    except Exception as e:
+        print(f"Error processing chunk: {str(e)}")
+        return ""
+
 
 def format_youtube_timestamp(timestamp: str, url: str) -> str:
     """Convert timestamp to YouTube URL format."""
@@ -495,9 +510,28 @@ def format_summary_with_timestamps(summaries: List[Tuple[str, str]], config: Dic
             
     return "\n\n".join(formatted_pieces)
 
+#Only for Perplexity models we need to remove CoT reasoning part delimited by <think> marker
+def parse_response_content(response: Dict[str, Any], base_url: str) -> str:
+    content = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+    if "perplexity" in base_url.lower():
+        marker = "</think>"
+        idx = content.rfind(marker)
+        if idx != -1:
+            content = content[idx + len(marker):].strip()
+        # Remove markdown code fences if present.
+        if content.startswith("```json"):
+            content = content[len("```json"):].strip()
+        if content.startswith("```"):
+            content = content[3:].strip()
+        if content.endswith("```"):
+            content = content[:-3].strip()
+    return content
+
+
 def main(config: Dict) -> str:
     """Main processing function."""
     try:
+        config["api_key"] = get_api_key(config)
         transcript = get_transcript(config)
         if not transcript or not transcript.strip():
             raise Exception("No transcript content to process")
