@@ -9,8 +9,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Summarize video content from various sources")
     
     # Source configuration
-    parser.add_argument("--urls", required=True, nargs='+',
-                       help="One or more video URLs or paths")
+    parser.add_argument("--source", required=True, nargs='+',
+                       help="One or more video sources")
     parser.add_argument("--type", 
                        choices=["YouTube Video", "Google Drive Video Link", 
                                "Dropbox Video Link", "Local File"],
@@ -38,6 +38,8 @@ def parse_args():
                                "Distill Wisdom", 
                                "Questions and answers",
                                "DNA Extractor",
+                               "Research",
+                               "Fact Checker",
                                "Essay Writing in Paul Graham Style"],
                        default="Questions and answers", 
                        help="Summary style")
@@ -109,8 +111,8 @@ def cli():
         base_config["api_key"] = args.api_key
     
     # Process each URL
-    for url in args.urls:
-        process_url(url, base_config, args.output_dir)
+    for source in args.source:
+        process_url(source, base_config, args.output_dir)
     
 if __name__ == "__main__":
     cli()

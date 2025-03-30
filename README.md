@@ -40,20 +40,20 @@ pip install -e .
 1. **Basic Usage** (using YouTube captions):
 ```bash
 python -m summarizer \
-    --urls "https://www.youtube.com/watch?v=VIDEO_ID" \
+    --source "https://www.youtube.com/watch?v=VIDEO_ID" \
     --base-url "https://api.deepseek.com/v1" \
     --model "deepseek-chat" \
     --api-key "your-api-key"
 ```
 
 ```bash
-python -m summarizer --urls "./lecture.mp4" --type "Local File"  --base-url "https://api.deepseek.com/v1" --model "deepseek-chat"
+python -m summarizer --source "./lecture.mp4" --type "Local File"  --base-url "https://api.deepseek.com/v1" --model "deepseek-chat"
 ```
 
 2. **Process Multiple Videos**:
 ```bash
 python -m summarizer \
-    --urls "https://youtube.com/watch?v=ID1" "https://youtube.com/watch?v=ID2" \
+    --source "https://youtube.com/watch?v=ID1" "https://youtube.com/watch?v=ID2" \
     --base-url "https://api.deepseek.com/v1" \
     --model "deepseek-chat"
 ```
@@ -61,7 +61,7 @@ python -m summarizer \
 3. **Force Audio Download** (instead of captions):
 ```bash
 python -m summarizer \
-    --urls "https://youtube.com/watch?v=VIDEO_ID" \
+    --source "https://youtube.com/watch?v=VIDEO_ID" \
     --base-url "https://api.deepseek.com/v1" \
     --model "deepseek-chat" \
     --force-download
@@ -70,7 +70,7 @@ python -m summarizer \
 5. **Different Summary Styles**:
 ```bash
 python -m summarizer \
-    --urls "https://youtube.com/watch?v=VIDEO_ID" \
+    --source "https://youtube.com/watch?v=VIDEO_ID" \
     --base-url "https://api.deepseek.com/v1" \
     --model "deepseek-chat" \
     --prompt-type "Distill Wisdom"
@@ -79,19 +79,19 @@ python -m summarizer \
 ## Other examples:
 
 ```bash
-python -m summarizer --base-url "https://api.openai.com/v1" --model "gpt-4o" --urls "https://www.youtube.com/watch?v=VIDEO_ID"
+python -m summarizer --base-url "https://api.openai.com/v1" --model "gpt-4o" --source "https://www.youtube.com/watch?v=VIDEO_ID"
 
-python -m summarizer --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --urls "https://www.youtube.com/watch?v=VIDEO_ID"
+python -m summarizer --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "https://www.youtube.com/watch?v=VIDEO_ID"
 
-python -m summarizer --base-url "https://api.hyperbolic.xyz/v1" --model "meta-llama/Llama-3.3-70B-Instruct" --urls "https://www.youtube.com/watch?v=VIDEO_ID"
+python -m summarizer --base-url "https://api.hyperbolic.xyz/v1" --model "meta-llama/Llama-3.3-70B-Instruct" --source "https://www.youtube.com/watch?v=VIDEO_ID"
 
-python -m summarizer --type "Local File"  --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --urls "./lecture.mp4" "./lecture2.mp4" "./lecture3.mp4"
+python -m summarizer --type "Local File"  --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "./lecture.mp4" "./lecture2.mp4" "./lecture3.mp4"
 
-python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.0-flash-exp" --chunk-size "28000" --urls "https://www.youtube.com/watch?v=VIDEO_ID" 
+python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.0-flash-exp" --chunk-size "28000" --source "https://www.youtube.com/watch?v=VIDEO_ID" 
 
-python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.0-flash-exp" --prompt-type "Distill Wisdom" --urls "https://www.youtube.com/watch?v=VIDEO_ID"
+python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.0-flash-exp" --prompt-type "Distill Wisdom" --source "https://www.youtube.com/watch?v=VIDEO_ID"
 
-python -m summarizer --base-url "https://api.perplexity.ai" --model "sonar-pro" --chunk-size "20000" --urls "https://www.youtube.com/watch?v=VIDEO_ID" 
+python -m summarizer --base-url "https://api.perplexity.ai" --model "sonar-pro"  --prompt-type "Fact Checker" --chunk-size "100000" --source "https://www.youtube.com/watch?v=VIDEO_ID" 
 ```
 
 
@@ -99,7 +99,7 @@ python -m summarizer --base-url "https://api.perplexity.ai" --model "sonar-pro" 
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| --urls | One or more video URLs | Required |
+| --source | One or more video sources (URLs or filenames) | Required |
 | --base-url | API endpoint URL | Required |
 | --model | Model to use | Required |
 | --api-key | API key (or use .env) | Optional |
