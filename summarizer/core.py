@@ -7,13 +7,19 @@ import tempfile
 import asyncio
 import aiohttp
 import subprocess
+import logging
 from pathlib import Path
+from contextlib import contextmanager
 from dotenv import load_dotenv
 from youtube_transcript_api import YouTubeTranscriptApi
 import pytubefix as pytube
 
 # Load environment variables
 load_dotenv()
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class VideoSourceHandler:
     def __init__(self, source_path: str, temp_dir: Optional[str] = None):
@@ -70,8 +76,6 @@ class GoogleDriveHandler(VideoSourceHandler):
         convert_to_wav(self.source_path, temp_wav)
         processed_path = os.path.join(self.temp_dir, "gdrive_processed.mp3")
         process_audio_file(temp_wav, processed_path)
-        
-        process_audio_file(temp_wav, processed_path)
         self.cleanup(temp_wav)
         
         return processed_path, True
@@ -84,7 +88,7 @@ class DropboxHandler(VideoSourceHandler):
         wget.download(self.source_path, temp_video)
         
         temp_wav = os.path.join(self.temp_dir, "dropbox_audio.wav")
-        convert_to_wav(self.source_path, temp_wav)
+        convert_to_wav(temp_video, temp_wav)
         processed_path = os.path.join(self.temp_dir, "dropbox_processed.mp3")
         process_audio_file(temp_wav, processed_path)
         self.cleanup(temp_video)
@@ -131,7 +135,7 @@ def get_api_key(cfg: Dict) -> str:
         raise ValueError(f"No matching service found for base_url: {cfg.get('base_url')}")
     if not key:
         raise ValueError(f"API key not found in environment for base_url: {cfg.get('base_url')}")
-    print(f"Using API key from environment variable for service in base_url: {cfg.get('base_url')}")
+    logger.info(f"Using API service: {cfg.get('base_url')}")
     return key
 
 
@@ -183,15 +187,15 @@ def transcribe_audio(audio_path: str, method: str = "Cloud Whisper") -> str:
     """Transcribe audio file."""
     try:
         if method == "Cloud Whisper":
-            api_key = os.getenv("api_key_groq")
+            api_key = os.getenv("groq")
             if not api_key:
-                raise ValueError("Groq API key not found in environment")
-            
+                raise ValueError("Groq API key not found in environment (set 'groq' in .env)")
+
             from groq import Groq
             groq_client = Groq(api_key=api_key)
             
             with open(audio_path, "rb") as audio_file:
-                print("Starting transcription with Groq API...")
+                logger.info("Starting transcription with Groq API...")
                 # Use text format directly as it's more reliable
                 response = groq_client.audio.transcriptions.create(
                     file=audio_file,
@@ -211,11 +215,12 @@ def transcribe_audio(audio_path: str, method: str = "Cloud Whisper") -> str:
             try:
                 import whisper
             except ImportError:
-                print("Local Whisper not available")
+                logger.warning("Local Whisper not available")
+                raise ImportError("Local Whisper package not installed")
             
-            print("Loading Whisper model...")
+            logger.info("Loading Whisper model...")
             model = whisper.load_model("base")
-            print("Transcribing with local Whisper...")
+            logger.info("Transcribing with local Whisper...")
             result = model.transcribe(audio_path)
             
             transcript = ""
@@ -330,63 +335,24 @@ def chunk_text(text: str, chunk_size: int) -> List[str]:
         
     return merged_chunks
 
-async def process_chunk(chunk: str, template: str, config: Dict) -> str:
+async def process_chunk(chunk: str, template: str, config: Dict, max_retries: int = 3) -> str:
     """Process a single chunk using API."""
     if not chunk.strip():
         return ""
-        
+
+    # Validate required config parameters
+    required_keys = ["api_key", "model", "base_url", "max_output_tokens"]
+    for key in required_keys:
+        if key not in config:
+            raise ValueError(f"Missing required config parameter: {key}")
+
     headers = {
         "Authorization": f"Bearer {config['api_key']}",
         "Content-Type": "application/json"
     }
-    
-    processed_template = template.format(text=chunk.strip())
-    
-    data = {
-        "model": config["model"],
-        "messages": [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant specializing in video content analysis. Always provide direct responses based on the given transcript without asking for more content."
-            },
-            {
-                "role": "user",
-                "content": processed_template
-            }
-        ],
-        "max_tokens": config["max_output_tokens"]
-    }
-    
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"{config['base_url']}/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=aiohttp.ClientTimeout(total=60)
-            ) as response:
-                if response.status != 200:
-                    error_text = await response.text()
-                    raise Exception(f"API request failed: {error_text}")
-                result = await response.json()
-                content = parse_response_content(result, config.get("base_url", ""))
-                return content
 
-    except asyncio.CancelledError:
-        # Handle task cancellation gracefully
-        return ""
-    except Exception as e:
-        print(f"Error processing chunk: {str(e)}")
-        return ""
-
-async def process_chunk(chunk: str, template: str, config: Dict) -> str:
-    if not chunk.strip():
-        return ""
-    headers = {
-        "Authorization": f"Bearer {config["api_key"]}",
-        "Content-Type": "application/json"
-    }
     processed_template = template.format(text=chunk.strip())
+
     data = {
         "model": config["model"],
         "messages": [
@@ -402,37 +368,49 @@ async def process_chunk(chunk: str, template: str, config: Dict) -> str:
         ],
         "max_tokens": config["max_output_tokens"]
     }
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"{config['base_url']}/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=aiohttp.ClientTimeout(total=60)
-            ) as response:
-                if response.status != 200:
-                    error_text = await response.text()
-                    raise Exception(f"API request failed: {error_text}")
-                result = await response.json()
-                
-                content = parse_response_content(result, config.get("base_url", ""))
-                
-                # Only for Perplexity models we need to append citation URLs 
-                citations = result.get("citations", [])
-                if citations:
-                    sources_text = "\n\nSources:\n"
-                    for idx, citation in enumerate(citations, start=1):
-                        sources_text += f"{idx}. {citation}\n"
-                    content += sources_text
 
-                if "please provide" in content.lower() or "please share" in content.lower():
-                    return ""
-                return content
-    except asyncio.CancelledError:
-        return ""
-    except Exception as e:
-        print(f"Error processing chunk: {str(e)}")
-        return ""
+    for attempt in range(max_retries):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{config['base_url']}/chat/completions",
+                    headers=headers,
+                    json=data,
+                    timeout=aiohttp.ClientTimeout(total=60)
+                ) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        if attempt < max_retries - 1:
+                            logger.warning(f"API request failed (attempt {attempt + 1}/{max_retries}): {error_text}")
+                            await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                            continue
+                        else:
+                            raise Exception(f"API request failed after {max_retries} attempts: {error_text}")
+
+                    result = await response.json()
+                    content = parse_response_content(result, config.get("base_url", ""))
+
+                    # Only for Perplexity models we need to append citation URLs
+                    citations = result.get("citations", [])
+                    if citations:
+                        sources_text = "\n\nSources:\n"
+                        for idx, citation in enumerate(citations, start=1):
+                            sources_text += f"{idx}. {citation}\n"
+                        content += sources_text
+
+                    if "please provide" in content.lower() or "please share" in content.lower():
+                        return ""
+                    return content
+
+        except asyncio.CancelledError:
+            return ""
+        except Exception as e:
+            if attempt < max_retries - 1:
+                logger.warning(f"Error processing chunk (attempt {attempt + 1}/{max_retries}): {str(e)}")
+                await asyncio.sleep(2 ** attempt)  # Exponential backoff
+            else:
+                logger.error(f"Error processing chunk after {max_retries} attempts: {str(e)}")
+                return ""
 
 
 def format_youtube_timestamp(timestamp: str, url: str) -> str:
@@ -484,12 +462,12 @@ async def process_chunks(chunks: List[Tuple[str, str]], template: str, config: D
         valid_results = []
         for result in results:
             if isinstance(result, Exception):
-                print(f"Chunk processing error: {result}")
+                logger.error(f"Chunk processing error: {result}")
             elif result[1] and result[1].strip():
                 valid_results.append(result)
         return valid_results
     except Exception as e:
-        print(f"Error in gather: {str(e)}")
+        logger.error(f"Error in gather: {str(e)}")
         return []
 
 def format_summary_with_timestamps(summaries: List[Tuple[str, str]], config: Dict) -> str:
