@@ -299,8 +299,11 @@ def download_youtube_audio(url: str) -> str:
 def transcribe_audio(audio_path: str, method: str = "Cloud Whisper") -> str:
     """Transcribe audio file."""
     global _verbose_mode
+    spinner = None
+
     try:
         if method == "Cloud Whisper":
+            # Cloud Whisper uses Groq API - no local whisper dependency needed
             api_key = os.getenv("groq")
             if not api_key:
                 raise ValueError("Groq API key not found in environment (set 'groq' in .env)")
@@ -308,7 +311,13 @@ def transcribe_audio(audio_path: str, method: str = "Cloud Whisper") -> str:
             spinner = ProgressSpinner("Transcribing audio with Groq API", _verbose_mode)
             spinner.start()
 
-            from groq import Groq
+            try:
+                from groq import Groq
+            except ImportError:
+                spinner.stop()
+                print_status("Groq package not installed", "ERROR", _verbose_mode)
+                raise ImportError("Cloud Whisper requires 'groq' package: pip install groq")
+
             groq_client = Groq(api_key=api_key)
 
             with open(audio_path, "rb") as audio_file:
@@ -329,37 +338,50 @@ def transcribe_audio(audio_path: str, method: str = "Cloud Whisper") -> str:
                 return transcript
 
         elif method == "Local Whisper":
+            # Local Whisper requires the openai-whisper package
             try:
                 import whisper
             except ImportError:
-                print_status("Local Whisper not available", "ERROR", _verbose_mode)
-                raise ImportError("Local Whisper package not installed")
+                print_status("Local Whisper package not installed", "ERROR", _verbose_mode)
+                print_status("Install with: pip install openai-whisper", "WARNING", _verbose_mode)
+                raise ImportError("Local Whisper requires 'openai-whisper' package: pip install openai-whisper")
 
             spinner = ProgressSpinner("Loading Whisper model", _verbose_mode)
             spinner.start()
 
-            model = whisper.load_model("base")
-
-            spinner.stop()
-            print_status("Whisper model loaded", "SUCCESS", _verbose_mode)
+            try:
+                model = whisper.load_model("base")
+                spinner.stop()
+                print_status("Whisper model loaded", "SUCCESS", _verbose_mode)
+            except Exception as e:
+                spinner.stop()
+                print_status(f"Failed to load Whisper model: {str(e)}", "ERROR", _verbose_mode)
+                raise Exception(f"Whisper model loading failed: {str(e)}")
 
             spinner = ProgressSpinner("Transcribing with local Whisper", _verbose_mode)
             spinner.start()
 
-            result = model.transcribe(audio_path)
+            try:
+                result = model.transcribe(audio_path)
 
-            transcript = ""
-            for segment in result["segments"]:
-                time = format_timestamp(segment["start"])
-                transcript += f"{time} {segment['text'].strip()}\n"
+                transcript = ""
+                for segment in result["segments"]:
+                    time = format_timestamp(segment["start"])
+                    transcript += f"{time} {segment['text'].strip()}\n"
 
-            spinner.stop()
-            print_status("Local transcription completed", "SUCCESS", _verbose_mode)
-            return transcript
+                spinner.stop()
+                print_status("Local transcription completed", "SUCCESS", _verbose_mode)
+                return transcript
+
+            except Exception as e:
+                spinner.stop()
+                print_status(f"Whisper transcription failed: {str(e)}", "ERROR", _verbose_mode)
+                raise Exception(f"Whisper transcription failed: {str(e)}")
         else:
             raise ValueError(f"Unknown transcription method: {method}")
+
     except Exception as e:
-        if 'spinner' in locals():
+        if spinner:
             spinner.stop()
         print_status(f"Transcription failed: {str(e)}", "ERROR", _verbose_mode)
         raise Exception(f"Transcription failed: {str(e)}")
