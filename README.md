@@ -76,6 +76,15 @@ python -m summarizer \
     --prompt-type "Distill Wisdom"
 ```
 
+6. **Verbose Output** (shows detailed progress):
+```bash
+python -m summarizer \
+    --source "https://youtube.com/watch?v=VIDEO_ID" \
+    --base-url "https://api.deepseek.com/v1" \
+    --model "deepseek-chat" \
+    --verbose
+```
+
 ## Other examples:
 
 ```bash
@@ -112,6 +121,7 @@ python -m summarizer --base-url "https://api.perplexity.ai" --model "sonar-pro" 
 | --chunk-size | Text chunk size | 10000 |
 | --parallel-calls | Parallel API calls | 30 |
 | --max-tokens | Max output tokens | 4096 |
+| --verbose, -v | Enable detailed progress output | False |
 
 ## Summary Styles
 

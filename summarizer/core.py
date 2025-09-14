@@ -8,6 +8,9 @@ import asyncio
 import aiohttp
 import subprocess
 import logging
+import sys
+import time
+import threading
 from pathlib import Path
 from contextlib import contextmanager
 from dotenv import load_dotenv
@@ -20,6 +23,90 @@ load_dotenv()
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+class ProgressSpinner:
+    def __init__(self, message: str = "Processing", verbose: bool = False):
+        self.message = message
+        self.spinner_chars = "|/-\\"
+        self.running = False
+        self.thread = None
+        self.verbose = verbose
+
+    def start(self):
+        if not self.verbose:
+            return
+        self.running = True
+        self.thread = threading.Thread(target=self._spin)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def stop(self):
+        if not self.verbose:
+            return
+        self.running = False
+        if self.thread:
+            self.thread.join()
+        sys.stdout.write('\r' + ' ' * (len(self.message) + 10) + '\r')
+        sys.stdout.flush()
+
+    def _spin(self):
+        i = 0
+        while self.running:
+            sys.stdout.write(f'\r{self.message}... {self.spinner_chars[i % len(self.spinner_chars)]}')
+            sys.stdout.flush()
+            time.sleep(0.1)
+            i += 1
+
+class ProgressBar:
+    def __init__(self, total: int, prefix: str = "Progress", length: int = 50):
+        self.total = total
+        self.prefix = prefix
+        self.length = length
+        self.current = 0
+
+    def update(self, current: int = None):
+        if current is not None:
+            self.current = current
+        else:
+            self.current += 1
+
+        percent = (self.current / self.total) * 100
+        filled_length = int(self.length * self.current // self.total)
+        bar = '█' * filled_length + '░' * (self.length - filled_length)
+
+        sys.stdout.write(f'\r{self.prefix}: |{bar}| {self.current}/{self.total} ({percent:.1f}%)')
+        sys.stdout.flush()
+
+        if self.current >= self.total:
+            print()  # New line when complete
+
+def print_status(message: str, status: str = "INFO", verbose: bool = False):
+    if not verbose:
+        # Only show errors and final success in non-verbose mode
+        if status in ["ERROR", "SUCCESS"]:
+            status_symbols = {
+                "SUCCESS": "[+]",
+                "ERROR": "[-]",
+            }
+            symbol = status_symbols.get(status, "[*]")
+            print(f"{symbol} {message}")
+        return
+
+    timestamp = time.strftime("%H:%M:%S")
+    status_symbols = {
+        "INFO": "[i]",
+        "SUCCESS": "[+]",
+        "ERROR": "[-]",
+        "WARNING": "[!]",
+        "PROCESSING": "[~]"
+    }
+    symbol = status_symbols.get(status, "[*]")
+    print(f"[{timestamp}] {symbol} {message}")
+
+# Global progress tracking variables
+_current_progress = None
+_completed_chunks = 0
+_verbose_mode = False
 
 class VideoSourceHandler:
     def __init__(self, source_path: str, temp_dir: Optional[str] = None):
@@ -150,12 +237,21 @@ def extract_youtube_id(url: str) -> str:
 
 def get_youtube_transcript(video_id: str, language: str = "en") -> str:
     """Get transcript from YouTube captions."""
+    global _verbose_mode
     try:
+        spinner = ProgressSpinner("Fetching YouTube transcript", _verbose_mode)
+        spinner.start()
+
         if language == "auto":
             language = "en"
         transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
+
+        spinner.stop()
+        print_status("YouTube transcript fetched successfully", "SUCCESS", _verbose_mode)
         return "\n".join(f"{format_timestamp(entry['start'])} {entry['text'].strip()}" for entry in transcript)
     except Exception as e:
+        spinner.stop()
+        print_status(f"Failed to get YouTube transcript: {str(e)}", "ERROR", _verbose_mode)
         raise Exception(f"Failed to get YouTube transcript. Try using --force-download instead. Error: {str(e)}")
 
 def format_timestamp(seconds: float) -> str:
@@ -167,36 +263,55 @@ def format_timestamp(seconds: float) -> str:
 
 def download_youtube_audio(url: str) -> str:
     """Download YouTube video audio."""
+    global _verbose_mode
     try:
+        spinner = ProgressSpinner("Downloading YouTube audio", _verbose_mode)
+        spinner.start()
+
         yt = pytube.YouTube(url)
         stream = yt.streams.get_audio_only()
-        
+
         temp_dir = tempfile.gettempdir()
         temp_path = os.path.join(temp_dir, "audio.mp4")
         processed_path = os.path.join(temp_dir, "audio_processed.mp3")
-        
+
         stream.download(output_path=temp_dir, filename="audio.mp4")
+
+        spinner.stop()
+        print_status("Audio download completed", "SUCCESS", _verbose_mode)
+
+        spinner = ProgressSpinner("Processing audio file", _verbose_mode)
+        spinner.start()
+
         process_audio_file(temp_path, processed_path)
         os.remove(temp_path)
-        
+
+        spinner.stop()
+        print_status("Audio processing completed", "SUCCESS", _verbose_mode)
+
         return processed_path
     except Exception as e:
+        if 'spinner' in locals():
+            spinner.stop()
+        print_status(f"Failed to download YouTube audio: {str(e)}", "ERROR", _verbose_mode)
         raise Exception(f"Failed to download YouTube audio: {str(e)}")
 
 def transcribe_audio(audio_path: str, method: str = "Cloud Whisper") -> str:
     """Transcribe audio file."""
+    global _verbose_mode
     try:
         if method == "Cloud Whisper":
             api_key = os.getenv("groq")
             if not api_key:
                 raise ValueError("Groq API key not found in environment (set 'groq' in .env)")
 
+            spinner = ProgressSpinner("Transcribing audio with Groq API", _verbose_mode)
+            spinner.start()
+
             from groq import Groq
             groq_client = Groq(api_key=api_key)
-            
+
             with open(audio_path, "rb") as audio_file:
-                logger.info("Starting transcription with Groq API...")
-                # Use text format directly as it's more reliable
                 response = groq_client.audio.transcriptions.create(
                     file=audio_file,
                     model="whisper-large-v3",
@@ -204,34 +319,49 @@ def transcribe_audio(audio_path: str, method: str = "Cloud Whisper") -> str:
                     language="en",  # Explicitly set language
                     temperature=0.0
                 )
-                
+
                 # Since we're using text format, add a timestamp at the start
                 timestamp = format_timestamp(0)
                 transcript = f"{timestamp} {response.strip()}\n"
-                
+
+                spinner.stop()
+                print_status("Audio transcription completed", "SUCCESS", _verbose_mode)
                 return transcript
-            
+
         elif method == "Local Whisper":
             try:
                 import whisper
             except ImportError:
-                logger.warning("Local Whisper not available")
+                print_status("Local Whisper not available", "ERROR", _verbose_mode)
                 raise ImportError("Local Whisper package not installed")
-            
-            logger.info("Loading Whisper model...")
+
+            spinner = ProgressSpinner("Loading Whisper model", _verbose_mode)
+            spinner.start()
+
             model = whisper.load_model("base")
-            logger.info("Transcribing with local Whisper...")
+
+            spinner.stop()
+            print_status("Whisper model loaded", "SUCCESS", _verbose_mode)
+
+            spinner = ProgressSpinner("Transcribing with local Whisper", _verbose_mode)
+            spinner.start()
+
             result = model.transcribe(audio_path)
-            
+
             transcript = ""
             for segment in result["segments"]:
                 time = format_timestamp(segment["start"])
                 transcript += f"{time} {segment['text'].strip()}\n"
-                
+
+            spinner.stop()
+            print_status("Local transcription completed", "SUCCESS", _verbose_mode)
             return transcript
         else:
             raise ValueError(f"Unknown transcription method: {method}")
     except Exception as e:
+        if 'spinner' in locals():
+            spinner.stop()
+        print_status(f"Transcription failed: {str(e)}", "ERROR", _verbose_mode)
         raise Exception(f"Transcription failed: {str(e)}")
 
 def get_transcript(config: dict) -> str:
@@ -440,34 +570,53 @@ def extract_and_clean_chunks(text: str, chunk_size: int) -> List[Tuple[str, str]
 
 async def process_chunks(chunks: List[Tuple[str, str]], template: str, config: Dict) -> List[Tuple[str, str]]:
     """Process chunks and preserve timestamps."""
+    global _current_progress, _completed_chunks, _verbose_mode
+
     tasks = []
     semaphore = asyncio.Semaphore(config.get("parallel_api_calls", 5))
-    
+    _completed_chunks = 0
+
+    # Initialize progress bar only in verbose mode
+    if _verbose_mode:
+        progress = ProgressBar(len(chunks), "Processing chunks", 50)
+        _current_progress = progress
+    else:
+        _current_progress = None
+
     async def process_with_semaphore(chunk_data: Tuple[str, str]) -> Tuple[str, str]:
+        global _completed_chunks
         timestamp, chunk_text = chunk_data
         async with semaphore:
             summary = await process_chunk(chunk_text, template, config)
+            _completed_chunks += 1
+            if _current_progress:
+                _current_progress.update(_completed_chunks)
             return timestamp, summary
-    
+
     for chunk_data in chunks:
         if chunk_data[1].strip():
             task = asyncio.create_task(process_with_semaphore(chunk_data))
             tasks.append(task)
-            
+
     if not tasks:
         raise Exception("No valid content chunks to process")
-    
+
     try:
+        print_status(f"Processing {len(tasks)} chunks using {config.get('model', 'unknown model')}", "PROCESSING", _verbose_mode)
         results = await asyncio.gather(*tasks, return_exceptions=True)
+
         valid_results = []
         for result in results:
             if isinstance(result, Exception):
                 logger.error(f"Chunk processing error: {result}")
             elif result[1] and result[1].strip():
                 valid_results.append(result)
+
+        print_status(f"Completed processing {len(valid_results)}/{len(tasks)} chunks", "SUCCESS", _verbose_mode)
         return valid_results
     except Exception as e:
         logger.error(f"Error in gather: {str(e)}")
+        print_status(f"Error during chunk processing: {str(e)}", "ERROR", _verbose_mode)
         return []
 
 def format_summary_with_timestamps(summaries: List[Tuple[str, str]], config: Dict) -> str:
@@ -508,41 +657,76 @@ def parse_response_content(response: Dict[str, Any], base_url: str) -> str:
 
 def main(config: Dict) -> str:
     """Main processing function."""
+    global _verbose_mode
+
+    # Set verbose mode from config
+    _verbose_mode = config.get('verbose', False)
+
     try:
+        print_status(f"Starting summarization", "PROCESSING", _verbose_mode)
+        if _verbose_mode:
+            print_status(f"Source: {config.get('source_url_or_path', 'unknown')}", "INFO", _verbose_mode)
+            print_status(f"Prompt type: {config.get('prompt_type', 'unknown')}", "INFO", _verbose_mode)
+
+        # Get API key
+        spinner = ProgressSpinner("Validating API configuration", _verbose_mode)
+        spinner.start()
         config["api_key"] = get_api_key(config)
+        spinner.stop()
+        print_status("API configuration validated", "SUCCESS", _verbose_mode)
+
+        # Get transcript
         transcript = get_transcript(config)
         if not transcript or not transcript.strip():
             raise Exception("No transcript content to process")
-            
+
         # Extract chunks with timestamps
+        spinner = ProgressSpinner("Preparing content chunks", _verbose_mode)
+        spinner.start()
         chunks = extract_and_clean_chunks(transcript, config.get("chunk_size", 10000))
         if not chunks:
             raise Exception("Failed to create content chunks")
-            
+        spinner.stop()
+
+        if _verbose_mode:
+            print_status(f"Created {len(chunks)} content chunks (chunk size: {config.get('chunk_size', 10000)})", "SUCCESS", _verbose_mode)
+        else:
+            print_status(f"Created {len(chunks)} chunks", "SUCCESS", _verbose_mode)
+
+        # Load template
+        spinner = ProgressSpinner("Loading prompt template", _verbose_mode)
+        spinner.start()
         template = load_prompt_template(config.get("prompt_type", "Questions and answers"))
-        
+        spinner.stop()
+        print_status("Template loaded", "SUCCESS", _verbose_mode)
+
         # Use nest_asyncio if in notebook environment
         try:
             import nest_asyncio
             nest_asyncio.apply()
         except ImportError:
             pass
-            
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        
+
         try:
             summaries = loop.run_until_complete(process_chunks(chunks, template, config))
             if not summaries:
                 raise Exception("No valid summaries generated")
-                
-            return format_summary_with_timestamps(summaries, config)
+
+            if _verbose_mode:
+                print_status("Finalizing summary output", "PROCESSING", _verbose_mode)
+            final_summary = format_summary_with_timestamps(summaries, config)
+            print_status("Summarization completed", "SUCCESS", _verbose_mode)
+            return final_summary
         finally:
             pending = asyncio.all_tasks(loop)
             for task in pending:
                 task.cancel()
             loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
             loop.close()
-            
+
     except Exception as e:
+        print_status(f"Processing failed: {str(e)}", "ERROR", _verbose_mode)
         raise Exception(f"Processing failed: {str(e)}")
