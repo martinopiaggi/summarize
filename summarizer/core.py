@@ -390,11 +390,14 @@ def get_transcript(config: dict) -> str:
     """Get transcript based on source type and configuration."""
     source_type = config.get("type_of_source")
     source_path = config.get("source_url_or_path")
-    
+    transcription_method = config.get("transcription_method", "Cloud Whisper")
+
     if not source_type or not source_path:
         raise ValueError("Source type and path/URL are required")
-    
+
     if source_type == "YouTube Video":
+        # use_youtube_captions is False when --force-download is used
+        # When False, we download audio and transcribe using the specified method
         if config.get("use_youtube_captions", True):
             video_id = extract_youtube_id(source_path)
             return get_youtube_transcript(
@@ -402,20 +405,22 @@ def get_transcript(config: dict) -> str:
                 config.get("language", "en")
             )
         else:
+            # Audio transcription path - download and transcribe
             audio_path = download_youtube_audio(source_path)
             transcript = transcribe_audio(
                 audio_path,
-                config.get("transcription_method", "Cloud Whisper")
+                transcription_method
             )
             os.remove(audio_path)
             return transcript
     else:
+        # Non-YouTube sources always use audio transcription
         handler = get_handler(source_type, source_path)
         try:
             audio_path, should_delete = handler.get_processed_audio()
             transcript = transcribe_audio(
                 audio_path,
-                config.get("transcription_method", "Cloud Whisper")
+                transcription_method
             )
             if should_delete:
                 os.remove(audio_path)

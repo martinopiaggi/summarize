@@ -114,10 +114,18 @@ def cli():
         print_status(f"Processing {len(args.source)} source(s)", "INFO", verbose)
     # In non-verbose mode, show nothing at startup
 
+    # Smart caption logic: If user explicitly specifies a transcription method,
+    # they likely want to test it, so disable captions for YouTube videos
+    explicit_transcription = args.transcription != "Cloud Whisper"  # Non-default transcription method
+    smart_force_download = args.force_download or explicit_transcription
+
+    if verbose and explicit_transcription and not args.force_download:
+        print_status(f"Auto-enabling audio download for {args.transcription} testing", "INFO", verbose)
+
     # Base config
     base_config = {
         "type_of_source": args.type,
-        "use_youtube_captions": not args.force_download,
+        "use_youtube_captions": not smart_force_download,
         "transcription_method": args.transcription,
         "language": args.language,
         "prompt_type": args.prompt_type,
