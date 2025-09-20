@@ -53,12 +53,8 @@ pip install -e .
 ```bash
 python -m summarizer \
     --source "https://www.youtube.com/watch?v=VIDEO_ID" \
-    --base-url "https://api.groq.com/openai/v1" \
-    --model "openai/gpt-oss-120b"
-```
-
-```bash
-python -m summarizer --source "./lecture.mp4" --type "Local File"  --base-url "https://api.groq.com/openai/v1" --model "moonshotai/kimi-k2-instruct-0905"
+    --base-url "https://generativelanguage.googleapis.com/v1beta/openai" \
+    --model "gemini-2.5-flash-lite"
 ```
 
 2. **Process Multiple Videos**:
@@ -95,8 +91,6 @@ python -m summarizer \
     --model "deepseek-chat" \
     --verbose
 ```
-
-python -m summarizer --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-120b" --chunk-size "100000"--source "https://www.youtube.com/watch?v=F0bEPJQo7AU" --language "it"
 
 ## Other examples:
 
