@@ -1,6 +1,7 @@
 """CLI interface for the summarizer package."""
 import argparse
 import os
+import sys
 from datetime import datetime
 from typing import List
 from .core import main, CONFIG
@@ -116,7 +117,9 @@ def cli():
 
     # Smart caption logic: If user explicitly specifies ANY transcription method,
     # they want to use that method, so disable captions for YouTube videos
-    explicit_transcription = hasattr(args, 'transcription') and args.transcription in ["Cloud Whisper", "Local Whisper"]
+    # Only consider it explicit if the user provided the --transcription flag
+    transcription_was_provided = any('--transcription' in arg for arg in sys.argv)
+    explicit_transcription = transcription_was_provided and args.transcription in ["Cloud Whisper", "Local Whisper"]
     smart_force_download = args.force_download or explicit_transcription
 
     if verbose and explicit_transcription and not args.force_download:

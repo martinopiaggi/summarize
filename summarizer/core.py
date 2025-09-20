@@ -210,14 +210,15 @@ CONFIG = {
 
 def get_api_key(cfg: Dict) -> str:
     base_url = cfg.get("base_url", "").lower()
-    if "openai" in base_url:
-        key = os.getenv("openai")
-    elif "groq" in base_url:
-        key = os.getenv("groq")
+    # Check more specific patterns first to avoid conflicts
+    if "generativelanguage.googleapis.com" in base_url:
+        key = os.getenv("generativelanguage")
     elif "perplexity" in base_url:
         key = os.getenv("perplexity")
-    elif "generativelanguage" in base_url:
-        key = os.getenv("generativelanguage")
+    elif "groq" in base_url:
+        key = os.getenv("groq")
+    elif "openai" in base_url:
+        key = os.getenv("openai")
     else:
         raise ValueError(f"No matching service found for base_url: {cfg.get('base_url')}")
     if not key:
@@ -529,8 +530,10 @@ async def process_chunk(chunk: str, template: str, config: Dict, max_retries: in
     for attempt in range(max_retries):
         try:
             async with aiohttp.ClientSession() as session:
+                url = f"{config['base_url']}/chat/completions"
+
                 async with session.post(
-                    f"{config['base_url']}/chat/completions",
+                    url,
                     headers=headers,
                     json=data,
                     timeout=aiohttp.ClientTimeout(total=60)

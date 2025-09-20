@@ -2,6 +2,12 @@
 
 A tool to transcribe and summarize videos from various sources using AI. Supports YouTube, Google Drive, Dropbox, and local files.
 
+How to use it ?
+
+- **CLI** - Command line interface for batch processing and automation
+- **Google Colab** - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb) Interactive notebook with visual interface
+- **(roadmap) Streamlit** - Web-based GUI for easy video summarization
+
 ## Features
 
 - **Multiple Video Sources**:
@@ -28,7 +34,7 @@ A tool to transcribe and summarize videos from various sources using AI. Support
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/summarize.git
+git clone https://github.com/martinopiaggi/summarize.git
 cd summarize
 
 # Install the package
@@ -41,21 +47,20 @@ pip install -e .
 ```bash
 python -m summarizer \
     --source "https://www.youtube.com/watch?v=VIDEO_ID" \
-    --base-url "https://api.deepseek.com/v1" \
-    --model "deepseek-chat" \
-    --api-key "your-api-key"
+    --base-url "https://api.groq.com/openai/v1" \
+    --model "openai/gpt-oss-120b"
 ```
 
 ```bash
-python -m summarizer --source "./lecture.mp4" --type "Local File"  --base-url "https://api.deepseek.com/v1" --model "deepseek-chat"
+python -m summarizer --source "./lecture.mp4" --type "Local File"  --base-url "https://api.groq.com/openai/v1" --model "moonshotai/kimi-k2-instruct-0905"
 ```
 
 2. **Process Multiple Videos**:
 ```bash
 python -m summarizer \
     --source "https://youtube.com/watch?v=ID1" "https://youtube.com/watch?v=ID2" \
-    --base-url "https://api.deepseek.com/v1" \
-    --model "deepseek-chat"
+    --base-url "https://api.groq.com/openai/v1" \
+    --model "openai/gpt-oss-20b"
 ```
 
 3. **Force Audio Download** (instead of captions):
@@ -85,10 +90,14 @@ python -m summarizer \
     --verbose
 ```
 
+python -m summarizer --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-120b" --chunk-size "100000"--source "https://www.youtube.com/watch?v=F0bEPJQo7AU" --language "it"
+
 ## Other examples:
 
 ```bash
-python -m summarizer --base-url "https://api.openai.com/v1" --model "gpt-4o" --source "https://www.youtube.com/watch?v=VIDEO_ID"
+python -m summarizer --base-url "https://api.openai.com/v1" --model "gpt-5-nano-2025-08-07" --source "https://www.youtube.com/watch?v=VIDEO_ID"
+
+python -m summarizer --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-20b" --source "https://www.youtube.com/watch?v=VIDEO_ID"
 
 python -m summarizer --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "https://www.youtube.com/watch?v=VIDEO_ID"
 
@@ -96,9 +105,9 @@ python -m summarizer --base-url "https://api.hyperbolic.xyz/v1" --model "meta-ll
 
 python -m summarizer --type "Local File"  --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "./lecture.mp4" "./lecture2.mp4" "./lecture3.mp4"
 
-python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.0-flash-exp" --chunk-size "28000" --source "https://www.youtube.com/watch?v=VIDEO_ID" 
+python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite" --chunk-size "28000" --source "https://www.youtube.com/watch?v=VIDEO_ID" 
 
-python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.0-flash-exp" --prompt-type "Distill Wisdom" --source "https://www.youtube.com/watch?v=VIDEO_ID"
+python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite" --prompt-type "Distill Wisdom" --source "https://www.youtube.com/watch?v=VIDEO_ID"
 
 python -m summarizer --base-url "https://api.perplexity.ai" --model "sonar-pro"  --prompt-type "Fact Checker" --chunk-size "100000" --source "https://www.youtube.com/watch?v=VIDEO_ID" 
 ```
@@ -118,9 +127,9 @@ python -m summarizer --base-url "https://api.perplexity.ai" --model "sonar-pro" 
 | --no-save | Don't save to files | False |
 | --prompt-type | Summary style | "Questions and answers" |
 | --language | Language code | "auto" |
-| --chunk-size | Text chunk size | 10000 |
+| --chunk-size | **Input** text chunk size | 10000 |
 | --parallel-calls | Parallel API calls | 30 |
-| --max-tokens | Max output tokens | 4096 |
+| --max-tokens | Max **output** tokens for each chunk | 4096 |
 | --verbose, -v | Enable detailed progress output | False |
 
 ## Summary Styles
@@ -156,4 +165,4 @@ perplexity = pplx-Na7TCdZoKyEVqRpp2xWJtUmvh63HEyAb1BqnMWPYXsJg9
 generativelanguage = AIzaSyAl9bTw6XUPqKdAVFYZNXDOCPlERcTfGPk
 ```
 
-keep in mind that you will always able to add new services and the program will pick the correct key (match based if for example the api url is ... the word must be present )
+Keep in mind that you can always add new services and the program will automatically pick the correct key (matching based on keywords in the API URL).
