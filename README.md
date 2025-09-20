@@ -8,6 +8,12 @@ How to use it ?
 - **Google Colab** - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb) Interactive notebook with visual interface
 - **(roadmap) Streamlit** - Web-based GUI for easy video summarization
 
+
+https://github.com/user-attachments/assets/4641743a-2d0e-4b54-9f82-8195431db3cb
+
+
+
+
 ## Features
 
 - **Multiple Video Sources**:
