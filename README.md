@@ -9,7 +9,7 @@ How to use it ?
 - **(roadmap) Streamlit** - Web-based GUI for easy video summarization
 
 
-![](https://github.com/user-attachments/assets/4641743a-2d0e-4b54-9f82-8195431db3cb)
+https://github.com/user-attachments/assets/4641743a-2d0e-4b54-9f82-8195431db3cb
 
 
 
