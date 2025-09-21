@@ -8,11 +8,7 @@ How to use it ?
 - **Google Colab** - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb) Interactive notebook with visual interface
 - **(roadmap) Streamlit** - Web-based GUI for easy video summarization
 
-
 https://github.com/user-attachments/assets/4641743a-2d0e-4b54-9f82-8195431db3cb
-
-
-
 
 ## Features
 
@@ -49,96 +45,86 @@ pip install -e .
 
 ## Usage Examples
 
-1. **Basic Usage** (using YouTube captions):
-```bash
-python -m summarizer \
-    --source "https://www.youtube.com/watch?v=VIDEO_ID" \
-    --base-url "https://generativelanguage.googleapis.com/v1beta/openai" \
-    --model "gemini-2.5-flash-lite"
-```
+### Usage (concise)
 
-2. **Process Multiple Videos**:
-```bash
-python -m summarizer \
-    --source "https://youtube.com/watch?v=ID1" "https://youtube.com/watch?v=ID2" \
-    --base-url "https://api.groq.com/openai/v1" \
-    --model "openai/gpt-oss-20b"
-```
+- Basic (YouTube captions)
+  - `python -m summarizer --source "https://www.youtube.com/watch?v=VIDEO_ID" --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite"`
 
-3. **Force Audio Download** (instead of captions):
-```bash
-python -m summarizer \
-    --source "https://youtube.com/watch?v=VIDEO_ID" \
-    --base-url "https://api.deepseek.com/v1" \
-    --model "deepseek-chat" \
-    --force-download
-```
+- Multiple videos
+  - `python -m summarizer --source "https://youtube.com/watch?v=ID1" "https://youtube.com/watch?v=ID2" --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-20b"`
 
-5. **Different Summary Styles**:
-```bash
-python -m summarizer \
-    --source "https://youtube.com/watch?v=VIDEO_ID" \
-    --base-url "https://api.deepseek.com/v1" \
-    --model "deepseek-chat" \
-    --prompt-type "Distill Wisdom"
-```
+- Force audio (skip captions)
+  - `python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --force-download`
 
-6. **Verbose Output** (shows detailed progress):
-```bash
-python -m summarizer \
-    --source "https://youtube.com/watch?v=VIDEO_ID" \
-    --base-url "https://api.deepseek.com/v1" \
-    --model "deepseek-chat" \
-    --verbose
-```
+- Choose style
+  - `python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --prompt-type "Distill Wisdom"`
 
-## Other examples:
+- Verbose logs
+  - `python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --verbose`
 
-```bash
-python -m summarizer --base-url "https://api.openai.com/v1" --model "gpt-5-nano-2025-08-07" --source "https://www.youtube.com/watch?v=VIDEO_ID"
+- Providers quick picks
+  - OpenAI: `python -m summarizer --base-url "https://api.openai.com/v1" --model "gpt-5-nano-2025-08-07" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
+  - Groq: `python -m summarizer --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-20b" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
+  - Deepseek: `python -m summarizer --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
+  - Hyperbolic (Llama): `python -m summarizer --base-url "https://api.hyperbolic.xyz/v1" --model "meta-llama/Llama-3.3-70B-Instruct" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
 
-python -m summarizer --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-20b" --source "https://www.youtube.com/watch?v=VIDEO_ID"
+- Local files
+  - `python -m summarizer --type "Local File" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "./lecture.mp4" "./lecture2.mp4" "./lecture3.mp4" 
 
-python -m summarizer --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "https://www.youtube.com/watch?v=VIDEO_ID"
+- Long videos (bigger chunks)
+  - `python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite" --chunk-size 28000 --source "https://www.youtube.com/watch?v=VIDEO_ID"`
 
-python -m summarizer --base-url "https://api.hyperbolic.xyz/v1" --model "meta-llama/Llama-3.3-70B-Instruct" --source "https://www.youtube.com/watch?v=VIDEO_ID"
-
-python -m summarizer --type "Local File"  --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "./lecture.mp4" "./lecture2.mp4" "./lecture3.mp4"
-
-python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite" --chunk-size "28000" --source "https://www.youtube.com/watch?v=VIDEO_ID" 
-
-python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite" --prompt-type "Distill Wisdom" --source "https://www.youtube.com/watch?v=VIDEO_ID"
-
-python -m summarizer --base-url "https://api.perplexity.ai" --model "sonar-pro"  --prompt-type "Fact Checker" --chunk-size "100000" --source "https://www.youtube.com/watch?v=VIDEO_ID" 
-```
-
+- Style + provider combo
+  - Gemini + Distill: `python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite" --prompt-type "Distill Wisdom" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
+  - Perplexity + Fact Check: `python -m summarizer --base-url "https://api.perplexity.ai" --model "sonar-pro" --prompt-type "Fact Checker" --chunk-size 100000 --source "https://www.youtube.com/watch?v=VIDEO_ID"`
 
 ## Configuration Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| --source | One or more video sources (URLs or filenames) | Required |
-| --base-url | API endpoint URL | Required |
-| --model | Model to use | Required |
-| --api-key | API key (or use .env) | Optional |
-| --type | Source type | "YouTube Video" |
-| --force-download | Skip captions, use audio | False |
-| --output-dir | Save directory | "summaries" |
-| --no-save | Don't save to files | False |
-| --prompt-type | Summary style | "Questions and answers" |
-| --language | Language code | "auto" |
-| --chunk-size | **Input** text chunk size | 10000 |
-| --parallel-calls | Parallel API calls | 30 |
-| --max-tokens | Max **output** tokens for each chunk | 4096 |
-| --verbose, -v | Enable detailed progress output | False |
+| `--source` | One or more video sources (URLs or filenames) | Required |
+| `--base-url` | API endpoint URL | Required |
+| `--model` | Model to use | Required |
+| `--api-key` | API key (or use .env) | Optional |
+| `--type` | Source type | "YouTube Video" |
+| `--force-download` | Skip captions, use audio | False |
+| `--output-dir` | Save directory | "summaries" |
+| `--no-save` | Don't save to files | False |
+| `--prompt-type` | Summary style | "Questions and answers" |
+| `--language` | Language code | "auto" |
+| `--chunk-size` | **Input** text chunk size | 10000 |
+| `--parallel-calls` | Parallel API calls | 30 |
+| `--max-tokens` | Max **output** tokens for each chunk | 4096 |
+| `--verbose`, `-v` | Enable detailed progress output | False |
 
 ## Summary Styles
+Built-in templates live in [`summarizer/prompts.json`](https://github.com/martinopiaggi/summarize/blob/main/summarizer/prompts.json). Select with `--prompt-type "<Name>"`.
 
-1. **Summarization**: Concise overview
-2. **Grammar Correction**: Cleaned transcript
-3. **Distill Wisdom**: Key insights & quotes
-4. **Q&A**: Key questions & answers
-5. **Essay**: Paul Graham style essay
+- Summarization
+  - Concise narrative with a bold title; conversational tone.
+
+- Only grammar correction with highlights
+  - Same text, corrected; only key quotes are bold; no intro text.
+  
+- Distill Wisdom
+  - Strict template: TITLE, IDEAS, QUOTES, REFERENCES; bullet-only, omit empty sections.
+
+- Questions and answers
+  - Unnumbered bold questions with detailed answers; no preamble.
+
+- Essay Writing in Paul Graham Style
+  - ≤250 words; simple, clear prose; no clichés or concluding phrases.
+
+- Research
+  - Core insights + added context/background; connects to broader themes.
+
+- DNA Extractor
+  - <=200 words of distilled “core truth” in pure thought form; no meta text.
+
+- Fact Checker
+  - Claims labeled TRUE/FALSE/MISLEADING/UNVERIFIABLE with reasoning and sources; overall verdict.
+
+Tip: Names must match exactly as in prompts.json. Easily extend or add styles by editing that file, then pass the new name via `--prompt-type`.
 
 ## Environment Setup
 
