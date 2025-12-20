@@ -245,8 +245,10 @@ def get_youtube_transcript(video_id: str, language: str = "en") -> str:
 
         if language == "auto":
             language = "en"
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
-
+        
+        ytt_api = YouTubeTranscriptApi()
+        transcript = ytt_api.fetch(video_id, languages=[language]).to_raw_data()
+        
         spinner.stop()
         print_status("YouTube transcript fetched successfully", "SUCCESS", _verbose_mode)
         return "\n".join(f"{format_timestamp(entry['start'])} {entry['text'].strip()}" for entry in transcript)

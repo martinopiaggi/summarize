@@ -42,6 +42,8 @@ def parse_args():
                                "Questions and answers",
                                "DNA Extractor",
                                "Research",
+                               "Tutorial",
+                               "Reflections",
                                "Fact Checker",
                                "Essay Writing in Paul Graham Style"],
                        default="Questions and answers", 

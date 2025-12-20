@@ -13,7 +13,11 @@
 
     "DNA Extractor": "Extract this transcript segment into its purest form (max 200 words easy to remember and understandable) which contains the core truth, mental models used, pattern breaks, universal principles or unexpected connections. Write as pure thought - no introductions, no explanations, no conclusions - no meta description.\n\nHere is the transcript segment:\n{text}",
 
-    "Fact Checker": "Perform exhaustive research on the provided transcript, carefully identifying and evaluating all claims made within. Determine the factual accuracy of each claim, clearly labeling them as TRUE, FALSE, MISLEADING, or UNVERIFIABLE. For each claim, explain your reasoning and provide authoritative sources to support your assessment. Conclude with an overall evaluation highlighting the accuracy or potential misinformation present in the transcript. Here is the transcript:\n{text}"
+    "Fact Checker": "Perform exhaustive research on the provided transcript, carefully identifying and evaluating all claims made within. Determine the factual accuracy of each claim, clearly labeling them as TRUE, FALSE, MISLEADING, or UNVERIFIABLE. For each claim, explain your reasoning and provide authoritative sources to support your assessment. Conclude with an overall evaluation highlighting the accuracy or potential misinformation present in the transcript. Here is the transcript:\n{text}",
+
+    "Tutorial": "Turn the provided transcript into a clear, step-by-step tutorial that anyone can follow. Use this structure:\n\n**TITLE** \n\n**STEPS**\n1. Present each instruction clearly in numbered order.\n2. Keep steps concise but actionable.\n\n**TIPS & INSIGHTS**\n- Capture any warnings, shortcuts, or helpful advice mentioned.\n\n**KNOWLEDGE EXPANSION**\n- Add relevant background information, research, or broader connections to deepen understanding.\n\nHere is the transcript:\n{text}",
+
+    "Reflections": "From the transcript, produce a concise, extremely deep reflective synthesis that *builds beyond* what is said (do not summarize or outline). Extend the ideas plainly into new territory. Forge connections to other domains but also think about counterpoints that could overturn the thesis. Everyday words and zero fluff—only concrete extensions that spark new action. Transcript:\n{text}"
 }
 
 

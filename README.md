@@ -45,8 +45,6 @@ pip install -e .
 
 ## Usage Examples
 
-### Usage (concise)
-
 - Basic (YouTube captions)
   - `python -m summarizer --source "https://www.youtube.com/watch?v=VIDEO_ID" --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite"`
 

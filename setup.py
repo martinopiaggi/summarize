@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 # Define core requirements that are always needed
 core_requirements = [
     "python-dotenv>=1.0.0",
-    "youtube-transcript-api>=0.6.1",
+    "youtube-transcript-api>=1.2.3",
     "pytubefix>=1.6.3", 
     "groq>=0.4.2",
     "openai>=1.3.7",
