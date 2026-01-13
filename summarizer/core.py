@@ -700,12 +700,15 @@ def main(config: Dict) -> str:
             print_status(f"Source: {config.get('source_url_or_path', 'unknown')}", "INFO", _verbose_mode)
             print_status(f"Prompt type: {config.get('prompt_type', 'unknown')}", "INFO", _verbose_mode)
 
-        # Get API key
-        spinner = ProgressSpinner("Validating API configuration", _verbose_mode)
-        spinner.start()
-        config["api_key"] = get_api_key(config)
-        spinner.stop()
-        print_status("API configuration validated", "SUCCESS", _verbose_mode)
+        # Get API key (only if not already provided)
+        if "api_key" not in config:
+            spinner = ProgressSpinner("Validating API configuration", _verbose_mode)
+            spinner.start()
+            config["api_key"] = get_api_key(config)
+            spinner.stop()
+            print_status("API configuration validated", "SUCCESS", _verbose_mode)
+        else:
+            print_status("Using provided API key", "SUCCESS", _verbose_mode)
 
         # Get transcript
         transcript = get_transcript(config)
