@@ -87,9 +87,11 @@ pip install -e .
   - Groq: `python -m summarizer --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-20b" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
   - Deepseek: `python -m summarizer --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
   - Hyperbolic (Llama): `python -m summarizer --base-url "https://api.hyperbolic.xyz/v1" --model "meta-llama/Llama-3.3-70B-Instruct" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
+  - Ollama (Local): `python -m summarizer --base-url "http://127.0.0.1:11434/v1" --model "qwen:32b" --api-key "ollama" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
 
 - Local files
   - `python -m summarizer --type "Local File" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "./lecture.mp4" "./lecture2.mp4" "./lecture3.mp4"`
+  - Ollama (Local): `python -m summarizer --type "Local File" --base-url "http://127.0.0.1:11434/v1" --model "qwen:32b" --api-key "ollama" --transcription "Local Whisper" --source "./video.mkv"`
 
 - Long videos (bigger chunks)
   - `python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite" --chunk-size 28000 --source "https://www.youtube.com/watch?v=VIDEO_ID"`
@@ -101,6 +103,44 @@ pip install -e .
 ## Summary Styles
 Built-in templates live in [`summarizer/prompts.json`](https://github.com/martinopiaggi/summarize/blob/main/summarizer/prompts.json). Select with `--prompt-type "<Name>"`.
 Tip: Names must match exactly as in prompts.json. Easily extend or add styles by editing that file, then pass the new name via `--prompt-type`.
+
+## Using Ollama (Local Models)
+
+You can use Ollama to run models locally without requiring cloud API keys:
+
+1. **Install Ollama**: Follow instructions at [ollama.ai](https://ollama.ai)
+2. **Pull a model**: `ollama pull qwen:32b` (or any model you prefer)
+3. **Verify Ollama is running**: `ollama list`
+4. **Use with the summarizer**:
+   ```bash
+   python -m summarizer \
+     --base-url "http://127.0.0.1:11434/v1" \
+     --model "qwen:32b" \
+     --api-key "ollama" \
+     --source "https://www.youtube.com/watch?v=VIDEO_ID"
+   ```
+
+**Note**: For local video files, you'll need transcription. Install Local Whisper with:
+```bash
+pip install openai-whisper
+```
+
+Then use:
+```bash
+python -m summarizer \
+  --type "Local File" \
+  --base-url "http://127.0.0.1:11434/v1" \
+  --model "qwen:32b" \
+  --api-key "ollama" \
+  --transcription "Local Whisper" \
+  --source "./your-video.mkv"
+```
+
+Popular Ollama models for summarization:
+- `qwen:32b` - Good balance of quality and speed
+- `llama3.2:latest` - Meta's Llama 3.2
+- `deepseek-r1:32b` - DeepSeek R1 with reasoning
+- `mistral:latest` - Mistral models
 
 ## Environment Setup
 
