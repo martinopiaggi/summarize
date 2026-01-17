@@ -111,10 +111,10 @@ api_key=your_default_api_key
 This is an example of (**randomized api keys here**) of my `.env` : 
 
 ```ini
-groq = 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
-openai = sk-proj-HaW8cZ_9er50L3f5Q0Nkavu3EyAb1B1EyAb1BXf5Q0Nkavr
-perplexity = pplx-Na7TCdZoKyEVqRpp2xWJtUmvh63HEyAb1BqnMWPYXsJg9
-generativelanguage = AIzaSyAl9bTw6XUPqKdAVFYZNXDOCPlERcTfGPk
+groq = gsk_YOUR_GROQ_API_KEY_HERE
+openai = sk-proj-YOUR_OPENAI_API_KEY_HERE
+perplexity = pplx-YOUR_PERPLEXITY_API_KEY_HERE
+generativelanguage = YOUR_GOOGLE_AI_API_KEY_HERE
 ```
 Keep in mind that you can always add new services and the script will automatically pick the correct key (matching based on keywords in the API URL).
 Or provide them directly via --api-key parameter.
