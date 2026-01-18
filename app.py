@@ -80,7 +80,8 @@ PROMPT_TYPES = [
     "Tutorial",
     "Reflections",
     "Fact Checker",
-    "Essay Writing in Paul Graham Style"
+    "Essay Writing in Paul Graham Style",
+    "Mermaid Diagram"
 ]
 
 LANGUAGES = [
