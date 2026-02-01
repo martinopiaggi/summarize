@@ -1,11 +1,12 @@
 """Transcription functionality for audio and video sources."""
+
 import os
 import re
-import tempfile
 from typing import Optional
-from .exceptions import TranscriptError, APIKeyError, AudioProcessingError
+from .exceptions import TranscriptError, APIKeyError
 from .progress import ProgressSpinner, print_status
-from .handlers import get_handler, process_audio_file
+from .handlers import get_handler
+from .downloaders import DownloadManager, is_youtube_url
 
 
 def format_timestamp(seconds: float) -> str:
@@ -19,28 +20,30 @@ def format_timestamp(seconds: float) -> str:
 def extract_youtube_id(url: str) -> str:
     """
     Extract YouTube video ID from URL.
-    
+
     Supports various YouTube URL formats including:
     - youtube.com/watch?v=ID
     - youtu.be/ID
     - youtube.com/embed/ID
     """
-    regex = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
+    regex = r"(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})"
     match = re.search(regex, url)
     if not match:
         raise TranscriptError("Could not extract YouTube video ID from URL")
     return match.group(1)
 
 
-def get_youtube_transcript(video_id: str, language: str = "en", verbose: bool = False) -> str:
+def get_youtube_transcript(
+    video_id: str, language: str = "en", verbose: bool = False
+) -> str:
     """
     Get transcript from YouTube captions.
-    
+
     Args:
         video_id: YouTube video ID
         language: Language code for captions
         verbose: Enable verbose output
-        
+
     Returns:
         Formatted transcript with timestamps
     """
@@ -48,22 +51,22 @@ def get_youtube_transcript(video_id: str, language: str = "en", verbose: bool = 
         from youtube_transcript_api import YouTubeTranscriptApi
     except ImportError:
         raise TranscriptError("youtube-transcript-api package not installed")
-    
+
     spinner = ProgressSpinner("Fetching YouTube transcript", verbose)
     try:
         spinner.start()
 
         if language == "auto":
             language = "en"
-        
+
         ytt_api = YouTubeTranscriptApi()
         transcript = ytt_api.fetch(video_id, languages=[language]).to_raw_data()
-        
+
         spinner.stop()
         print_status("YouTube transcript fetched successfully", "SUCCESS", verbose)
-        
+
         return "\n".join(
-            f"{format_timestamp(entry['start'])} {entry['text'].strip()}" 
+            f"{format_timestamp(entry['start'])} {entry['text'].strip()}"
             for entry in transcript
         )
     except Exception as e:
@@ -73,62 +76,17 @@ def get_youtube_transcript(video_id: str, language: str = "en", verbose: bool = 
         )
 
 
-def download_youtube_audio(url: str, verbose: bool = False) -> str:
-    """
-    Download YouTube video audio.
-    
-    Args:
-        url: YouTube video URL
-        verbose: Enable verbose output
-        
-    Returns:
-        Path to the processed audio file
-    """
-    try:
-        import pytubefix as pytube
-    except ImportError:
-        raise TranscriptError("pytubefix package not installed")
-    
-    spinner = ProgressSpinner("Downloading YouTube audio", verbose)
-    try:
-        spinner.start()
-
-        yt = pytube.YouTube(url)
-        stream = yt.streams.get_audio_only()
-
-        temp_dir = tempfile.gettempdir()
-        temp_path = os.path.join(temp_dir, "audio.mp4")
-        processed_path = os.path.join(temp_dir, "audio_processed.mp3")
-
-        stream.download(output_path=temp_dir, filename="audio.mp4")
-
-        spinner.stop()
-        print_status("Audio download completed", "SUCCESS", verbose)
-
-        spinner = ProgressSpinner("Processing audio file", verbose)
-        spinner.start()
-
-        process_audio_file(temp_path, processed_path)
-        os.remove(temp_path)
-
-        spinner.stop()
-        print_status("Audio processing completed", "SUCCESS", verbose)
-
-        return processed_path
-    except Exception as e:
-        spinner.stop()
-        raise AudioProcessingError(f"Failed to download YouTube audio: {str(e)}")
-
-
-def transcribe_audio(audio_path: str, method: str = "Cloud Whisper", verbose: bool = False) -> str:
+def transcribe_audio(
+    audio_path: str, method: str = "Cloud Whisper", verbose: bool = False
+) -> str:
     """
     Transcribe audio file using specified method.
-    
+
     Args:
         audio_path: Path to the audio file
         method: Transcription method ("Cloud Whisper" or "Local Whisper")
         verbose: Enable verbose output
-        
+
     Returns:
         Transcription text with timestamps
     """
@@ -154,7 +112,9 @@ def _transcribe_cloud_whisper(audio_path: str, verbose: bool) -> str:
             from groq import Groq
         except ImportError:
             spinner.stop()
-            raise TranscriptError("Cloud Whisper requires 'groq' package: pip install groq")
+            raise TranscriptError(
+                "Cloud Whisper requires 'groq' package: pip install groq"
+            )
 
         groq_client = Groq(api_key=api_key)
 
@@ -164,7 +124,7 @@ def _transcribe_cloud_whisper(audio_path: str, verbose: bool) -> str:
                 model="whisper-large-v3",
                 response_format="text",
                 language="en",
-                temperature=0.0
+                temperature=0.0,
             )
 
             timestamp = format_timestamp(0)
@@ -220,10 +180,10 @@ def _transcribe_local_whisper(audio_path: str, verbose: bool) -> str:
 def get_transcript(config: dict) -> str:
     """
     Get transcript based on source type and configuration.
-    
+
     Args:
         config: Configuration dictionary with source details
-        
+
     Returns:
         Transcript text with timestamps
     """
@@ -236,24 +196,24 @@ def get_transcript(config: dict) -> str:
         raise TranscriptError("Source type and path/URL are required")
 
     if source_type == "YouTube Video":
-        if config.get("use_youtube_captions", True):
+        if is_youtube_url(source_path) and config.get("use_youtube_captions", True):
             video_id = extract_youtube_id(source_path)
             return get_youtube_transcript(
-                video_id,
-                config.get("language", "en"),
-                verbose
+                video_id, config.get("language", "en"), verbose
             )
-        else:
-            # Audio transcription path - download and transcribe
-            audio_path = download_youtube_audio(source_path, verbose)
-            try:
-                transcript = transcribe_audio(audio_path, transcription_method, verbose)
-                return transcript
-            finally:
-                if os.path.exists(audio_path):
-                    os.remove(audio_path)
-    else:
-        # Non-YouTube sources always use audio transcription
+
+        audio_path = DownloadManager(config.get("cobalt_base_url")).download_audio(
+            source_path,
+            verbose=verbose,
+        )
+        try:
+            transcript = transcribe_audio(audio_path, transcription_method, verbose)
+            return transcript
+        finally:
+            if os.path.exists(audio_path):
+                os.remove(audio_path)
+
+    if source_type in ("Local File", "Google Drive Video Link", "Dropbox Video Link"):
         handler = get_handler(source_type, source_path)
         audio_path, should_delete = handler.get_processed_audio()
         try:
@@ -262,3 +222,17 @@ def get_transcript(config: dict) -> str:
         finally:
             if should_delete and os.path.exists(audio_path):
                 os.remove(audio_path)
+
+    if source_type == "Video URL":
+        audio_path = DownloadManager(config.get("cobalt_base_url")).download_audio(
+            source_path,
+            verbose=verbose,
+        )
+        try:
+            transcript = transcribe_audio(audio_path, transcription_method, verbose)
+            return transcript
+        finally:
+            if os.path.exists(audio_path):
+                os.remove(audio_path)
+
+    raise TranscriptError(f"Unknown source type: {source_type}")

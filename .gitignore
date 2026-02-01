@@ -45,3 +45,4 @@ temp/
 *.md
 !README.md
 !CONTRIBUTING.md
+cobalt.env

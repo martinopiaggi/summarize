@@ -1,4 +1,5 @@
 """Core functionality for video transcription and summarization."""
+
 import asyncio
 import logging
 
@@ -6,45 +7,71 @@ import logging
 from .config import DEFAULT_CONFIG as CONFIG, get_api_key, validate_config
 from .progress import ProgressSpinner, ProgressBar, print_status
 from .handlers import (
-    VideoSourceHandler, LocalFileHandler, GoogleDriveHandler, 
-    DropboxHandler, get_handler, convert_to_wav, process_audio_file
+    VideoSourceHandler,
+    LocalFileHandler,
+    GoogleDriveHandler,
+    DropboxHandler,
+    get_handler,
+    convert_to_wav,
+    process_audio_file,
 )
 from .transcription import (
-    get_transcript, get_youtube_transcript, download_youtube_audio,
-    transcribe_audio, extract_youtube_id, format_timestamp
+    get_transcript,
+    get_youtube_transcript,
+    transcribe_audio,
+    extract_youtube_id,
+    format_timestamp,
 )
+from .downloaders import download_youtube_audio
 from .api import (
-    chunk_text, extract_and_clean_chunks, process_chunk, 
-    process_chunks, format_summary_with_timestamps, parse_response_content
+    chunk_text,
+    extract_and_clean_chunks,
+    process_chunk,
+    process_chunks,
+    format_summary_with_timestamps,
+    parse_response_content,
 )
 from .prompts import load_prompt_template, get_available_prompts
 from .exceptions import (
-    SummarizerError, TranscriptError, APIError, APIKeyError,
-    ConfigurationError, AudioProcessingError, SourceNotFoundError
+    SummarizerError,
+    TranscriptError,
+    APIError,
+    APIKeyError,
+    ConfigurationError,
+    AudioProcessingError,
+    SourceNotFoundError,
 )
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
 def main(config: dict) -> str:
     """
     Main processing function.
-    
+
     Args:
         config: Configuration dictionary with all settings
-        
+
     Returns:
         Final formatted summary string
     """
-    verbose = config.get('verbose', False)
+    verbose = config.get("verbose", False)
 
     try:
         print_status("Starting summarization", "PROCESSING", verbose)
         if verbose:
-            print_status(f"Source: {config.get('source_url_or_path', 'unknown')}", "INFO", verbose)
-            print_status(f"Prompt type: {config.get('prompt_type', 'unknown')}", "INFO", verbose)
+            print_status(
+                f"Source: {config.get('source_url_or_path', 'unknown')}",
+                "INFO",
+                verbose,
+            )
+            print_status(
+                f"Prompt type: {config.get('prompt_type', 'unknown')}", "INFO", verbose
+            )
 
         # Get API key
         with ProgressSpinner("Validating API configuration", verbose) as spinner:
@@ -58,23 +85,32 @@ def main(config: dict) -> str:
 
         # Extract chunks with timestamps
         with ProgressSpinner("Preparing content chunks", verbose) as spinner:
-            chunks = extract_and_clean_chunks(transcript, config.get("chunk_size", 10000))
+            chunks = extract_and_clean_chunks(
+                transcript, config.get("chunk_size", 10000)
+            )
         if not chunks:
             raise TranscriptError("Failed to create content chunks")
 
         if verbose:
-            print_status(f"Created {len(chunks)} content chunks (chunk size: {config.get('chunk_size', 10000)})", "SUCCESS", verbose)
+            print_status(
+                f"Created {len(chunks)} content chunks (chunk size: {config.get('chunk_size', 10000)})",
+                "SUCCESS",
+                verbose,
+            )
         else:
             print_status(f"Created {len(chunks)} chunks", "SUCCESS", verbose)
 
         # Load template
         with ProgressSpinner("Loading prompt template", verbose) as spinner:
-            template = load_prompt_template(config.get("prompt_type", "Questions and answers"))
+            template = load_prompt_template(
+                config.get("prompt_type", "Questions and answers")
+            )
         print_status("Template loaded", "SUCCESS", verbose)
 
         # Use nest_asyncio if in notebook environment
         try:
             import nest_asyncio
+
             nest_asyncio.apply()
         except ImportError:
             pass
@@ -83,7 +119,9 @@ def main(config: dict) -> str:
         asyncio.set_event_loop(loop)
 
         try:
-            summaries = loop.run_until_complete(process_chunks(chunks, template, config))
+            summaries = loop.run_until_complete(
+                process_chunks(chunks, template, config)
+            )
             if not summaries:
                 raise APIError("No valid summaries generated")
 

@@ -1,4 +1,5 @@
 """Config file support for the summarizer package."""
+
 import os
 from pathlib import Path
 from typing import Dict, Optional, Any
@@ -8,12 +9,12 @@ from .exceptions import ConfigurationError
 def find_config_file() -> Optional[Path]:
     """
     Find the config file in standard locations.
-    
+
     Search order:
     1. ./summarizer.yaml (current directory)
     2. ~/.summarizer.yaml (home directory)
     3. ~/.config/summarizer/config.yaml (XDG style)
-    
+
     Returns:
         Path to config file or None if not found
     """
@@ -25,42 +26,42 @@ def find_config_file() -> Optional[Path]:
         Path.home() / ".config" / "summarizer" / "config.yaml",
         Path.home() / ".config" / "summarizer" / "config.yml",
     ]
-    
+
     for path in locations:
         if path.exists():
             return path
-    
+
     return None
 
 
 def load_config_file(path: Optional[Path] = None) -> Dict[str, Any]:
     """
     Load configuration from YAML file.
-    
+
     Args:
         path: Optional explicit path to config file
-        
+
     Returns:
         Configuration dictionary
     """
     if path is None:
         path = find_config_file()
-    
+
     if path is None:
         return {}
-    
+
     try:
         import yaml
     except ImportError:
         # YAML is optional - fail silently if not installed
         return {}
-    
+
     # If an explicit path is provided but doesn't exist, return empty dict
     if not path.exists():
         return {}
-    
+
     try:
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             loaded = yaml.safe_load(f)
             config = loaded if loaded is not None else {}
         return config
@@ -71,16 +72,16 @@ def load_config_file(path: Optional[Path] = None) -> Dict[str, Any]:
 def get_provider_config(config: Dict, provider_name: str) -> Dict[str, Any]:
     """
     Get configuration for a specific provider.
-    
+
     Args:
         config: Full config dictionary
         provider_name: Name of the provider (e.g., 'groq', 'gemini')
-        
+
     Returns:
         Provider-specific config dictionary
     """
     providers = config.get("providers", {})
-    
+
     if provider_name not in providers:
         available = list(providers.keys())
         if available:
@@ -92,7 +93,7 @@ def get_provider_config(config: Dict, provider_name: str) -> Dict[str, Any]:
             raise ConfigurationError(
                 f"No providers configured. Add providers to your config file."
             )
-    
+
     return providers[provider_name]
 
 
@@ -100,11 +101,11 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
     """
     Merge file config with CLI arguments.
     CLI arguments take precedence.
-    
+
     Args:
         file_config: Configuration from file
         cli_args: Configuration from CLI arguments
-        
+
     Returns:
         Merged configuration dictionary
     """
@@ -117,15 +118,18 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "language": "auto",
         "transcription_method": "Cloud Whisper",
         "output_dir": "summaries",
+        "cobalt_base_url": "http://localhost:9000",
     }
-    
+
     # Apply file config defaults
     defaults = file_config.get("defaults", {})
     for key, value in defaults.items():
         # Convert kebab-case to snake_case
         snake_key = key.replace("-", "_")
+        if snake_key == "cobalt_url":
+            snake_key = "cobalt_base_url"
         merged[snake_key] = value
-    
+
     # Apply provider config if specified
     provider_name = cli_args.get("provider") or file_config.get("default_provider")
     if provider_name:
@@ -139,23 +143,23 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
                     merged[key.replace("-", "_")] = value
         except ConfigurationError:
             pass  # Will be caught later if required
-    
+
     # CLI args override everything (skip None values)
     for key, value in cli_args.items():
         if value is not None:
             merged[key] = value
-    
+
     return merged
 
 
 def create_example_config() -> str:
     """
     Generate example config file content.
-    
+
     Returns:
         YAML string with example configuration
     """
-    return '''# Summarizer Configuration
+    return """# Summarizer Configuration
 # Save as ~/.summarizer.yaml or ./summarizer.yaml
 
 # Default provider to use when --provider is not specified
@@ -186,4 +190,5 @@ defaults:
   parallel-calls: 30
   max-tokens: 4096
   output-dir: summaries
-'''
+  cobalt-base-url: http://localhost:9000
+"""

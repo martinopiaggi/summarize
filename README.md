@@ -14,6 +14,7 @@ https://github.com/user-attachments/assets/4641743a-2d0e-4b54-9f82-8195431db3cb
 
 - **Multiple Video Sources**:
   - YouTube (with automatic caption support)
+  - Instagram, TikTok, Twitter, Reddit, Facebook (via optional Cobalt)
   - Google Drive
   - Dropbox
   - Local files
@@ -72,6 +73,45 @@ pip install -e .
 
 - Multiple videos
   - `python -m summarizer --source "https://youtube.com/watch?v=ID1" "https://youtube.com/watch?v=ID2" --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-20b"`
+
+- Non-YouTube platforms (via Cobalt)
+  - `docker compose -f docker-compose.cobalt.yml up -d`
+  - `python -m summarizer --type "Video URL" --source "https://www.instagram.com/reel/..." --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-20b"`
+
+## Cobalt Setup (first run)
+
+If Cobalt prints "cobalt wasn't configured yet" or keeps restarting, this is because the configuration isn't persisted correctly. Follow this flow to fix it:
+
+1. Stop any existing container:
+```bash
+docker compose -f docker-compose.cobalt.yml down
+```
+
+2. Run setup and persist the `.env`:
+
+   **Bash:**
+   ```bash
+   docker run --rm -it -v "$(pwd)/cobalt.env:/app/.env" --entrypoint sh ghcr.io/wukko/cobalt:latest
+   ```
+
+   **PowerShell:**
+   ```powershell
+   docker run --rm -it -v "${PWD}/cobalt.env:/app/.env" --entrypoint sh ghcr.io/wukko/cobalt:latest
+   ```
+
+   Inside the shell run:
+   ```bash
+   npm run setup
+   ```
+   
+   Answers for prompts:
+   - "What kind of server will this instance be?" → `api`
+   - "What's the domain this API instance will be running on?" → `localhost` (press Enter)
+
+3. Start the service:
+```bash
+docker compose -f docker-compose.cobalt.yml up -d
+```
 
 - Force audio (skip captions)
   - `python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --force-download`
