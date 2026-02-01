@@ -55,6 +55,10 @@ def load_config_file(path: Optional[Path] = None) -> Dict[str, Any]:
         # YAML is optional - fail silently if not installed
         return {}
     
+    # If an explicit path is provided but doesn't exist, return empty dict
+    if not path.exists():
+        return {}
+    
     try:
         with open(path, 'r', encoding='utf-8') as f:
             loaded = yaml.safe_load(f)

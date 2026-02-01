@@ -1,4 +1,5 @@
 """Progress indicators for the summarizer package."""
+
 import sys
 import time
 import threading
@@ -7,7 +8,7 @@ from typing import Optional
 
 class ProgressSpinner:
     """A simple terminal spinner for indicating progress."""
-    
+
     def __init__(self, message: str = "Processing", verbose: bool = False):
         self.message = message
         self.spinner_chars = "|/-\\"
@@ -31,14 +32,16 @@ class ProgressSpinner:
         self.running = False
         if self.thread:
             self.thread.join()
-        sys.stdout.write('\r' + ' ' * (len(self.message) + 10) + '\r')
+        sys.stdout.write("\r" + " " * (len(self.message) + 10) + "\r")
         sys.stdout.flush()
 
     def _spin(self) -> None:
         """Internal method to animate the spinner."""
         i = 0
         while self.running:
-            sys.stdout.write(f'\r{self.message}... {self.spinner_chars[i % len(self.spinner_chars)]}')
+            sys.stdout.write(
+                f"\r{self.message}... {self.spinner_chars[i % len(self.spinner_chars)]}"
+            )
             sys.stdout.flush()
             time.sleep(0.1)
             i += 1
@@ -55,7 +58,7 @@ class ProgressSpinner:
 
 class ProgressBar:
     """A terminal progress bar for tracking completion."""
-    
+
     def __init__(self, total: int, prefix: str = "Progress", length: int = 50):
         self.total = total
         self.prefix = prefix
@@ -71,9 +74,12 @@ class ProgressBar:
 
         percent = (self.current / self.total) * 100
         filled_length = int(self.length * self.current // self.total)
-        bar = '█' * filled_length + '░' * (self.length - filled_length)
+        bar = "#" * filled_length + "-" * (self.length - filled_length)
 
-        sys.stdout.write(f'\r{self.prefix}: |{bar}| {self.current}/{self.total} ({percent:.1f}%)')
+        sys.stdout.write(
+            f"\r{self.prefix}: |{bar}| {self.current}/{self.total} ({percent:.1f}%)"
+        )
+
         sys.stdout.flush()
 
         if self.current >= self.total:
@@ -82,33 +88,33 @@ class ProgressBar:
 
 class SimpleProgress:
     """A simple dot-based progress indicator for non-verbose mode."""
-    
+
     def __init__(self, total: int, message: str = "Processing"):
         self.total = total
         self.message = message
         self.current = 0
         self.dots_shown = 0
         self.max_dots = 20
-        
+
     def start(self) -> None:
         """Show the initial message."""
-        sys.stdout.write(f'{self.message} ')
+        sys.stdout.write(f"{self.message} ")
         sys.stdout.flush()
-        
+
     def update(self, current: Optional[int] = None) -> None:
         """Update progress with a dot."""
         if current is not None:
             self.current = current
         else:
             self.current += 1
-            
+
         # Show a dot every N% of progress
         dots_needed = int((self.current / self.total) * self.max_dots)
         while self.dots_shown < dots_needed:
-            sys.stdout.write('.')
+            sys.stdout.write(".")
             sys.stdout.flush()
             self.dots_shown += 1
-            
+
     def finish(self, success: bool = True) -> None:
         """Complete the progress line."""
         status = "done" if success else "failed"
@@ -118,7 +124,7 @@ class SimpleProgress:
 def print_status(message: str, status: str = "INFO", verbose: bool = False) -> None:
     """
     Print a status message with appropriate formatting.
-    
+
     Args:
         message: The message to print
         status: Status type (INFO, SUCCESS, ERROR, WARNING, PROCESSING)
@@ -141,7 +147,7 @@ def print_status(message: str, status: str = "INFO", verbose: bool = False) -> N
         "SUCCESS": "[+]",
         "ERROR": "[-]",
         "WARNING": "[!]",
-        "PROCESSING": "[~]"
+        "PROCESSING": "[~]",
     }
     symbol = status_symbols.get(status, "[*]")
     print(f"[{timestamp}] {symbol} {message}")

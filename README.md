@@ -6,7 +6,7 @@ How to use it ?
 
 - **CLI** - Command line interface for batch processing and automation
 - **Google Colab** - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb) Interactive notebook with visual interface
-- **(roadmap) Streamlit** - Web-based GUI for easy video summarization
+- **Streamlit** - Web-based GUI (`python -m streamlit run app.py`)
 
 https://github.com/user-attachments/assets/4641743a-2d0e-4b54-9f82-8195431db3cb
 
