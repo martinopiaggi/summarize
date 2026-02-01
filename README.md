@@ -78,40 +78,19 @@ pip install -e .
   - `docker compose -f docker-compose.cobalt.yml up -d`
   - `python -m summarizer --type "Video URL" --source "https://www.instagram.com/reel/..." --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-20b"`
 
-## Cobalt Setup (first run)
+## Cobalt Setup
 
-If Cobalt prints "cobalt wasn't configured yet" or keeps restarting, this is because the configuration isn't persisted correctly. Follow this flow to fix it:
+We have pre-configured `cobalt.env` with default settings so you don't need to run any complex setup scripts.
 
-1. Stop any existing container:
-```bash
-docker compose -f docker-compose.cobalt.yml down
-```
+Simply start the service:
 
-2. Run setup and persist the `.env`:
-
-   **Bash:**
-   ```bash
-   docker run --rm -it -v "$(pwd)/cobalt.env:/app/.env" --entrypoint sh ghcr.io/wukko/cobalt:latest
-   ```
-
-   **PowerShell:**
-   ```powershell
-   docker run --rm -it -v "${PWD}/cobalt.env:/app/.env" --entrypoint sh ghcr.io/wukko/cobalt:latest
-   ```
-
-   Inside the shell run:
-   ```bash
-   npm run setup
-   ```
-   
-   Answers for prompts:
-   - "What kind of server will this instance be?" → `api`
-   - "What's the domain this API instance will be running on?" → `localhost` (press Enter)
-
-3. Start the service:
 ```bash
 docker compose -f docker-compose.cobalt.yml up -d
 ```
+
+That's it! The API will be available at `http://localhost:9000`.
+
+If you need to customize the settings (e.g., change the port), edit the `cobalt.env` file directly.
 
 - Force audio (skip captions)
   - `python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --force-download`
