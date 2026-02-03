@@ -64,7 +64,23 @@ pip install -e .
 | `--parallel-calls` | Parallel API calls | 30 |
 | `--max-tokens` | Max **output** tokens for each chunk | 4096 |
 | `--verbose`, `-v` | Enable detailed progress output | False |
+| `--transcription` | Transcription method (`Cloud Whisper` or `Local Whisper`) | "Cloud Whisper" |
+| `--whisper-model` | Local Whisper model size (`tiny`, `base`, `small`, `medium`, `large`) | "tiny" |
 
+### Local Whisper GPU Support
+
+For GPU-accelerated local transcription, install PyTorch with CUDA support:
+
+```bash
+# Uninstall CPU-only version and install CUDA-enabled PyTorch
+pip uninstall torch torchvision torchaudio -y
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+```
+
+Verify GPU detection:
+```bash
+python -c "import torch; print('CUDA:', torch.cuda.is_available(), '| GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'None')"
+```
 
 ## CLI Examples
 

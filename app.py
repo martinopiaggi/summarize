@@ -148,6 +148,8 @@ def run_summarization(
     language: str,
     cobalt_base_url: str,
     source_type: str = "YouTube Video",
+    transcription_method: str = "Cloud Whisper",
+    whisper_model: str = "tiny",
 ) -> str:
     from summarizer.core import main
 
@@ -155,7 +157,8 @@ def run_summarization(
         "source_url_or_path": source,
         "type_of_source": source_type,
         "use_youtube_captions": not force_download and source_type == "YouTube Video",
-        "transcription_method": "Cloud Whisper",
+        "transcription_method": transcription_method,
+        "whisper_model": whisper_model,
         "language": language,
         "prompt_type": prompt_type,
         "chunk_size": chunk_size,
@@ -273,6 +276,18 @@ def main():
 
         with st.expander("ADVANCED"):
             force_download = st.checkbox("Force audio download", value=False)
+            transcription_method = st.selectbox(
+                "TRANSCRIPTION METHOD",
+                ["Cloud Whisper", "Local Whisper"],
+                index=0,
+                help="Cloud Whisper uses Groq API, Local Whisper requires openai-whisper package"
+            )
+            whisper_model = st.selectbox(
+                "WHISPER MODEL (LOCAL)",
+                ["tiny", "base", "small", "medium", "large"],
+                index=0,
+                help="Model size for local transcription. 'tiny' is fastest, 'large' is most accurate. Auto-uses GPU if available."
+            )
             cobalt_base_url = st.text_input(
                 "COBALT URL",
                 value=defaults.get("cobalt_base_url", "http://localhost:9000"),
@@ -346,6 +361,8 @@ def main():
                             language,
                             cobalt_base_url,
                             source_type,
+                            transcription_method,
+                            whisper_model,
                         )
                         add_to_history(
                             video_url, selected_provider, prompt_type, summary
@@ -381,6 +398,8 @@ def main():
                             language,
                             cobalt_base_url,
                             "Local File",
+                            transcription_method,
+                            whisper_model,
                         )
                         add_to_history(
                             uploaded.name, selected_provider, prompt_type, summary

@@ -77,7 +77,10 @@ def get_youtube_transcript(
 
 
 def transcribe_audio(
-    audio_path: str, method: str = "Cloud Whisper", verbose: bool = False
+    audio_path: str,
+    method: str = "Cloud Whisper",
+    verbose: bool = False,
+    whisper_model: str = "tiny",
 ) -> str:
     """
     Transcribe audio file using specified method.
@@ -86,6 +89,7 @@ def transcribe_audio(
         audio_path: Path to the audio file
         method: Transcription method ("Cloud Whisper" or "Local Whisper")
         verbose: Enable verbose output
+        whisper_model: Whisper model size for local transcription (tiny, base, small, medium, large)
 
     Returns:
         Transcription text with timestamps
@@ -93,7 +97,7 @@ def transcribe_audio(
     if method == "Cloud Whisper":
         return _transcribe_cloud_whisper(audio_path, verbose)
     elif method == "Local Whisper":
-        return _transcribe_local_whisper(audio_path, verbose)
+        return _transcribe_local_whisper(audio_path, verbose, whisper_model)
     else:
         raise TranscriptError(f"Unknown transcription method: {method}")
 
@@ -139,21 +143,45 @@ def _transcribe_cloud_whisper(audio_path: str, verbose: bool) -> str:
         raise TranscriptError(f"Cloud Whisper transcription failed: {str(e)}")
 
 
-def _transcribe_local_whisper(audio_path: str, verbose: bool) -> str:
-    """Transcribe using local Whisper model."""
+def _transcribe_local_whisper(
+    audio_path: str, verbose: bool, model_size: str = "tiny"
+) -> str:
+    """Transcribe using local Whisper model.
+    
+    Args:
+        audio_path: Path to audio file
+        verbose: Enable verbose output
+        model_size: Whisper model size (tiny, base, small, medium, large)
+    """
     try:
         import whisper
+        import torch
     except ImportError:
         raise TranscriptError(
             "Local Whisper requires 'openai-whisper' package: pip install openai-whisper"
         )
 
-    spinner = ProgressSpinner("Loading Whisper model", verbose)
+    # Auto-detect GPU
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if verbose:
+        if device == "cuda":
+            gpu_name = torch.cuda.get_device_name(0)
+            print_status(f"Using GPU: {gpu_name}", "INFO", verbose)
+        else:
+            print_status("No GPU detected, using CPU", "INFO", verbose)
+
+    # Validate model size
+    valid_models = ["tiny", "base", "small", "medium", "large"]
+    if model_size not in valid_models:
+        print_status(f"Invalid model '{model_size}', using 'tiny'", "WARNING", verbose)
+        model_size = "tiny"
+
+    spinner = ProgressSpinner(f"Loading Whisper {model_size} model", verbose)
     try:
         spinner.start()
-        model = whisper.load_model("base")
+        model = whisper.load_model(model_size, device=device)
         spinner.stop()
-        print_status("Whisper model loaded", "SUCCESS", verbose)
+        print_status(f"Whisper {model_size} model loaded on {device.upper()}", "SUCCESS", verbose)
     except Exception as e:
         spinner.stop()
         raise TranscriptError(f"Whisper model loading failed: {str(e)}")
@@ -190,6 +218,7 @@ def get_transcript(config: dict) -> str:
     source_type = config.get("type_of_source")
     source_path = config.get("source_url_or_path")
     transcription_method = config.get("transcription_method", "Cloud Whisper")
+    whisper_model = config.get("whisper_model", "tiny")
     verbose = config.get("verbose", False)
 
     if not source_type or not source_path:
@@ -207,7 +236,7 @@ def get_transcript(config: dict) -> str:
             verbose=verbose,
         )
         try:
-            transcript = transcribe_audio(audio_path, transcription_method, verbose)
+            transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
             return transcript
         finally:
             if os.path.exists(audio_path):
@@ -217,7 +246,7 @@ def get_transcript(config: dict) -> str:
         handler = get_handler(source_type, source_path)
         audio_path, should_delete = handler.get_processed_audio()
         try:
-            transcript = transcribe_audio(audio_path, transcription_method, verbose)
+            transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
             return transcript
         finally:
             if should_delete and os.path.exists(audio_path):
@@ -229,7 +258,7 @@ def get_transcript(config: dict) -> str:
             verbose=verbose,
         )
         try:
-            transcript = transcribe_audio(audio_path, transcription_method, verbose)
+            transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
             return transcript
         finally:
             if os.path.exists(audio_path):

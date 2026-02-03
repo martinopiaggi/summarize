@@ -32,6 +32,7 @@ class CobaltDownloader(BaseDownloader):
             response = requests.post(
                 f"{self.base_url}/api/json",
                 json={"url": url},
+                headers={"Accept": "application/json"},
                 timeout=60,
             )
             response.raise_for_status()

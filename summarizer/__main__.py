@@ -145,6 +145,12 @@ Examples:
         default="Cloud Whisper",
         help="Transcription method when forcing download",
     )
+    parser.add_argument(
+        "--whisper-model",
+        choices=["tiny", "base", "small", "medium", "large"],
+        default="tiny",
+        help="Whisper model size for local transcription (default: tiny for speed)",
+    )
 
     return parser.parse_args()
 
@@ -324,6 +330,7 @@ def cli():
         "max_output_tokens": args.max_tokens,
         "language": args.language,
         "transcription_method": args.transcription,
+        "whisper_model": args.whisper_model,
         "output_dir": args.output_dir,
         "cobalt_base_url": args.cobalt_url,
     }
@@ -376,6 +383,7 @@ def cli():
         "type_of_source": args.type,
         "use_youtube_captions": not smart_force_download,
         "transcription_method": merged.get("transcription_method"),
+        "whisper_model": merged.get("whisper_model", "tiny"),
         "language": merged.get("language"),
         "prompt_type": merged.get("prompt_type"),
         "chunk_size": merged.get("chunk_size"),
