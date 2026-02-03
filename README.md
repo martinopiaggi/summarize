@@ -2,7 +2,7 @@
 
 Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter, Reddit, Facebook, Google Drive, Dropbox, and local files.
 
-https://github.com/user-attachments/assets/4641743a-2d0e-4b54-9f82-8195431db3cb
+Requires an API key from any OpenAI-compatible LLM provider (OpenAI, Groq, Google AI, Deepseek, etc.).
 
 ## Requirements
 
@@ -15,8 +15,7 @@ https://github.com/user-attachments/assets/4641743a-2d0e-4b54-9f82-8195431db3cb
 | Interface | Command |
 |-----------|---------|
 | CLI | `python -m summarizer --source "URL" --base-url "..." --model "..."` |
-| Streamlit | `python -m streamlit run app.py` |
-| Colab | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb) |
+| Streamlit GUI | `python -m streamlit run app.py` |
 
 ## Installation
 
