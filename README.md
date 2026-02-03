@@ -1,155 +1,232 @@
 # Video Transcript Summarizer
 
-A tool to transcribe and summarize videos from various sources using AI. Supports YouTube, Google Drive, Dropbox, and local files.
-
-How to use it ?
-
-- **CLI** - Command line interface for batch processing and automation
-- **Google Colab** - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb) Interactive notebook with visual interface
-- **Streamlit** - Web-based GUI (`python -m streamlit run app.py`)
+Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter, Reddit, Facebook, Google Drive, Dropbox, and local files.
 
 https://github.com/user-attachments/assets/4641743a-2d0e-4b54-9f82-8195431db3cb
 
-## Features
+## Requirements
 
-- **Multiple Video Sources**:
-  - YouTube (with automatic caption support)
-  - Instagram, TikTok, Twitter, Reddit, Facebook (via optional Cobalt)
-  - Google Drive
-  - Dropbox
-  - Local files
+- Python 3.10+
+- API key for at least one LLM provider
+- Docker (only for non-YouTube platforms via Cobalt)
 
-- **Flexible API Support**:
-  - Works with any OpenAI-compatible API endpoint
-  - Configurable models and parameters
+## Interfaces
 
-- **Smart Processing**:
-  - YouTube videos use captions by default (faster & free)
-  - Falls back to audio download & transcription if needed
-  - Non-YouTube sources always use audio download
-  - Processes multiple videos in one command
+| Interface | Command |
+|-----------|---------|
+| CLI | `python -m summarizer --source "URL" --base-url "..." --model "..."` |
+| Streamlit | `python -m streamlit run app.py` |
+| Colab | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/martinopiaggi/summarize/blob/main/Summarize.ipynb) |
 
-- **Output Options**:
-  - Summaries are automatically saved to markdown files
-  - Each summary includes source URL and timestamp
-  - Customizable output directory
-  - Timestamped summaries
-
-## CLI Installation
+## Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/martinopiaggi/summarize.git
 cd summarize
-
-# Install the package
 pip install -e .
 ```
 
-## CLI Configuration Options
+## Configuration
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--source` | One or more video sources (URLs or filenames) | Required |
-| `--base-url` | API endpoint URL | Required |
-| `--model` | Model to use | Required |
-| `--api-key` | API key (or use .env) | Optional |
-| `--type` | Source type | "YouTube Video" |
-| `--force-download` | Skip captions, use audio | False |
-| `--output-dir` | Save directory | "summaries" |
-| `--no-save` | Don't save to files | False |
-| `--prompt-type` | Summary style | "Questions and answers" |
-| `--language` | Language code | "auto" |
-| `--chunk-size` | **Input** text chunk size | 10000 |
-| `--parallel-calls` | Parallel API calls | 30 |
-| `--max-tokens` | Max **output** tokens for each chunk | 4096 |
-| `--verbose`, `-v` | Enable detailed progress output | False |
-| `--transcription` | Transcription method (`Cloud Whisper` or `Local Whisper`) | "Cloud Whisper" |
-| `--whisper-model` | Local Whisper model size (`tiny`, `base`, `small`, `medium`, `large`) | "tiny" |
+Two configuration methods. Both optional. CLI flags override everything.
 
-### Local Whisper GPU Support
+### 1. YAML Configuration (`summarizer.yaml`)
 
-For GPU-accelerated local transcription, install PyTorch with CUDA support:
+Define providers and defaults:
 
-```bash
-# Uninstall CPU-only version and install CUDA-enabled PyTorch
-pip uninstall torch torchvision torchaudio -y
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+```yaml
+default_provider: gemini
+
+providers:
+  gemini:
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai
+    model: gemini-2.5-flash-lite
+    chunk-size: 128000
+
+  groq:
+    base_url: https://api.groq.com/openai/v1
+    model: openai/gpt-oss-20b
+
+  deepseek:
+    base_url: https://api.deepseek.com/v1
+    model: deepseek-chat
+
+defaults:
+  prompt-type: Questions and answers
+  chunk-size: 10000
+  parallel-calls: 30
+  max-tokens: 4096
+  output-dir: summaries
 ```
 
-Verify GPU detection:
-```bash
-python -c "import torch; print('CUDA:', torch.cuda.is_available(), '| GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'None')"
+Provider-specific `chunk-size` overrides global default.
+
+### 2. Environment Variables (`.env`)
+
+API keys auto-matched by URL keyword:
+
+```ini
+groq = gsk_YOUR_KEY
+openai = sk-proj-YOUR_KEY
+perplexity = pplx-YOUR_KEY
+generativelanguage = YOUR_GOOGLE_KEY
+deepseek = YOUR_DEEPSEEK_KEY
+hyperbolic = YOUR_HYPERBOLIC_KEY
 ```
 
-## CLI Examples
+The script matches `generativelanguage` in `https://generativelanguage.googleapis.com/...` and uses that key.
 
-- Basic (YouTube captions)
-  - `python -m summarizer --source "https://www.youtube.com/watch?v=VIDEO_ID" --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite"`
+Override with `--api-key` flag.
 
-- Multiple videos
-  - `python -m summarizer --source "https://youtube.com/watch?v=ID1" "https://youtube.com/watch?v=ID2" --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-20b"`
+## CLI Reference
 
-- Non-YouTube platforms (via Cobalt)
-  - `docker compose -f docker-compose.cobalt.yml up -d`
-  - `python -m summarizer --type "Video URL" --source "https://www.instagram.com/reel/..." --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-20b"`
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--source` | Video URLs or file paths (multiple allowed) | Required |
+| `--base-url` | API endpoint | Required (unless in YAML) |
+| `--model` | Model identifier | Required (unless in YAML) |
+| `--api-key` | API key (overrides .env) | - |
+| `--type` | Source type: `YouTube Video`, `Video URL`, `Local File`, `Google Drive`, `Dropbox` | `YouTube Video` |
+| `--force-download` | Skip captions, download audio | `False` |
+| `--output-dir` | Output directory | `summaries` |
+| `--no-save` | Print only, no file output | `False` |
+| `--prompt-type` | Summary style (see below) | `Questions and answers` |
+| `--language` | Language code | `auto` |
+| `--chunk-size` | Input text chunk size (chars) | `10000` |
+| `--parallel-calls` | Concurrent API requests | `30` |
+| `--max-tokens` | Max output tokens per chunk | `4096` |
+| `--transcription` | `Cloud Whisper` or `Local Whisper` | `Cloud Whisper` |
+| `--whisper-model` | Local Whisper size: `tiny`, `base`, `small`, `medium`, `large` | `tiny` |
+| `--verbose`, `-v` | Detailed output | `False` |
 
-## Cobalt Setup
+## Summary Styles
 
-We have pre-configured `cobalt.env` with default settings so you don't need to run any complex setup scripts.
+Defined in `summarizer/prompts.json`. Use exact name with `--prompt-type`.
 
-Simply start the service:
+| Style | Purpose |
+|-------|---------|
+| `Questions and answers` | Q&A extraction from content |
+| `Summarization` | Standard summary with title |
+| `Distill Wisdom` | Ideas, quotes, references extraction |
+| `DNA Extractor` | Core truth in 200 words max |
+| `Fact Checker` | Claim verification with sources |
+| `Tutorial` | Step-by-step instructions |
+| `Research` | Deep analysis with context |
+| `Reflections` | Philosophical extensions |
+| `Mermaid Diagram` | Visual concept map in Mermaid.js |
+| `Essay Writing in Paul Graham Style` | 250-word essay |
+| `Only grammar correction with highlights` | Text cleanup |
 
+Add custom styles by editing `prompts.json`. Use `{text}` placeholder for transcript injection.
+
+## Examples
+
+YouTube (uses captions by default):
+```bash
+python -m summarizer \
+  --source "https://www.youtube.com/watch?v=VIDEO_ID" \
+  --base-url "https://generativelanguage.googleapis.com/v1beta/openai" \
+  --model "gemini-2.5-flash-lite"
+```
+
+Multiple videos:
+```bash
+python -m summarizer \
+  --source "https://youtube.com/watch?v=ID1" "https://youtube.com/watch?v=ID2" \
+  --base-url "https://api.groq.com/openai/v1" \
+  --model "openai/gpt-oss-20b"
+```
+
+Force audio transcription (skip captions):
+```bash
+python -m summarizer \
+  --source "https://youtube.com/watch?v=VIDEO_ID" \
+  --base-url "https://api.deepseek.com/v1" \
+  --model "deepseek-chat" \
+  --force-download
+```
+
+Local files:
+```bash
+python -m summarizer \
+  --type "Local File" \
+  --source "./lecture.mp4" "./lecture2.mp4" \
+  --base-url "https://api.deepseek.com/v1" \
+  --model "deepseek-chat"
+```
+
+Long videos (increase chunk size):
+```bash
+python -m summarizer \
+  --source "https://www.youtube.com/watch?v=VIDEO_ID" \
+  --base-url "https://generativelanguage.googleapis.com/v1beta/openai" \
+  --model "gemini-2.5-flash-lite" \
+  --chunk-size 28000
+```
+
+Specific style:
+```bash
+python -m summarizer \
+  --source "https://youtube.com/watch?v=VIDEO_ID" \
+  --base-url "https://api.deepseek.com/v1" \
+  --model "deepseek-chat" \
+  --prompt-type "Distill Wisdom"
+```
+
+## Non-YouTube Platforms (Cobalt)
+
+Instagram, TikTok, Twitter, Reddit, Facebook require Cobalt for video download.
+
+Start Cobalt:
 ```bash
 docker compose -f docker-compose.cobalt.yml up -d
 ```
 
-That's it! The API will be available at `http://localhost:9000`.
+API available at `http://localhost:9000`. Edit `cobalt.env` to customize.
 
-If you need to customize the settings (e.g., change the port), edit the `cobalt.env` file directly.
-
-- Force audio (skip captions)
-  - `python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --force-download`
-
-- Choose style
-  - `python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --prompt-type "Distill Wisdom"`
-
-- Verbose logs
-  - `python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --verbose`
-
-- Providers quick picks
-  - OpenAI: `python -m summarizer --base-url "https://api.openai.com/v1" --model "gpt-5-nano-2025-08-07" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
-  - Groq: `python -m summarizer --base-url "https://api.groq.com/openai/v1" --model "openai/gpt-oss-20b" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
-  - Deepseek: `python -m summarizer --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
-  - Hyperbolic (Llama): `python -m summarizer --base-url "https://api.hyperbolic.xyz/v1" --model "meta-llama/Llama-3.3-70B-Instruct" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
-
-- Local files
-  - `python -m summarizer --type "Local File" --base-url "https://api.deepseek.com/v1" --model "deepseek-chat" --source "./lecture.mp4" "./lecture2.mp4" "./lecture3.mp4"`
-
-- Long videos (bigger chunks)
-  - `python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite" --chunk-size 28000 --source "https://www.youtube.com/watch?v=VIDEO_ID"`
-
-- Style + provider combo
-  - Gemini + Distill: `python -m summarizer --base-url "https://generativelanguage.googleapis.com/v1beta/openai" --model "gemini-2.5-flash-lite" --prompt-type "Distill Wisdom" --source "https://www.youtube.com/watch?v=VIDEO_ID"`
-  - Perplexity + Fact Check: `python -m summarizer --base-url "https://api.perplexity.ai" --model "sonar-pro" --prompt-type "Fact Checker" --chunk-size 100000 --source "https://www.youtube.com/watch?v=VIDEO_ID"`
-
-## Summary Styles
-Built-in templates live in [`summarizer/prompts.json`](https://github.com/martinopiaggi/summarize/blob/main/summarizer/prompts.json). Select with `--prompt-type "<Name>"`.
-Tip: Names must match exactly as in prompts.json. Easily extend or add styles by editing that file, then pass the new name via `--prompt-type`.
-
-## Environment Setup
-
-You can set default API keys in a `.env` file:
-```env
-api_key=your_default_api_key
+Usage:
+```bash
+python -m summarizer \
+  --type "Video URL" \
+  --source "https://www.instagram.com/reel/..." \
+  --base-url "https://api.groq.com/openai/v1" \
+  --model "openai/gpt-oss-20b"
 ```
-This is an example of (**randomized api keys here**) of my `.env` : 
 
-```ini
-groq = gsk_YOUR_GROQ_API_KEY_HERE
-openai = sk-proj-YOUR_OPENAI_API_KEY_HERE
-perplexity = pplx-YOUR_PERPLEXITY_API_KEY_HERE
-generativelanguage = YOUR_GOOGLE_AI_API_KEY_HERE
+## Local Whisper
+
+For local transcription without cloud API.
+
+Install with GPU support:
+```bash
+pip uninstall torch torchvision torchaudio -y
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 ```
-Keep in mind that you can always add new services and the script will automatically pick the correct key (matching based on keywords in the API URL).
-Or provide them directly via --api-key parameter.
+
+Verify GPU:
+```bash
+python -c "import torch; print('CUDA:', torch.cuda.is_available(), '| GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'None')"
+```
+
+Usage:
+```bash
+python -m summarizer \
+  --source "https://youtube.com/watch?v=VIDEO_ID" \
+  --base-url "https://api.openai.com/v1" \
+  --model "gpt-4o" \
+  --force-download \
+  --transcription "Local Whisper" \
+  --whisper-model "small"
+```
+
+Model sizes: `tiny` (fastest) < `base` < `small` < `medium` < `large` (most accurate).
+
+GPU auto-detected. Falls back to CPU if unavailable.
+
+## Processing Logic
+
+1. YouTube with captions available: Uses captions (fast, free)
+2. YouTube without captions or `--force-download`: Downloads audio, transcribes
+3. Non-YouTube sources: Always downloads audio, transcribes
+4. Transcript split into chunks, processed in parallel
+5. Results merged into final summary
