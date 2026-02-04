@@ -86,7 +86,6 @@ Examples:
     # Output configuration
     parser.add_argument(
         "--output-dir",
-        default="summaries",
         help="Directory to save summaries (default: summaries)",
     )
     parser.add_argument(
@@ -123,32 +122,29 @@ Examples:
             "Fact Checker",
             "Essay Writing in Paul Graham Style",
         ],
-        default="Questions and answers",
+        default=None,
         help="Summary style",
     )
     parser.add_argument(
         "--chunk-size",
         type=int,
-        default=10000,
         help="Size of text chunks for processing",
     )
     parser.add_argument(
-        "--parallel-calls", type=int, default=30, help="Number of parallel API calls"
+        "--parallel-calls", type=int, help="Number of parallel API calls"
     )
     parser.add_argument(
-        "--max-tokens", type=int, default=4096, help="Maximum tokens in model output"
+        "--max-tokens", type=int, help="Maximum tokens in model output"
     )
-    parser.add_argument("--language", default="auto", help="Language code (e.g., 'en')")
+    parser.add_argument("--language", help="Language code (e.g., 'en')")
     parser.add_argument(
         "--transcription",
         choices=["Cloud Whisper", "Local Whisper"],
-        default="Cloud Whisper",
         help="Transcription method when forcing download",
     )
     parser.add_argument(
         "--whisper-model",
         choices=["tiny", "base", "small", "medium", "large"],
-        default="tiny",
         help="Whisper model size for local transcription (default: tiny for speed)",
     )
 

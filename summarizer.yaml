@@ -1,10 +1,14 @@
-default_provider: gemini
+default_provider: hyperbolic
 
 providers:
+
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    model: mistralai/mistral-7b-instruct
+
   gemini:
     base_url: https://generativelanguage.googleapis.com/v1beta/openai
     model: gemini-2.5-flash-lite
-    chunk-size: 128000
 
   groq:
     base_url: https://api.groq.com/openai/v1
@@ -20,7 +24,7 @@ providers:
 
   hyperbolic:
     base_url: https://api.hyperbolic.xyz/v1
-    model: meta-llama/Llama-3.3-70B-Instruct
+    model: openai/gpt-oss-20b
 
   perplexity:
     base_url: https://api.perplexity.ai
@@ -28,8 +32,8 @@ providers:
     chunk-size: 100000
 
 defaults:
-  prompt-type: Questions and answers
-  chunk-size: 10000
+  prompt-type: Distill Wisdom
+  chunk-size: 128000
   parallel-calls: 30
   max-tokens: 4096
   output-dir: summaries

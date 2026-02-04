@@ -61,6 +61,10 @@ providers:
     base_url: https://api.deepseek.com/v1
     model: deepseek-chat
 
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-2.0-flash-001
+
 defaults:
   prompt-type: Questions and answers
   chunk-size: 10000
@@ -82,6 +86,7 @@ perplexity = pplx-YOUR_KEY
 generativelanguage = YOUR_GOOGLE_KEY
 deepseek = YOUR_DEEPSEEK_KEY
 hyperbolic = YOUR_HYPERBOLIC_KEY
+openrouter = YOUR_OPENROUTER_KEY
 ```
 
 The script automatically matches API keys by searching for the provider keyword in the base URL. For example, `generativelanguage` matches `https://generativelanguage.googleapis.com/...`.

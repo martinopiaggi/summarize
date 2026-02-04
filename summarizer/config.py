@@ -39,6 +39,7 @@ API_PROVIDERS = {
     "replicate": "replicate",
     "huggingface": "huggingface",
     "azure": "azure",
+    "openrouter.ai": "openrouter",
 }
 
 
