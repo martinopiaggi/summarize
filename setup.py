@@ -14,7 +14,8 @@ core_requirements = [
     "google-auth-httplib2>=0.1.0",
     "google-auth-oauthlib>=0.4.1",
     "dropbox>=11.36.2",
-    "ffmpeg-python>=0.2.0"
+    "ffmpeg-python>=0.2.0",
+    "pyyaml>=6.0"
 ]
 
 extras_require = {

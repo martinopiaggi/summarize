@@ -1,0 +1,9 @@
+services:
+  cobalt:
+    image: ghcr.io/wukko/cobalt:latest
+    container_name: cobalt
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./cobalt.env:/app/.env
+    restart: unless-stopped

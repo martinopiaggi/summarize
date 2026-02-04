@@ -1,0 +1,39 @@
+default_provider: hyperbolic
+
+providers:
+
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    model: mistralai/mistral-7b-instruct
+
+  gemini:
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai
+    model: gemini-2.5-flash-lite
+
+  groq:
+    base_url: https://api.groq.com/openai/v1
+    model: openai/gpt-oss-20b
+
+  deepseek:
+    base_url: https://api.deepseek.com/v1
+    model: deepseek-chat
+
+  openai:
+    base_url: https://api.openai.com/v1
+    model: gpt-5-nano-2025-08-07
+
+  hyperbolic:
+    base_url: https://api.hyperbolic.xyz/v1
+    model: openai/gpt-oss-20b
+
+  perplexity:
+    base_url: https://api.perplexity.ai
+    model: sonar-pro
+    chunk-size: 100000
+
+defaults:
+  prompt-type: Distill Wisdom
+  chunk-size: 128000
+  parallel-calls: 30
+  max-tokens: 4096
+  output-dir: summaries
