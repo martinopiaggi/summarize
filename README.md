@@ -87,6 +87,10 @@ generativelanguage = YOUR_GOOGLE_KEY
 deepseek = YOUR_DEEPSEEK_KEY
 hyperbolic = YOUR_HYPERBOLIC_KEY
 openrouter = YOUR_OPENROUTER_KEY
+
+# Optional: YouTube transcript proxy (useful to deploy in vps cloud providers to avoid IP bans)
+WEBSHARE_PROXY_USERNAME = your_username
+WEBSHARE_PROXY_PASSWORD = your_password
 ```
 
 The script automatically matches API keys by searching for the provider keyword in the base URL. For example, `generativelanguage` matches `https://generativelanguage.googleapis.com/...`.

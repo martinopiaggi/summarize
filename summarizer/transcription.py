@@ -39,6 +39,10 @@ def get_youtube_transcript(
     """
     Get transcript from YouTube captions.
 
+    Uses Webshare rotating residential proxies if WEBSHARE_PROXY_USERNAME and
+    WEBSHARE_PROXY_PASSWORD environment variables are set. This helps avoid
+    IP bans when running from cloud providers.
+
     Args:
         video_id: YouTube video ID
         language: Language code for captions
@@ -59,7 +63,25 @@ def get_youtube_transcript(
         if language == "auto":
             language = "en"
 
-        ytt_api = YouTubeTranscriptApi()
+        # Check for Webshare proxy credentials
+        proxy_username = os.getenv("WEBSHARE_PROXY_USERNAME")
+        proxy_password = os.getenv("WEBSHARE_PROXY_PASSWORD")
+
+        if proxy_username and proxy_password:
+            try:
+                from youtube_transcript_api.proxies import WebshareProxyConfig
+                proxy_config = WebshareProxyConfig(
+                    proxy_username=proxy_username,
+                    proxy_password=proxy_password,
+                )
+                ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config)
+                print_status("Using Webshare proxy for YouTube transcript", "INFO", verbose)
+            except ImportError:
+                # Older version of youtube-transcript-api without proxy support
+                ytt_api = YouTubeTranscriptApi()
+        else:
+            ytt_api = YouTubeTranscriptApi()
+
         transcript = ytt_api.fetch(video_id, languages=[language]).to_raw_data()
 
         spinner.stop()

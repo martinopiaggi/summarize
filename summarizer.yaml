@@ -4,8 +4,7 @@ providers:
 
   openrouter:
     base_url: https://openrouter.ai/api/v1
-    model: mistralai/mistral-7b-instruct
-
+    model: openai/gpt-oss-120b
   gemini:
     base_url: https://generativelanguage.googleapis.com/v1beta/openai
     model: gemini-2.5-flash-lite
