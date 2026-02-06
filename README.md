@@ -7,54 +7,54 @@ Works with any OpenAI-compatible LLM provider (even locally hosted).
 ## How It Works
 
 ```
-              ┌──────────────────┐
-              │  Video URL/Path  │
-              └─────────┬────────┘
-                        │
-                        ▼
-              ┌─────────┴────────┐
-              │   Source Type?   │
-              └─────────┬────────┘
-                        │
-      ┌─────────────────┼────────────┐
-      │                 │            │
-      │             X.com/IG     Local File     
-   YouTube           TikTok     Google Drive      
-      │                etc.       Dropbox           
-      │                 │            │
-      ▼             ┌───┴────┐       │
-┌──────┴─────────┐  │ Cobalt │       │
-│Captions Exist? │  └───┬────┘       │
-└────┬───┬───────┘      │            │
-    Yes  No             │            │
-     │   └──────────────┴────────┐───┘
-     │                           │    
-     │                           ▼
-     │                  ┌────────┴──────┐
-     │                  │     Whisper   │
-     │                  │    endpoint?  │
-     │                  └────────┬──────┘
-     │                           │
-     │               ┌───────────┴────────┐
-     │               │                    │
-     │          Cloud Whisper        Local Whisper
-     │               │                    │
-     │               └─────────┬──────────┘
-     │                         │
-     └─────────────────────┬───┘
-                           │
-                       Transcript
-                           │
-                           ▼
-                  ┌────────┴───────┐
-summarizer.yaml-> │  Prompt + LLM  │ 
-prompts.json   -> │  Merge         │ 
-.env           -> └────────┬───────┘
-                           │
-                           ▼
-                     ┌─────┴──────┐
-                     │   Output   │
-                     └────────────┘
+               +--------------------+
+               |  Video URL/Path    |
+               +---------+----------+
+                         |
+                         v
+               +---------+----------+
+               |    Source Type?     |
+               +---------+----------+
+                         |
+       +-----------------+-------------+
+       |                 |             |
+       |             X.com/IG     Local File
+    YouTube           TikTok     Google Drive
+       |                etc.       Dropbox
+       |                 |             |
+       v            +----+-----+       |
++------+----------+ | Cobalt   |       |
+| Captions Exist? | +----+-----+       |
++----+----+-------+      |             |
+    Yes   No             |             |
+     |    +--------------+--------+----+
+     |                            |
+     |                            v
+     |                   +--------+--------+
+     |                   |     Whisper     |
+     |                   |    endpoint?    |
+     |                   +--------+--------+
+     |                            |
+     |                +-----------+-----------+
+     |                |                       |
+     |           Cloud Whisper          Local Whisper
+     |                |                       |
+     |                +----------+------------+
+     |                           |
+     +---------------------------+
+                                 |
+                            Transcript
+                                 |
+                                 v
+                    +------------+----------+
+ summarizer.yaml -> |    Prompt + LLM       |
+ prompts.json    -> |    Merge              |
+ .env            -> +------------+----------+
+                                 |
+                                 v
+                          +------+-------+
+                          |    Output    |
+                          +--------------+
 ```
 
 1. **Video URL/Path** enters the pipeline
