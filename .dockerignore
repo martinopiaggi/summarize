@@ -1,0 +1,47 @@
+# Environment and secrets
+.env
+cobalt.env
+
+# Git
+.git
+.gitignore
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Build artifacts
+build/
+dist/
+sdist/
+wheels/
+
+# Media files (should not be baked into the image)
+*.mp3
+*.mp4
+*.wav
+*.m4a
+*.webm
+
+# Output
+summaries/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker files (avoid recursive builds)
+Dockerfile
+docker-compose*.yml

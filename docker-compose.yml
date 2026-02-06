@@ -1,0 +1,31 @@
+services:
+  summarizer:
+    build: .
+    container_name: summarizer
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./summaries:/app/summaries
+      - ./.env:/app/.env:ro
+      - ./summarizer.yaml:/app/summarizer.yaml:ro
+    environment:
+      - COBALT_BASE_URL=http://cobalt:9000
+    depends_on:
+      cobalt:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+  cobalt:
+    image: ghcr.io/wukko/cobalt:latest
+    container_name: cobalt
+    ports:
+      - "9000:9000"
+    environment:
+      - API_URL=http://cobalt:9000/
+    restart: unless-stopped

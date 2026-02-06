@@ -4,6 +4,6 @@ services:
     container_name: cobalt
     ports:
       - "9000:9000"
-    volumes:
-      - ./cobalt.env:/app/.env
+    environment:
+      - API_URL=http://localhost:9000/
     restart: unless-stopped

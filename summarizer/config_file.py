@@ -118,7 +118,7 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "language": "auto",
         "transcription_method": "Cloud Whisper",
         "output_dir": "summaries",
-        "cobalt_base_url": "http://localhost:9000",
+        "cobalt_base_url": os.getenv("COBALT_BASE_URL", "http://localhost:9000"),
     }
 
     # Apply file config defaults

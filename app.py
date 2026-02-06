@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 from datetime import datetime
 from summarizer.downloaders import is_youtube_url
+from summarizer.prompts import get_available_prompts
 
 CUSTOM_CSS = """
 <style>
@@ -72,20 +73,6 @@ CUSTOM_CSS = """
 </style>
 """
 
-PROMPT_TYPES = [
-    "Questions and answers",
-    "Summarization",
-    "Distill Wisdom",
-    "Only grammar correction with highlights",
-    "DNA Extractor",
-    "Research",
-    "Tutorial",
-    "Reflections",
-    "Fact Checker",
-    "Essay Writing in Paul Graham Style",
-    "Mermaid Diagram",
-]
-
 LANGUAGES = [
     ("auto", "Auto-detect"),
     ("en", "English"),
@@ -102,7 +89,9 @@ LANGUAGES = [
 CONFIG_PATH = Path.cwd() / "summarizer.yaml"
 
 
-def load_providers():
+def load_config():
+    """Load config from YAML. Returns (providers, default_provider, defaults) where
+    defaults is a normalized dict with snake_case keys."""
     config_paths = [CONFIG_PATH, Path.home() / ".summarizer.yaml"]
     for path in config_paths:
         if path.exists():
@@ -125,8 +114,26 @@ def load_providers():
             }
         },
         "gemini",
-        {"cobalt_base_url": "http://localhost:9000"},
+        {},
     )
+
+
+def get_cobalt_url():
+    """Resolve Cobalt URL. Environment variable wins, then YAML, then default."""
+    env_url = os.environ.get("COBALT_BASE_URL")
+    if env_url:
+        return env_url
+    # Try reading from YAML
+    config_paths = [CONFIG_PATH, Path.home() / ".summarizer.yaml"]
+    for path in config_paths:
+        if path.exists():
+            with open(path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f) or {}
+                defaults = config.get("defaults", {})
+                url = defaults.get("cobalt-base-url") or defaults.get("cobalt_base_url")
+                if url:
+                    return url
+    return "http://localhost:9000"
 
 
 def load_config_raw():
@@ -146,7 +153,6 @@ def run_summarization(
     chunk_size: int,
     force_download: bool,
     language: str,
-    cobalt_base_url: str,
     source_type: str = "YouTube Video",
     transcription_method: str = "Cloud Whisper",
     whisper_model: str = "tiny",
@@ -164,7 +170,7 @@ def run_summarization(
         "chunk_size": chunk_size,
         "parallel_api_calls": 30,
         "max_output_tokens": 4096,
-        "cobalt_base_url": cobalt_base_url,
+        "cobalt_base_url": get_cobalt_url(),
         "base_url": provider_config.get("base_url"),
         "model": provider_config.get("model"),
         "verbose": False,
@@ -199,7 +205,6 @@ def copy_to_clipboard(text: str):
     """Render a button that copies text to clipboard using JavaScript."""
     import base64
 
-    # Encode text to base64 to avoid JS escaping issues
     b64_text = base64.b64encode(text.encode()).decode()
 
     html = f'''
@@ -236,13 +241,22 @@ def main():
     init_session_state()
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-    providers, default_provider, defaults = load_providers()
+    # Load config from YAML -- this is re-read every run so EDIT CONFIG changes apply immediately
+    providers, default_provider, defaults = load_config()
     provider_names = list(providers.keys())
+
+    # Get prompt types from prompts.json (single source of truth)
+    prompt_types = get_available_prompts()
+
+    # Resolve defaults from YAML (snake_case keys)
+    default_prompt = defaults.get("prompt_type", "Questions and answers")
+    default_chunk_size = defaults.get("chunk_size", 10000)
 
     with st.sidebar:
         st.markdown("### CONFIG")
         st.divider()
 
+        # -- Provider --
         default_idx = (
             provider_names.index(default_provider)
             if default_provider in provider_names
@@ -250,19 +264,23 @@ def main():
         )
         selected_provider = st.selectbox("PROVIDER", provider_names, index=default_idx)
         provider_config = providers[selected_provider] if selected_provider else {}
-        st.caption(f"model: {provider_config.get('model', 'n/a')}")
+
+        # Show model and provider-level chunk-size if set
+        model_label = provider_config.get("model", "n/a")
+        st.caption(f"model: {model_label}")
+
+        # Use provider-level chunk-size if defined, else global default
+        effective_chunk_size = provider_config.get("chunk-size", default_chunk_size)
 
         st.divider()
 
-        st.markdown("### PLATFORMS")
-        st.caption("YouTube: always available")
-        st.caption("Instagram/TikTok/Twitter/Reddit: requires Cobalt")
-        st.code("docker compose -f docker-compose.cobalt.yml up -d")
+        # -- Style --
+        prompt_idx = 0
+        if default_prompt in prompt_types:
+            prompt_idx = prompt_types.index(default_prompt)
+        prompt_type = st.selectbox("STYLE", prompt_types, index=prompt_idx)
 
-        st.divider()
-
-        prompt_type = st.selectbox("STYLE", PROMPT_TYPES, index=0)
-
+        # -- Language --
         language = st.selectbox(
             "LANGUAGE",
             options=[code for code, name in LANGUAGES],
@@ -270,30 +288,41 @@ def main():
             index=0,
         )
 
-        chunk_size = st.slider(
-            "CHUNK SIZE", 5000, 50000, provider_config.get("chunk-size", 10000), 1000
+        # -- Chunk size: number input, no arbitrary cap --
+        chunk_size = st.number_input(
+            "CHUNK SIZE",
+            min_value=500,
+            max_value=1000000,
+            value=int(effective_chunk_size),
+            step=1000,
+            help="Characters per chunk. Increase for models with large context windows.",
         )
 
-        with st.expander("ADVANCED"):
-            force_download = st.checkbox("Force audio download", value=False)
+        st.divider()
+
+        # -- Settings (less common options) --
+        with st.expander("SETTINGS"):
+            force_download = st.checkbox(
+                "Force audio download",
+                value=False,
+                help="Skip captions and download audio for transcription instead.",
+            )
             transcription_method = st.selectbox(
-                "TRANSCRIPTION METHOD",
+                "TRANSCRIPTION",
                 ["Cloud Whisper", "Local Whisper"],
                 index=0,
-                help="Cloud Whisper uses Groq API, Local Whisper requires openai-whisper package"
+                help="Cloud Whisper uses Groq API (free). Local Whisper runs on your machine.",
             )
             whisper_model = st.selectbox(
-                "WHISPER MODEL (LOCAL)",
+                "WHISPER MODEL",
                 ["tiny", "base", "small", "medium", "large"],
                 index=0,
-                help="Model size for local transcription. 'tiny' is fastest, 'large' is most accurate. Auto-uses GPU if available."
-            )
-            cobalt_base_url = st.text_input(
-                "COBALT URL",
-                value=defaults.get("cobalt_base_url", "http://localhost:9000"),
+                help="Only used with Local Whisper. tiny=fastest, large=most accurate.",
             )
 
+        # -- YAML editor --
         with st.expander("EDIT CONFIG"):
+            st.caption("Edit summarizer.yaml. Save to update all defaults above.")
             yaml_content = load_config_raw()
             edited_yaml = st.text_area(
                 "YAML", yaml_content, height=300, label_visibility="collapsed"
@@ -312,6 +341,7 @@ def main():
                 if st.button("RELOAD", use_container_width=True):
                     st.rerun()
 
+        # -- History --
         if st.session_state.history:
             st.divider()
             st.markdown("### HISTORY")
@@ -324,6 +354,7 @@ def main():
                     st.session_state.show_history_item = i
                     st.session_state.current_summary = None
 
+    # -- Main area --
     st.markdown('<h1 class="main-header">SUMMARIZE</h1>', unsafe_allow_html=True)
 
     tab_url, tab_file = st.tabs(["URL", "FILE"])
@@ -359,7 +390,6 @@ def main():
                             chunk_size,
                             force_download,
                             language,
-                            cobalt_base_url,
                             source_type,
                             transcription_method,
                             whisper_model,
@@ -396,7 +426,6 @@ def main():
                             chunk_size,
                             True,
                             language,
-                            cobalt_base_url,
                             "Local File",
                             transcription_method,
                             whisper_model,

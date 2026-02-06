@@ -13,7 +13,7 @@ class DownloadManager:
 
     def __init__(self, cobalt_base_url: Optional[str] = None):
         self.cobalt_base_url = (
-            cobalt_base_url or os.getenv("COBALT_BASE_URL") or "http://localhost:9000"
+            os.getenv("COBALT_BASE_URL") or cobalt_base_url or "http://localhost:9000"
         )
         self.downloaders = [
             YouTubeDownloader(),

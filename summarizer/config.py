@@ -19,7 +19,7 @@ DEFAULT_CONFIG = {
     "chunk_size": 10000,
     "parallel_api_calls": 30,
     "max_output_tokens": 4096,
-    "cobalt_base_url": "http://localhost:9000",
+    "cobalt_base_url": os.getenv("COBALT_BASE_URL", "http://localhost:9000"),
 }
 
 # API provider patterns - extensible mapping of URL patterns to env var names
