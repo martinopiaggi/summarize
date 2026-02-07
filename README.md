@@ -4,7 +4,14 @@ Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter, Reddit
 
 Works with any OpenAI-compatible LLM provider (even locally hosted).
 
-**For AI agents:** See [`.agent/skills/summarize/SKILL.md`](./.agent/skills/summarize/SKILL.md) for the complete skill documentation with step-by-step usage instructions.
+## Interfaces
+
+| Interface | Command |
+|-----------|---------|
+| CLI | `python -m summarizer --source <source>` |
+| Streamlit GUI | `python -m streamlit run app.py` |
+| SKILL for AI agents | See [`.agent/skills/summarize/SKILL.md`](./.agent/skills/summarize/SKILL.md) |
+
 
 ## How It Works
 
