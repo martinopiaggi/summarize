@@ -108,20 +108,17 @@ Examples:
     )
 
     # Processing settings
+    # Dynamically load prompt types from prompts.json
+    import json, os
+    _prompts_path = os.path.join(os.path.dirname(__file__), "prompts.json")
+    try:
+        with open(_prompts_path, "r", encoding="utf-8") as _f:
+            _prompt_choices = list(json.load(_f).keys())
+    except Exception:
+        _prompt_choices = []
     parser.add_argument(
         "--prompt-type",
-        choices=[
-            "Summarization",
-            "Only grammar correction with highlights",
-            "Distill Wisdom",
-            "Questions and answers",
-            "DNA Extractor",
-            "Research",
-            "Tutorial",
-            "Reflections",
-            "Fact Checker",
-            "Essay Writing in Paul Graham Style",
-        ],
+        choices=_prompt_choices,
         default=None,
         help="Summary style",
     )
