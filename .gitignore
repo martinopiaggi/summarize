@@ -45,4 +45,5 @@ temp/
 *.md
 !README.md
 !CONTRIBUTING.md
+!SKILL.md
 cobalt.env

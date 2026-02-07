@@ -4,6 +4,8 @@ Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter, Reddit
 
 Works with any OpenAI-compatible LLM provider (even locally hosted).
 
+**For AI agents:** See [`.agent/skills/summarize/SKILL.md`](./.agent/skills/summarize/SKILL.md) for the complete skill documentation with step-by-step usage instructions.
+
 ## How It Works
 
 ```
@@ -118,16 +120,40 @@ defaults:
 ### API Keys ([`.env`](./.env))
 
 ```ini
+# Required for Cloud Whisper transcription (free tier available)
 groq = gsk_YOUR_KEY
+
+# LLM providers (choose one or more)
 openai = sk-proj-YOUR_KEY
 generativelanguage = YOUR_GOOGLE_KEY
 deepseek = YOUR_DEEPSEEK_KEY
 openrouter = YOUR_OPENROUTER_KEY
+perplexity = YOUR_PERPLEXITY_KEY
+hyperbolic = YOUR_HYPERBOLIC_KEY
+
+# Optional: Webshare proxy for YouTube transcript fetching
+# (helps avoid IP bans when running from cloud/VPS)
+WEBSHARE_PROXY_USERNAME = YOUR_WEBSHARE_USERNAME
+WEBSHARE_PROXY_PASSWORD = YOUR_WEBSHARE_PASSWORD
 ```
 
 If you pass endpoint url with `--base-url` flag in CLI, the api key selected from `.env` is auto-matched by URL keyword: for example, `https://generativelanguage.googleapis.com/...` matches `generativelanguage`.
 
 ## Usage
+
+### Quick Start
+
+**Step 1 - Run the CLI:**
+
+```bash
+python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
+```
+
+**Step 2 - Read the output:**
+
+The summary is saved to `summaries/watch_YYYYMMDD_HHMMSS.md`. The CLI prints the exact filename.
+
+That's it!
 
 ### Streamlit GUI
 
@@ -135,9 +161,9 @@ If you pass endpoint url with `--base-url` flag in CLI, the api key selected fro
 python -m streamlit run app.py
 ```
 
-Visit port 8501 .
+Visit port 8501.
 
-### CLI
+### CLI Examples
 
 With a configured [`summarizer.yaml`](./summarizer.yaml), the CLI is simple:
 
@@ -148,6 +174,25 @@ python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
 # Specify a provider
 python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --provider groq
 
+# Fact-check claims with Perplexity (use Summarize skill for AI agents)
+python -m summarizer \
+  --source "https://youtube.com/watch?v=VIDEO_ID" \
+  --base-url "https://api.perplexity.ai" \
+  --model "sonar-pro" \
+  --prompt-type "Fact Checker"
+
+# Extract key insights
+python -m summarizer \
+  --source "https://youtube.com/watch?v=VIDEO_ID" \
+  --provider gemini \
+  --prompt-type "Distill Wisdom"
+
+# Generate a Mermaid diagram
+python -m summarizer \
+  --source "https://youtube.com/watch?v=VIDEO_ID" \
+  --provider openrouter \
+  --prompt-type "Mermaid Diagram"
+
 # Multiple videos
 python -m summarizer --source "URL1" "URL2" "URL3"
 
@@ -157,8 +202,8 @@ python -m summarizer --type "Local File" --source "./lecture.mp4"
 # Non-YouTube (requires Cobalt running)
 python -m summarizer --type "Video URL" --source "https://www.instagram.com/reel/..."
 
-# Overrides defaults and specify a language
-python -m summarizer --source "URL" --prompt-type "Distill Wisdom" --chunk-size 128000 --language "it"
+# Specify language for YouTube captions
+python -m summarizer --source "URL" --prompt-type "Distill Wisdom" --language "it"
 ```
 
 Without YAML, pass `--base-url` and `--model` explicitly:
