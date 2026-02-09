@@ -270,3 +270,7 @@ python -m summarizer \
 | `--output-dir` | Output directory | `summaries` |
 | `--no-save` | Print only, no file output | `False` |
 | `--verbose`, `-v` | Detailed output | `False` |
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
