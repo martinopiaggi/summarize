@@ -135,9 +135,9 @@ providers:
     base_url: https://api.groq.com/openai/v1
     model: openai/gpt-oss-20b
 
-  deepseek:
-    base_url: https://api.deepseek.com/v1
-    model: deepseek-chat
+  ollama: 
+    base_url: http://localhost:11434/v1
+    model: qwen3:8b
 
   openrouter:
     base_url: https://openrouter.ai/api/v1
