@@ -39,6 +39,7 @@ ENV/
 *.wav
 *.mp4
 summaries/
+data/
 temp/
 
 # Keep specific markdown files
@@ -47,3 +48,4 @@ temp/
 !CONTRIBUTING.md
 !SKILL.md
 cobalt.env
+

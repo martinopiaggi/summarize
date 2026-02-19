@@ -8,6 +8,7 @@ services:
       - ./summaries:/app/summaries
       - ./.env:/app/.env:ro
       - ./summarizer.yaml:/app/summarizer.yaml:ro
+      - summarizer_data:/app/data
     environment:
       - COBALT_BASE_URL=http://cobalt:9000
     depends_on:
@@ -29,3 +30,6 @@ services:
     environment:
       - API_URL=http://cobalt:9000/
     restart: unless-stopped
+
+volumes:
+  summarizer_data:

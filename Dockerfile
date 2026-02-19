@@ -24,11 +24,14 @@ RUN pip install --no-cache-dir . "streamlit>=1.32.0"
 COPY app.py .
 COPY .streamlit/ .streamlit/
 
-# Create output directory
-RUN mkdir -p /app/summaries
+# Copy default config (read-only in image; writable copy goes to /app/data)
+COPY summarizer.yaml .
 
-# Summaries volume for persisting output
-VOLUME ["/app/summaries"]
+# Create output and writable data directories
+RUN mkdir -p /app/summaries /app/data
+
+# Volumes for persisting output and config edits
+VOLUME ["/app/summaries", "/app/data"]
 
 # Streamlit default port
 EXPOSE 8501
