@@ -60,6 +60,7 @@ Examples:
             "Google Drive Video Link",
             "Dropbox Video Link",
             "Local File",
+            "TXT",
         ],
         default="YouTube Video",
         help="Source type",

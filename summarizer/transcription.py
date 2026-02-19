@@ -246,6 +246,20 @@ def get_transcript(config: dict) -> str:
     if not source_type or not source_path:
         raise TranscriptError("Source type and path/URL are required")
 
+    # TXT source: read file directly as transcript text (no audio/video processing)
+    if source_type == "TXT":
+        if not os.path.exists(source_path):
+            raise TranscriptError(f"Text file not found: {source_path}")
+        try:
+            with open(source_path, "r", encoding="utf-8") as f:
+                text = f.read()
+        except UnicodeDecodeError:
+            with open(source_path, "r", encoding="latin-1") as f:
+                text = f.read()
+        if not text or not text.strip():
+            raise TranscriptError("Text file is empty")
+        return text
+
     if source_type == "YouTube Video":
         if is_youtube_url(source_path) and config.get("use_youtube_captions", True):
             video_id = extract_youtube_id(source_path)

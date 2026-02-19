@@ -706,6 +706,9 @@ def main():
     # -- Main area --
     st.markdown('<h1 class="main-header">SUMMARIZE</h1>', unsafe_allow_html=True)
 
+    # Text-based extensions that should be read directly (no audio processing)
+    TEXT_EXTENSIONS = {".txt", ".md", ".vtt", ".srt", ".csv", ".log", ".rst", ".html", ".xml", ".json"}
+
     tab_url, tab_file = st.tabs(["URL", "FILE"])
 
     with tab_url:
@@ -756,15 +759,17 @@ def main():
     with tab_file:
         uploaded = st.file_uploader(
             "Drop file",
-            type=["mp4", "mp3", "wav", "m4a", "webm"],
+            type=["mp4", "mp3", "wav", "m4a", "webm", "txt", "md", "vtt", "srt", "csv", "log", "rst", "html", "xml", "json"],
             label_visibility="collapsed",
         )
         if st.button("RUN", type="primary", disabled=uploaded is None, key="run_file"):
             if uploaded:
+                file_ext = Path(uploaded.name).suffix.lower()
+                is_text_file = file_ext in TEXT_EXTENSIONS
                 with st.spinner("Processing..."):
                     try:
                         with tempfile.NamedTemporaryFile(
-                            delete=False, suffix=Path(uploaded.name).suffix
+                            delete=False, suffix=file_ext, mode="wb"
                         ) as tmp:
                             tmp.write(uploaded.read())
                             tmp_path = tmp.name
@@ -773,9 +778,9 @@ def main():
                             provider_config,
                             prompt_type,
                             chunk_size,
-                            True,
+                            not is_text_file,  # force_download only for media files
                             language,
-                            "Local File",
+                            "TXT" if is_text_file else "Local File",
                             transcription_method,
                             whisper_model,
                         )
