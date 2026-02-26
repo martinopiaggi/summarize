@@ -14,6 +14,7 @@ DEFAULT_CONFIG = {
     "type_of_source": "YouTube Video",
     "use_youtube_captions": True,
     "transcription_method": "Cloud Whisper",
+    "audio_speed": 1.0,
     "language": "auto",
     "prompt_type": "Questions and answers",
     "chunk_size": 10000,

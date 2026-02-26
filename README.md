@@ -148,6 +148,7 @@ defaults:
   chunk-size: 10000
   parallel-calls: 30
   max-tokens: 4096
+  audio-speed: 1.0
   output-dir: summaries
 ```
 
@@ -233,6 +234,12 @@ python -m summarizer --source "URL1" "URL2" "URL3"
 # Local files
 python -m summarizer --type "Local File" --source "./lecture.mp4"
 
+# Speed up audio before Whisper (faster, may reduce accuracy)
+python -m summarizer --source "URL" --force-download --audio-speed 2.0
+
+# Aggressive speed-up (supported)
+python -m summarizer --source "URL" --force-download --audio-speed 5.0
+
 # Non-YouTube (requires Cobalt running)
 python -m summarizer --type "Video URL" --source "https://www.instagram.com/reel/..."
 
@@ -264,6 +271,7 @@ python -m summarizer \
 | `--force-download` | Skip captions, download audio | `False` |
 | `--transcription` | `Cloud Whisper` (Groq API) or `Local Whisper` (local) | `Cloud Whisper` |
 | `--whisper-model` | `tiny`, `base`, `small`, `medium`, `large` | `tiny` |
+| `--audio-speed` | Pre-transcription playback speed (any positive value) | `1.0` |
 | `--language` | Language code for captions from yt (often useful if Youtube can't found correct captions) | `auto` |
 | `--parallel-calls` | Concurrent API requests | `30` |
 | `--max-tokens` | Max output tokens per chunk | `4096` |

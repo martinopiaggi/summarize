@@ -117,6 +117,7 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "prompt_type": "Questions and answers",
         "language": "auto",
         "transcription_method": "Cloud Whisper",
+        "audio_speed": 1.0,
         "output_dir": "summaries",
         "cobalt_base_url": os.getenv("COBALT_BASE_URL", "http://localhost:9000"),
     }
@@ -189,6 +190,7 @@ defaults:
   chunk-size: 10000
   parallel-calls: 30
   max-tokens: 4096
+  audio-speed: 1.0
   output-dir: summaries
   cobalt-base-url: http://localhost:9000
 """

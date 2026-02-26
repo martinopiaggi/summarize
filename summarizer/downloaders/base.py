@@ -10,6 +10,10 @@ class BaseDownloader:
         raise NotImplementedError
 
     def download_audio(
-        self, url: str, temp_dir: Optional[str] = None, verbose: bool = False
+        self,
+        url: str,
+        temp_dir: Optional[str] = None,
+        verbose: bool = False,
+        audio_speed: float = 1.0,
     ) -> str:
         raise NotImplementedError

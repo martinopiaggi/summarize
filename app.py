@@ -495,6 +495,7 @@ def run_summarization(
     chunk_size: int,
     force_download: bool,
     language: str,
+    audio_speed: float,
     source_type: str = "YouTube Video",
     transcription_method: str = "Cloud Whisper",
     whisper_model: str = "tiny",
@@ -507,6 +508,7 @@ def run_summarization(
         "use_youtube_captions": not force_download and source_type == "YouTube Video",
         "transcription_method": transcription_method,
         "whisper_model": whisper_model,
+        "audio_speed": audio_speed,
         "language": language,
         "prompt_type": prompt_type,
         "chunk_size": chunk_size,
@@ -600,6 +602,12 @@ def main():
     # Resolve defaults from YAML (snake_case keys)
     default_prompt = defaults.get("prompt_type", "Questions and answers")
     default_chunk_size = defaults.get("chunk_size", 10000)
+    try:
+        default_audio_speed = float(defaults.get("audio_speed", 1.0))
+    except (TypeError, ValueError):
+        default_audio_speed = 1.0
+    if default_audio_speed <= 0:
+        default_audio_speed = 1.0
 
     with st.sidebar:
         # -- Theme Toggle --
@@ -695,6 +703,14 @@ def main():
                 index=0,
                 help="Only used with Local Whisper. tiny=fastest, large=most accurate.",
             )
+            audio_speed = st.number_input(
+                "AUDIO SPEED",
+                min_value=0.01,
+                value=default_audio_speed,
+                step=0.01,
+                format="%.2f",
+                help="Speeds up audio before transcription. Use any positive value (e.g. 1.0, 2.0, 5.0). Higher values are faster but can reduce accuracy.",
+            )
 
         # -- YAML editor --
         with st.expander("EDIT CONFIG"):
@@ -769,6 +785,7 @@ def main():
                             chunk_size,
                             force_download,
                             language,
+                            audio_speed,
                             source_type,
                             transcription_method,
                             whisper_model,
@@ -807,6 +824,7 @@ def main():
                             chunk_size,
                             not is_text_file,  # force_download only for media files
                             language,
+                            audio_speed,
                             "TXT" if is_text_file else "Local File",
                             transcription_method,
                             whisper_model,

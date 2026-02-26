@@ -21,12 +21,19 @@ class DownloadManager:
         ]
 
     def download_audio(
-        self, url: str, temp_dir: Optional[str] = None, verbose: bool = False
+        self,
+        url: str,
+        temp_dir: Optional[str] = None,
+        verbose: bool = False,
+        audio_speed: float = 1.0,
     ) -> str:
         temp_root = temp_dir or tempfile.gettempdir()
         for downloader in self.downloaders:
             if downloader.supports(url):
                 return downloader.download_audio(
-                    url, temp_dir=temp_root, verbose=verbose
+                    url,
+                    temp_dir=temp_root,
+                    verbose=verbose,
+                    audio_speed=audio_speed,
                 )
         raise UnsupportedSourceError("No downloader available for the provided URL")

@@ -260,6 +260,14 @@ def get_transcript(config: dict) -> str:
             raise TranscriptError("Text file is empty")
         return text
 
+    raw_audio_speed = config.get("audio_speed", 1.0)
+    try:
+        audio_speed = float(raw_audio_speed)
+    except (TypeError, ValueError):
+        raise TranscriptError("audio_speed must be a positive number")
+    if audio_speed <= 0:
+        raise TranscriptError("audio_speed must be greater than 0")
+
     if source_type == "YouTube Video":
         if is_youtube_url(source_path) and config.get("use_youtube_captions", True):
             video_id = extract_youtube_id(source_path)
@@ -270,6 +278,7 @@ def get_transcript(config: dict) -> str:
         audio_path = DownloadManager(config.get("cobalt_base_url")).download_audio(
             source_path,
             verbose=verbose,
+            audio_speed=audio_speed,
         )
         try:
             transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
@@ -279,7 +288,7 @@ def get_transcript(config: dict) -> str:
                 os.remove(audio_path)
 
     if source_type in ("Local File", "Google Drive Video Link", "Dropbox Video Link"):
-        handler = get_handler(source_type, source_path)
+        handler = get_handler(source_type, source_path, audio_speed=audio_speed)
         audio_path, should_delete = handler.get_processed_audio()
         try:
             transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
@@ -292,6 +301,7 @@ def get_transcript(config: dict) -> str:
         audio_path = DownloadManager(config.get("cobalt_base_url")).download_audio(
             source_path,
             verbose=verbose,
+            audio_speed=audio_speed,
         )
         try:
             transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)

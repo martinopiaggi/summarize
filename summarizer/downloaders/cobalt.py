@@ -29,9 +29,11 @@ class CobaltDownloader(BaseDownloader):
         spinner = ProgressSpinner("Requesting Cobalt download", verbose)
         try:
             spinner.start()
+            # Ask Cobalt for audio-only media to avoid downloading full video files.
+            request_payload = {"url": url, "downloadMode": "audio"}
             response = requests.post(
                 f"{self.base_url}/api/json",
-                json={"url": url},
+                json=request_payload,
                 headers={"Accept": "application/json"},
                 timeout=60,
             )
@@ -63,7 +65,11 @@ class CobaltDownloader(BaseDownloader):
         raise TranscriptError("Cobalt response did not include a download URL")
 
     def download_audio(
-        self, url: str, temp_dir: Optional[str] = None, verbose: bool = False
+        self,
+        url: str,
+        temp_dir: Optional[str] = None,
+        verbose: bool = False,
+        audio_speed: float = 1.0,
     ) -> str:
         download_url = self._resolve_download_url(url, verbose)
         temp_root = temp_dir or tempfile.gettempdir()
@@ -85,7 +91,7 @@ class CobaltDownloader(BaseDownloader):
 
             spinner = ProgressSpinner("Processing audio file", verbose)
             spinner.start()
-            process_audio_file(temp_path, processed_path)
+            process_audio_file(temp_path, processed_path, playback_speed=audio_speed)
             spinner.stop()
             print_status("Audio processing completed", "SUCCESS", verbose)
             os.remove(temp_path)

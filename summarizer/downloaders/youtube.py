@@ -22,7 +22,10 @@ def is_youtube_url(url: str) -> bool:
 
 
 def download_youtube_audio(
-    url: str, verbose: bool = False, temp_dir: Optional[str] = None
+    url: str,
+    verbose: bool = False,
+    temp_dir: Optional[str] = None,
+    audio_speed: float = 1.0,
 ) -> str:
     """
     Download YouTube video audio.
@@ -59,7 +62,7 @@ def download_youtube_audio(
         spinner = ProgressSpinner("Processing audio file", verbose)
         spinner.start()
 
-        process_audio_file(temp_path, processed_path)
+        process_audio_file(temp_path, processed_path, playback_speed=audio_speed)
         os.remove(temp_path)
 
         spinner.stop()
@@ -82,6 +85,12 @@ class YouTubeDownloader(BaseDownloader):
         return is_youtube_url(url)
 
     def download_audio(
-        self, url: str, temp_dir: Optional[str] = None, verbose: bool = False
+        self,
+        url: str,
+        temp_dir: Optional[str] = None,
+        verbose: bool = False,
+        audio_speed: float = 1.0,
     ) -> str:
-        return download_youtube_audio(url, verbose=verbose, temp_dir=temp_dir)
+        return download_youtube_audio(
+            url, verbose=verbose, temp_dir=temp_dir, audio_speed=audio_speed
+        )

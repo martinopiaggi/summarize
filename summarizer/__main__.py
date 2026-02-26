@@ -145,6 +145,11 @@ Examples:
         choices=["tiny", "base", "small", "medium", "large"],
         help="Whisper model size for local transcription (default: tiny for speed)",
     )
+    parser.add_argument(
+        "--audio-speed",
+        type=float,
+        help="Playback speed for preprocessing before transcription (any positive value)",
+    )
 
     return parser.parse_args()
 
@@ -325,6 +330,7 @@ def cli():
         "language": args.language,
         "transcription_method": args.transcription,
         "whisper_model": args.whisper_model,
+        "audio_speed": args.audio_speed,
         "output_dir": args.output_dir,
         "cobalt_base_url": args.cobalt_url,
     }
@@ -350,12 +356,22 @@ def cli():
         print_status("--source is required", "ERROR", True)
         sys.exit(1)
 
+    try:
+        audio_speed = float(merged.get("audio_speed", 1.0))
+    except (TypeError, ValueError):
+        print_status("--audio-speed must be a positive number", "ERROR", True)
+        sys.exit(1)
+    if audio_speed <= 0:
+        print_status("--audio-speed must be greater than 0", "ERROR", True)
+        sys.exit(1)
+
     if verbose:
         print_status("Video Summarizer CLI Started", "PROCESSING", verbose)
         print_status(f"Output directory: {merged.get('output_dir')}", "INFO", verbose)
         print_status(f"Model: {merged.get('model')}", "INFO", verbose)
         print_status(f"Prompt type: {merged.get('prompt_type')}", "INFO", verbose)
         print_status(f"Output format: {args.output_format}", "INFO", verbose)
+        print_status(f"Audio speed: {audio_speed}x", "INFO", verbose)
 
     # Smart caption logic
     transcription_was_provided = any("--transcription" in arg for arg in sys.argv)
@@ -378,6 +394,7 @@ def cli():
         "use_youtube_captions": not smart_force_download,
         "transcription_method": merged.get("transcription_method"),
         "whisper_model": merged.get("whisper_model", "tiny"),
+        "audio_speed": audio_speed,
         "language": merged.get("language"),
         "prompt_type": merged.get("prompt_type"),
         "chunk_size": merged.get("chunk_size"),

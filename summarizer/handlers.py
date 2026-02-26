@@ -9,9 +9,15 @@ from .exceptions import SourceNotFoundError, UnsupportedSourceError, AudioProces
 class VideoSourceHandler:
     """Base class for handling different video sources."""
     
-    def __init__(self, source_path: str, temp_dir: Optional[str] = None):
+    def __init__(
+        self,
+        source_path: str,
+        temp_dir: Optional[str] = None,
+        audio_speed: float = 1.0,
+    ):
         self.source_path = source_path
         self.temp_dir = temp_dir or tempfile.gettempdir()
+        self.audio_speed = audio_speed
         
     def get_processed_audio(self) -> Tuple[str, bool]:
         """
@@ -43,15 +49,41 @@ def convert_to_wav(input_path: str, output_wav: str, ffmpeg_args: Optional[List[
         raise AudioProcessingError(f"Failed to convert audio: {e.stderr.decode() if e.stderr else str(e)}")
 
 
-def process_audio_file(input_path: str, output_path: str) -> None:
+def process_audio_file(
+    input_path: str, output_path: str, playback_speed: float = 1.0
+) -> None:
     """Convert audio to MP3 with reduced quality for API limits."""
+    try:
+        speed = float(playback_speed)
+    except (TypeError, ValueError):
+        raise AudioProcessingError("Audio speed must be a number")
+    if speed <= 0:
+        raise AudioProcessingError("Audio speed must be greater than 0")
+
+    # ffmpeg atempo accepts 0.5..2.0 per stage; chain stages for any positive speed.
+    tempo_stages = []
+    remaining = speed
+    while remaining > 2.0:
+        tempo_stages.append(2.0)
+        remaining /= 2.0
+    while remaining < 0.5:
+        tempo_stages.append(0.5)
+        remaining /= 0.5
+    if abs(remaining - 1.0) > 1e-9:
+        tempo_stages.append(remaining)
+
     command = [
         'ffmpeg', '-y', '-i', input_path,
+    ]
+    if tempo_stages:
+        atempo_filter = ",".join(f"atempo={stage:g}" for stage in tempo_stages)
+        command.extend(['-filter:a', atempo_filter])
+    command.extend([
         '-ar', '8000',
         '-ac', '1',
         '-b:a', '16k',
         output_path
-    ]
+    ])
     try:
         subprocess.run(command, check=True, capture_output=True)
     except subprocess.CalledProcessError as e:
@@ -68,7 +100,7 @@ class LocalFileHandler(VideoSourceHandler):
         temp_wav = os.path.join(self.temp_dir, "local_audio.wav")
         convert_to_wav(self.source_path, temp_wav)
         processed_path = os.path.join(self.temp_dir, "local_processed.mp3")
-        process_audio_file(temp_wav, processed_path)
+        process_audio_file(temp_wav, processed_path, playback_speed=self.audio_speed)
         self.cleanup(temp_wav)
         
         return processed_path, True
@@ -93,7 +125,7 @@ class GoogleDriveHandler(VideoSourceHandler):
         temp_wav = os.path.join(self.temp_dir, "gdrive_audio.wav")
         convert_to_wav(self.source_path, temp_wav)
         processed_path = os.path.join(self.temp_dir, "gdrive_processed.mp3")
-        process_audio_file(temp_wav, processed_path)
+        process_audio_file(temp_wav, processed_path, playback_speed=self.audio_speed)
         self.cleanup(temp_wav)
         
         return processed_path, True
@@ -111,7 +143,7 @@ class DropboxHandler(VideoSourceHandler):
         temp_wav = os.path.join(self.temp_dir, "dropbox_audio.wav")
         convert_to_wav(temp_video, temp_wav)
         processed_path = os.path.join(self.temp_dir, "dropbox_processed.mp3")
-        process_audio_file(temp_wav, processed_path)
+        process_audio_file(temp_wav, processed_path, playback_speed=self.audio_speed)
         self.cleanup(temp_video)
         self.cleanup(temp_wav)
         
@@ -126,7 +158,9 @@ HANDLERS = {
 }
 
 
-def get_handler(source_type: str, source_path: str) -> VideoSourceHandler:
+def get_handler(
+    source_type: str, source_path: str, audio_speed: float = 1.0
+) -> VideoSourceHandler:
     """
     Get the appropriate handler for a source type.
     
@@ -148,4 +182,4 @@ def get_handler(source_type: str, source_path: str) -> VideoSourceHandler:
             f"Available types: {available}"
         )
         
-    return handler_class(source_path)
+    return handler_class(source_path, audio_speed=audio_speed)
