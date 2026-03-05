@@ -333,6 +333,7 @@ def cli():
         "audio_speed": args.audio_speed,
         "output_dir": args.output_dir,
         "cobalt_base_url": args.cobalt_url,
+        "use_proxy": None,
     }
 
     # Merge configs
@@ -395,6 +396,7 @@ def cli():
         "transcription_method": merged.get("transcription_method"),
         "whisper_model": merged.get("whisper_model", "tiny"),
         "audio_speed": audio_speed,
+        "use_proxy": bool(merged.get("use_proxy", False)),
         "language": merged.get("language"),
         "prompt_type": merged.get("prompt_type"),
         "chunk_size": merged.get("chunk_size"),

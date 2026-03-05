@@ -149,6 +149,7 @@ defaults:
   parallel-calls: 30
   max-tokens: 4096
   audio-speed: 1.0
+  use-proxy: false
   output-dir: summaries
 ```
 
@@ -166,8 +167,8 @@ openrouter = YOUR_OPENROUTER_KEY
 perplexity = YOUR_PERPLEXITY_KEY
 hyperbolic = YOUR_HYPERBOLIC_KEY
 
-# Optional: Webshare proxy for YouTube transcript fetching
-# (helps avoid IP bans when running from cloud/VPS)
+# Optional: Webshare proxy for YouTube transcript fetching and pytubefix audio downloads
+# Enable with `defaults.use-proxy: true` in summarizer.yaml
 WEBSHARE_PROXY_USERNAME = YOUR_WEBSHARE_USERNAME
 WEBSHARE_PROXY_PASSWORD = YOUR_WEBSHARE_PASSWORD
 ```

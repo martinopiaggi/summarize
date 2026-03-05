@@ -501,6 +501,7 @@ def run_summarization(
     whisper_model: str = "tiny",
 ) -> str:
     from summarizer.core import main
+    _, _, defaults = load_config()
 
     config = {
         "source_url_or_path": source,
@@ -515,6 +516,7 @@ def run_summarization(
         "parallel_api_calls": 30,
         "max_output_tokens": 4096,
         "cobalt_base_url": get_cobalt_url(),
+        "use_proxy": bool(defaults.get("use_proxy", False)),
         "base_url": provider_config.get("base_url"),
         "model": provider_config.get("model"),
         "verbose": False,

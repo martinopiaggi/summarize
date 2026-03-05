@@ -70,6 +70,7 @@ class CobaltDownloader(BaseDownloader):
         temp_dir: Optional[str] = None,
         verbose: bool = False,
         audio_speed: float = 1.0,
+        use_proxy: bool = False,
     ) -> str:
         download_url = self._resolve_download_url(url, verbose)
         temp_root = temp_dir or tempfile.gettempdir()

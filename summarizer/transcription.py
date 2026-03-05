@@ -242,6 +242,7 @@ def get_transcript(config: dict) -> str:
     transcription_method = config.get("transcription_method", "Cloud Whisper")
     whisper_model = config.get("whisper_model", "tiny")
     verbose = config.get("verbose", False)
+    use_proxy = bool(config.get("use_proxy", False))
 
     if not source_type or not source_path:
         raise TranscriptError("Source type and path/URL are required")
@@ -279,6 +280,7 @@ def get_transcript(config: dict) -> str:
             source_path,
             verbose=verbose,
             audio_speed=audio_speed,
+            use_proxy=use_proxy,
         )
         try:
             transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
@@ -302,6 +304,7 @@ def get_transcript(config: dict) -> str:
             source_path,
             verbose=verbose,
             audio_speed=audio_speed,
+            use_proxy=use_proxy,
         )
         try:
             transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
