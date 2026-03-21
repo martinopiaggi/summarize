@@ -1,0 +1,4 @@
+services:
+  cobalt:
+    env_file:
+      - ./cobalt.proxy.env

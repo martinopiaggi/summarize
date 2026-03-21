@@ -48,4 +48,6 @@ temp/
 !CONTRIBUTING.md
 !SKILL.md
 cobalt.env
+cobalt.proxy.env
+!cobalt.proxy.env.example
 

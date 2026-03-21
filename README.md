@@ -2,7 +2,7 @@
 
 Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter, Reddit, Facebook, Google Drive, Dropbox, and local files.
 
-Works with any OpenAI-compatible LLM provider (even locally hosted).
+Works with any OpenAI-compatible LLM provider, including locally hosted endpoints.
 
 ## Interfaces
 
@@ -10,9 +10,8 @@ Works with any OpenAI-compatible LLM provider (even locally hosted).
 |-----------|---------|
 | CLI | `python -m summarizer --source <source>` |
 | Streamlit GUI | `python -m streamlit run app.py` |
-| Docker | `docker compose up -d` → `http://localhost:8501` |
-| SKILL for AI agents  | [`.agent/skills/summarize/SKILL.md`](./.agent/skills/summarize/SKILL.md) to permit agents to use CLI interface |
-
+| Docker | `docker compose up -d` -> `http://localhost:8501` |
+| Agent skill | [`.agent/skills/summarize/SKILL.md`](./.agent/skills/summarize/SKILL.md) for agent access to the CLI |
 
 ## How It Works
 
@@ -23,7 +22,7 @@ Works with any OpenAI-compatible LLM provider (even locally hosted).
                          |
                          v
                +---------+----------+
-               |    Source Type?     |
+               |    Source Type?    |
                +---------+----------+
                          |
        +-----------------+-------------+
@@ -67,15 +66,15 @@ Works with any OpenAI-compatible LLM provider (even locally hosted).
                           +--------------+
 ```
 
-- [`summarizer.yaml`](./summarizer.yaml): Provider settings (base_url, model, chunk-size) and defaults
+- [`summarizer.yaml`](./summarizer.yaml): Provider settings (`base_url`, `model`, `chunk-size`) and defaults
 - [`.env`](./.env): API keys matched by URL keyword
 - [`prompts.json`](./summarizer/prompts.json): Summary style templates
 
 **Notes:**
-- Cloud Whisper uses **Groq Cloud API** (requires free Groq API key)
-- Docker image does **not** include Local Whisper (designed for VPS deployment without GPU)
+- Cloud Whisper uses **Groq Cloud API** and requires a Groq API key
+- The Docker image does **not** include Local Whisper and is aimed at lightweight VPS deployment
 
-## Installation and usage
+## Installation and Usage
 
 **Step 0 - CLI installation:**
 
@@ -91,7 +90,7 @@ pip install -e .
 python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
 ```
 
-The summary is saved to `summaries/watch_YYYYMMDD_HHMMSS.md`. That's it!
+The summary is saved to `summaries/watch_YYYYMMDD_HHMMSS.md`.
 
 ### Streamlit GUI
 
@@ -135,7 +134,7 @@ providers:
     base_url: https://api.groq.com/openai/v1
     model: openai/gpt-oss-20b
 
-  ollama: 
+  ollama:
     base_url: http://localhost:11434/v1
     model: qwen3:8b
 
@@ -153,10 +152,10 @@ defaults:
   output-dir: summaries
 ```
 
-### API Keys ([`.env`](./.env))
+### API Keys (`.env`)
 
 ```ini
-# Required for Cloud Whisper transcription (free tier available)
+# Required for Cloud Whisper transcription
 groq = gsk_YOUR_KEY
 
 # LLM providers (choose one or more)
@@ -167,50 +166,32 @@ openrouter = YOUR_OPENROUTER_KEY
 perplexity = YOUR_PERPLEXITY_KEY
 hyperbolic = YOUR_HYPERBOLIC_KEY
 
-# Optional: Webshare proxy for YouTube transcript fetching and pytubefix audio downloads
-# Enable with `defaults.use-proxy: true` in summarizer.yaml
+# Optional: Webshare credentials
+# - YouTube transcript fetching uses them automatically when present
+# - pytubefix audio downloads also require `defaults.use-proxy: true`
 WEBSHARE_PROXY_USERNAME = YOUR_WEBSHARE_USERNAME
 WEBSHARE_PROXY_PASSWORD = YOUR_WEBSHARE_PASSWORD
 ```
 
-If you pass endpoint url with `--base-url` flag in CLI, the api key selected from `.env` is auto-matched by URL keyword: for example, `https://generativelanguage.googleapis.com/...` matches `generativelanguage`.
+If you pass an endpoint URL with `--base-url`, the API key is matched from `.env` by URL keyword. For example, `https://generativelanguage.googleapis.com/...` matches `generativelanguage`.
 
 ### Prompts ([`prompts.json`](./summarizer/prompts.json))
 
-Use with `--prompt-type` in CLI or select in drop menu on web interface. 
+Use with `--prompt-type` in the CLI or select it from the dropdown in the web interface.
 Add custom styles by editing [`prompts.json`](./summarizer/prompts.json). Use `{text}` as the transcript placeholder.
 
-## Extra
-
-## Local Whisper
-
-Runs transcription on your machine instead of using Cloud Whisper (Groq API). No Groq API key needed, but slower without a GPU.
-
-```bash
-# Install with GPU support
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
-
-# Use it
-python -m summarizer --source "URL" --force-download --transcription "Local Whisper" --whisper-model "small"
-```
-
-**Why not in Docker?** I decided to not include local whsiper in the Docker image because in VPS deployment, GPUs are typically unavailable. Local Whisper without GPU is too slow for production use. Use Cloud Whisper (Groq API, there is also free tier) in Docker, or install locally with GPU.
-
-Model sizes: `tiny` (fastest) / `base` / `small` / `medium` / `large` (most accurate). GPU should be auto-detected.
-
-
-## CLI Examples
+### CLI Examples
 
 With a configured [`summarizer.yaml`](./summarizer.yaml), the CLI is simple:
 
 ```bash
-# Uses default provider from YAML
+# Uses the default provider from YAML
 python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
 
 # Specify a provider
 python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --provider groq
 
-# Fact-check claims with Perplexity (use Summarize skill for AI agents)
+# Fact-check claims with Perplexity (use the Summarize skill for AI agents)
 python -m summarizer \
   --source "https://youtube.com/watch?v=VIDEO_ID" \
   --base-url "https://api.perplexity.ai" \
@@ -241,10 +222,16 @@ python -m summarizer --source "URL" --force-download --audio-speed 2.0
 # Aggressive speed-up (supported)
 python -m summarizer --source "URL" --force-download --audio-speed 5.0
 
-# Non-YouTube (requires Cobalt running)
+# Force YouTube audio download and show detailed progress
+python -m summarizer \
+  --source "https://youtube.com/watch?v=VIDEO_ID" \
+  --force-download \
+  -v
+
+# Non-YouTube URL (requires Cobalt)
 python -m summarizer --type "Video URL" --source "https://www.instagram.com/reel/..."
 
-# Specify language for YouTube captions
+# Specify a language for YouTube captions
 python -m summarizer --source "URL" --prompt-type "Distill Wisdom" --language "it"
 ```
 
@@ -266,20 +253,98 @@ python -m summarizer \
 | `--base-url` | API endpoint (overrides provider) | From YAML |
 | `--model` | Model identifier (overrides provider) | From YAML |
 | `--api-key` | API key (overrides [`.env`](./.env)) | - |
-| `--type` | `YouTube Video`, `Video URL`, `Local File`, `Google Drive`, `Dropbox` | `YouTube Video` |
-| `--prompt-type` | Summary style (see below) | `Questions and answers` |
-| `--chunk-size` | Input text chunk size (chars) | `10000` |
-| `--force-download` | Skip captions, download audio | `False` |
+| `--type` | `YouTube Video`, `Video URL`, `Local File`, `Google Drive Video Link`, `Dropbox Video Link`, `TXT` | `YouTube Video` |
+| `--prompt-type` | Summary style | `Questions and answers` |
+| `--chunk-size` | Input text chunk size in characters | `10000` |
+| `--force-download` | Skip captions and download audio instead | `False` |
 | `--transcription` | `Cloud Whisper` (Groq API) or `Local Whisper` (local) | `Cloud Whisper` |
 | `--whisper-model` | `tiny`, `base`, `small`, `medium`, `large` | `tiny` |
-| `--audio-speed` | Pre-transcription playback speed (any positive value) | `1.0` |
-| `--language` | Language code for captions from yt (often useful if Youtube can't found correct captions) | `auto` |
+| `--audio-speed` | Pre-transcription playback speed | `1.0` |
+| `--language` | Language code for YouTube captions; useful when auto-detection picks the wrong track | `auto` |
 | `--parallel-calls` | Concurrent API requests | `30` |
 | `--max-tokens` | Max output tokens per chunk | `4096` |
+| `--cobalt-url` | Cobalt base URL for non-YouTube platforms and fallback downloads | `http://localhost:9000` |
 | `--output-dir` | Output directory | `summaries` |
 | `--no-save` | Print only, no file output | `False` |
 | `--verbose`, `-v` | Detailed output | `False` |
 
+Use `--verbose` to see detailed status output during config loading, downloads, transcription, and summarization.
+
+## Extra
+
+### Local Whisper
+
+Runs transcription on your machine instead of using Groq Cloud Whisper. This removes the Groq API requirement, but CPU-only runs are much slower.
+
+```bash
+# Add Local Whisper support
+pip install -e .[whisper]
+
+# Optional: install CUDA-enabled PyTorch for GPU acceleration
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+
+# Use it
+python -m summarizer --source "URL" --force-download --transcription "Local Whisper" --whisper-model "small"
+```
+
+If you only need CPU transcription, `pip install -e .[whisper]` is enough.
+
+**Why not in Docker?** The Docker image installs the core app only. It does not include `openai-whisper` or GPU-oriented PyTorch because this project targets lightweight VPS deployments, where GPUs are usually unavailable. In Docker, Cloud Whisper is the practical default. Use Local Whisper on the host machine if you have the hardware for it.
+
+Model sizes: `tiny` (fastest) / `base` / `small` / `medium` / `large` (most accurate). GPU detection is automatic when PyTorch can see a CUDA device.
+
+### Proxy Setup
+
+Proxy support matters in two separate places:
+
+1. The Python app, when fetching YouTube transcripts or downloading YouTube audio with `pytubefix`
+2. The Cobalt container, when it connects to upstream CDNs/providers
+
+For the Python app, this repo expects **Webshare** credentials:
+
+1. Add credentials to [`.env`](./.env):
+
+```ini
+WEBSHARE_PROXY_USERNAME = YOUR_WEBSHARE_USERNAME
+WEBSHARE_PROXY_PASSWORD = YOUR_WEBSHARE_PASSWORD
+```
+
+2. If you want `pytubefix` audio downloads to use that proxy, enable it in [`summarizer.yaml`](./summarizer.yaml):
+
+```yaml
+defaults:
+  use-proxy: true
+```
+
+Notes:
+
+- YouTube transcript fetching uses Webshare automatically when those credentials are present.
+- `defaults.use-proxy: true` affects `pytubefix` audio downloads.
+
+For the Cobalt container, the proxy is configured separately. That sits outside the Python app, but this repo includes a working example:
+
+- [docker-compose.yml](./docker-compose.yml) is the default full-stack setup
+- [docker-compose.cobalt.yml](./docker-compose.cobalt.yml) runs only Cobalt
+- [docker-compose.proxy.yml](./docker-compose.proxy.yml) adds `./cobalt.proxy.env` to the `cobalt` service
+- [cobalt.proxy.env.example](./cobalt.proxy.env.example) is the template
+- `cobalt.proxy.env` is your local, ignored secrets file
+
+Docker examples:
+
+```powershell
+# Cobalt only, no proxy
+docker compose -f docker-compose.cobalt.yml up -d
+
+# Cobalt only, with proxy
+docker compose -f docker-compose.cobalt.yml -f docker-compose.proxy.yml up -d
+
+# Full stack, no proxy
+docker compose up -d
+
+# Full stack, with proxy
+docker compose -f docker-compose.yml -f docker-compose.proxy.yml up -d
+```
+
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
