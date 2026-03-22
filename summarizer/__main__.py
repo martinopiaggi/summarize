@@ -150,6 +150,13 @@ Examples:
         type=float,
         help="Playback speed for preprocessing before transcription (any positive value)",
     )
+    parser.add_argument(
+        "--use-proxy",
+        dest="use_proxy",
+        action="store_true",
+        default=None,
+        help="Route supported requests through Webshare proxies",
+    )
 
     return parser.parse_args()
 
@@ -333,7 +340,7 @@ def cli():
         "audio_speed": args.audio_speed,
         "output_dir": args.output_dir,
         "cobalt_base_url": args.cobalt_url,
-        "use_proxy": None,
+        "use_proxy": args.use_proxy,
     }
 
     # Merge configs

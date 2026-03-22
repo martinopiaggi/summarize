@@ -8,29 +8,14 @@ from .exceptions import ConfigurationError
 
 def find_config_file() -> Optional[Path]:
     """
-    Find the config file in standard locations.
-
-    Search order:
-    1. ./summarizer.yaml (current directory)
-    2. ~/.summarizer.yaml (home directory)
-    3. ~/.config/summarizer/config.yaml (XDG style)
+    Find the default config file.
 
     Returns:
         Path to config file or None if not found
     """
-    locations = [
-        Path.cwd() / "summarizer.yaml",
-        Path.cwd() / "summarizer.yml",
-        Path.home() / ".summarizer.yaml",
-        Path.home() / ".summarizer.yml",
-        Path.home() / ".config" / "summarizer" / "config.yaml",
-        Path.home() / ".config" / "summarizer" / "config.yml",
-    ]
-
-    for path in locations:
-        if path.exists():
-            return path
-
+    path = Path.cwd() / "summarizer.yaml"
+    if path.exists():
+        return path
     return None
 
 
@@ -161,7 +146,7 @@ def create_example_config() -> str:
         YAML string with example configuration
     """
     return """# Summarizer Configuration
-# Save as ~/.summarizer.yaml or ./summarizer.yaml
+# Save as ./summarizer.yaml
 
 # Default provider to use when --provider is not specified
 default_provider: groq
@@ -191,6 +176,7 @@ defaults:
   parallel-calls: 30
   max-tokens: 4096
   audio-speed: 1.0
+  use-proxy: false
   output-dir: summaries
   cobalt-base-url: http://localhost:9000
 """

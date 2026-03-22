@@ -3,7 +3,10 @@ import os
 import tempfile
 import subprocess
 from typing import Tuple, Optional, List
+import requests
+
 from .exceptions import SourceNotFoundError, UnsupportedSourceError, AudioProcessingError
+from .proxy import get_webshare_proxies, should_proxy_url
 
 
 class VideoSourceHandler:
@@ -14,10 +17,12 @@ class VideoSourceHandler:
         source_path: str,
         temp_dir: Optional[str] = None,
         audio_speed: float = 1.0,
+        use_proxy: bool = False,
     ):
         self.source_path = source_path
         self.temp_dir = temp_dir or tempfile.gettempdir()
         self.audio_speed = audio_speed
+        self.use_proxy = use_proxy
         
     def get_processed_audio(self) -> Tuple[str, bool]:
         """
@@ -135,10 +140,25 @@ class DropboxHandler(VideoSourceHandler):
     """Handler for Dropbox video files."""
     
     def get_processed_audio(self) -> Tuple[str, bool]:
-        import wget
-        
         temp_video = os.path.join(self.temp_dir, "dropbox_video.mp4")
-        wget.download(self.source_path, temp_video)
+        proxies = None
+        if should_proxy_url(self.source_path, self.use_proxy):
+            proxies = get_webshare_proxies(True)
+
+        try:
+            with requests.get(
+                self.source_path,
+                stream=True,
+                timeout=120,
+                proxies=proxies,
+            ) as response:
+                response.raise_for_status()
+                with open(temp_video, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=1024 * 256):
+                        if chunk:
+                            f.write(chunk)
+        except Exception as exc:
+            raise AudioProcessingError(f"Failed to download Dropbox file: {exc}")
         
         temp_wav = os.path.join(self.temp_dir, "dropbox_audio.wav")
         convert_to_wav(temp_video, temp_wav)
@@ -159,7 +179,10 @@ HANDLERS = {
 
 
 def get_handler(
-    source_type: str, source_path: str, audio_speed: float = 1.0
+    source_type: str,
+    source_path: str,
+    audio_speed: float = 1.0,
+    use_proxy: bool = False,
 ) -> VideoSourceHandler:
     """
     Get the appropriate handler for a source type.
@@ -182,4 +205,4 @@ def get_handler(
             f"Available types: {available}"
         )
         
-    return handler_class(source_path, audio_speed=audio_speed)
+    return handler_class(source_path, audio_speed=audio_speed, use_proxy=use_proxy)

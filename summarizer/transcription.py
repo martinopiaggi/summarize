@@ -3,10 +3,12 @@
 import os
 import re
 from typing import Optional
+
 from .exceptions import TranscriptError, APIKeyError
 from .progress import ProgressSpinner, print_status
 from .handlers import get_handler
 from .downloaders import DownloadManager, is_youtube_url
+from .proxy import get_youtube_transcript_proxy_config
 
 
 def format_timestamp(seconds: float) -> str:
@@ -34,13 +36,15 @@ def extract_youtube_id(url: str) -> str:
 
 
 def get_youtube_transcript(
-    video_id: str, language: str = "en", verbose: bool = False
+    video_id: str,
+    language: str = "en",
+    verbose: bool = False,
+    use_proxy: bool = False,
 ) -> str:
     """
     Get transcript from YouTube captions.
 
-    Uses Webshare rotating residential proxies if WEBSHARE_PROXY_USERNAME and
-    WEBSHARE_PROXY_PASSWORD environment variables are set. This helps avoid
+    Uses Webshare rotating residential proxies when requested. This helps avoid
     IP bans when running from cloud providers.
 
     Args:
@@ -63,22 +67,10 @@ def get_youtube_transcript(
         if language == "auto":
             language = "en"
 
-        # Check for Webshare proxy credentials
-        proxy_username = os.getenv("WEBSHARE_PROXY_USERNAME")
-        proxy_password = os.getenv("WEBSHARE_PROXY_PASSWORD")
-
-        if proxy_username and proxy_password:
-            try:
-                from youtube_transcript_api.proxies import WebshareProxyConfig
-                proxy_config = WebshareProxyConfig(
-                    proxy_username=proxy_username,
-                    proxy_password=proxy_password,
-                )
-                ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config)
-                print_status("Using Webshare proxy for YouTube transcript", "INFO", verbose)
-            except ImportError:
-                # Older version of youtube-transcript-api without proxy support
-                ytt_api = YouTubeTranscriptApi()
+        proxy_config = get_youtube_transcript_proxy_config(use_proxy)
+        if proxy_config is not None:
+            ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config)
+            print_status("Using Webshare proxy for YouTube transcript", "INFO", verbose)
         else:
             ytt_api = YouTubeTranscriptApi()
 
@@ -273,7 +265,10 @@ def get_transcript(config: dict) -> str:
         if is_youtube_url(source_path) and config.get("use_youtube_captions", True):
             video_id = extract_youtube_id(source_path)
             return get_youtube_transcript(
-                video_id, config.get("language", "en"), verbose
+                video_id,
+                config.get("language", "en"),
+                verbose,
+                use_proxy=use_proxy,
             )
 
         audio_path = DownloadManager(config.get("cobalt_base_url")).download_audio(
@@ -290,7 +285,12 @@ def get_transcript(config: dict) -> str:
                 os.remove(audio_path)
 
     if source_type in ("Local File", "Google Drive Video Link", "Dropbox Video Link"):
-        handler = get_handler(source_type, source_path, audio_speed=audio_speed)
+        handler = get_handler(
+            source_type,
+            source_path,
+            audio_speed=audio_speed,
+            use_proxy=use_proxy,
+        )
         audio_path, should_delete = handler.get_processed_audio()
         try:
             transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)

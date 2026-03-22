@@ -110,6 +110,7 @@ docker compose up -d
 ```
 
 Open `http://localhost:8501` for the GUI. Summaries are saved to `./summaries/`.
+The CLI and GUI both read the same [`summarizer.yaml`](./summarizer.yaml).
 
 CLI via Docker: `docker compose run --rm summarizer python -m summarizer --source "URL"`
 
@@ -167,8 +168,7 @@ perplexity = YOUR_PERPLEXITY_KEY
 hyperbolic = YOUR_HYPERBOLIC_KEY
 
 # Optional: Webshare credentials
-# - YouTube transcript fetching uses them automatically when present
-# - pytubefix audio downloads also require `defaults.use-proxy: true`
+# Used only when `defaults.use-proxy: true` or `--use-proxy` is enabled
 WEBSHARE_PROXY_USERNAME = YOUR_WEBSHARE_USERNAME
 WEBSHARE_PROXY_PASSWORD = YOUR_WEBSHARE_PASSWORD
 ```

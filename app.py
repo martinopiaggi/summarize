@@ -402,35 +402,28 @@ LANGUAGES = [
 ]
 
 CONFIG_PATH = Path.cwd() / "summarizer.yaml"
-# Writable config location (used in Docker where CONFIG_PATH may be read-only)
-DATA_DIR = Path.cwd() / "data"
-WRITABLE_CONFIG_PATH = DATA_DIR / "summarizer.yaml"
 
 
 def _get_config_path():
-    """Return the active config path. Writable copy wins over original."""
-    if WRITABLE_CONFIG_PATH.exists():
-        return WRITABLE_CONFIG_PATH
+    """Return the active config path."""
     return CONFIG_PATH
 
 
 def load_config():
     """Load config from YAML. Returns (providers, default_provider, defaults) where
     defaults is a normalized dict with snake_case keys."""
-    config_paths = [WRITABLE_CONFIG_PATH, CONFIG_PATH, Path.home() / ".summarizer.yaml"]
-    for path in config_paths:
-        if path.exists():
-            with open(path, "r", encoding="utf-8") as f:
-                config = yaml.safe_load(f) or {}
-                defaults = config.get("defaults", {})
-                normalized = {
-                    key.replace("-", "_"): value for key, value in defaults.items()
-                }
-                return (
-                    config.get("providers", {}),
-                    config.get("default_provider", ""),
-                    normalized,
-                )
+    if CONFIG_PATH.exists():
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+            defaults = config.get("defaults", {})
+            normalized = {
+                key.replace("-", "_"): value for key, value in defaults.items()
+            }
+            return (
+                config.get("providers", {}),
+                config.get("default_provider", ""),
+                normalized,
+            )
     return (
         {
             "gemini": {
@@ -448,16 +441,13 @@ def get_cobalt_url():
     env_url = os.environ.get("COBALT_BASE_URL")
     if env_url:
         return env_url
-    # Try reading from YAML
-    config_paths = [WRITABLE_CONFIG_PATH, CONFIG_PATH, Path.home() / ".summarizer.yaml"]
-    for path in config_paths:
-        if path.exists():
-            with open(path, "r", encoding="utf-8") as f:
-                config = yaml.safe_load(f) or {}
-                defaults = config.get("defaults", {})
-                url = defaults.get("cobalt-base-url") or defaults.get("cobalt_base_url")
-                if url:
-                    return url
+    if CONFIG_PATH.exists():
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+            defaults = config.get("defaults", {})
+            url = defaults.get("cobalt-base-url") or defaults.get("cobalt_base_url")
+            if url:
+                return url
     return "http://localhost:9000"
 
 
@@ -469,23 +459,11 @@ def load_config_raw():
 
 
 def save_config_raw(content: str):
-    """Save config to the writable path. Falls back to original path."""
-    # Try writable data dir first (works in Docker)
-    try:
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        WRITABLE_CONFIG_PATH.write_text(content, encoding="utf-8")
-        return
-    except OSError:
-        pass
-    # Fallback: try original path (works outside Docker)
+    """Save config to the config path."""
     try:
         CONFIG_PATH.write_text(content, encoding="utf-8")
     except OSError as e:
-        raise OSError(
-            f"Cannot save config: filesystem is read-only. "
-            f"Mount a writable volume to /app/data in your Docker setup. "
-            f"Original error: {e}"
-        )
+        raise OSError(f"Cannot save config {CONFIG_PATH}: {e}")
 
 
 def run_summarization(

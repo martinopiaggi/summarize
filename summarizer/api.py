@@ -6,6 +6,7 @@ import logging
 from typing import Dict, List, Tuple, Any
 from .exceptions import APIError, ConfigurationError
 from .progress import ProgressBar, SimpleProgress, print_status
+from .proxy import get_webshare_proxy_url, should_proxy_url
 
 logger = logging.getLogger(__name__)
 
@@ -172,11 +173,15 @@ async def process_chunk(
         try:
             async with aiohttp.ClientSession() as session:
                 url = f"{config['base_url']}/chat/completions"
+                proxy = None
+                if should_proxy_url(url, bool(config.get("use_proxy", False))):
+                    proxy = get_webshare_proxy_url(True)
 
                 async with session.post(
                     url,
                     headers=headers,
                     json=data,
+                    proxy=proxy,
                     timeout=aiohttp.ClientTimeout(total=60)
                 ) as response:
                     if response.status != 200:

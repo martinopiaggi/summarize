@@ -35,5 +35,4 @@ defaults:
   chunk-size: 128000
   parallel-calls: 30
   max-tokens: 4096
-  use-proxy: true
   output-dir: summaries
