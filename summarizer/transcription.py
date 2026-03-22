@@ -28,21 +28,22 @@ def extract_youtube_id(url: str) -> str:
 
 def get_youtube_transcript(
     video_id: str,
-    language: str = "en",
+    language: str = "auto",
     verbose: bool = False,
     use_proxy: bool = False,
 ) -> str:
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
+        from youtube_transcript_api._errors import (
+            NoTranscriptFound,
+            YouTubeTranscriptApiException,
+        )
     except ImportError:
         raise TranscriptError("youtube-transcript-api package not installed")
 
     spinner = ProgressSpinner("Fetching YouTube transcript", verbose)
     try:
         spinner.start()
-
-        if language == "auto":
-            language = "en"
 
         proxy_config = get_youtube_transcript_proxy_config(use_proxy)
         if proxy_config is not None:
@@ -51,19 +52,42 @@ def get_youtube_transcript(
         else:
             ytt_api = YouTubeTranscriptApi()
 
-        transcript = ytt_api.fetch(video_id, languages=[language]).to_raw_data()
+        if language == "auto":
+            transcript_list = ytt_api.list(video_id)
+            transcript = next(iter(transcript_list), None)
+            if transcript is None:
+                raise TranscriptError(
+                    "No YouTube captions are available for this video. Try using --force-download instead."
+                )
+            transcript_data = transcript.fetch().to_raw_data()
+        else:
+            transcript_data = ytt_api.fetch(video_id, languages=[language]).to_raw_data()
+
         spinner.stop()
         print_status("YouTube transcript fetched successfully", "SUCCESS", verbose)
 
         return "\n".join(
             f"{format_timestamp(entry['start'])} {entry['text'].strip()}"
-            for entry in transcript
+            for entry in transcript_data
         )
+    except NoTranscriptFound as e:
+        spinner.stop()
+        raise TranscriptError(
+            f"Requested YouTube caption language '{language}' is not available for this video. Try --language auto or --force-download instead."
+        ) from e
+    except TranscriptError:
+        spinner.stop()
+        raise
+    except YouTubeTranscriptApiException as e:
+        spinner.stop()
+        raise TranscriptError(
+            f"Failed to get YouTube transcript. Try using --force-download instead. Error: {str(e)}"
+        ) from e
     except Exception as e:
         spinner.stop()
         raise TranscriptError(
             f"Failed to get YouTube transcript. Try using --force-download instead. Error: {str(e)}"
-        )
+        ) from e
 
 
 def transcribe_audio(
@@ -71,16 +95,19 @@ def transcribe_audio(
     method: str = "Cloud Whisper",
     verbose: bool = False,
     whisper_model: str = "tiny",
+    language: str = "auto",
 ) -> str:
     if method == "Cloud Whisper":
-        return _transcribe_cloud_whisper(audio_path, verbose)
+        return _transcribe_cloud_whisper(audio_path, verbose, language)
     elif method == "Local Whisper":
-        return _transcribe_local_whisper(audio_path, verbose, whisper_model)
+        return _transcribe_local_whisper(audio_path, verbose, whisper_model, language)
     else:
         raise TranscriptError(f"Unknown transcription method: {method}")
 
 
-def _transcribe_cloud_whisper(audio_path: str, verbose: bool) -> str:
+def _transcribe_cloud_whisper(
+    audio_path: str, verbose: bool, language: str = "auto"
+) -> str:
     api_key = os.getenv("groq")
     if not api_key:
         raise APIKeyError("Groq API key not found in environment (set 'groq' in .env)")
@@ -100,13 +127,16 @@ def _transcribe_cloud_whisper(audio_path: str, verbose: bool) -> str:
         groq_client = Groq(api_key=api_key)
 
         with open(audio_path, "rb") as audio_file:
-            response = groq_client.audio.transcriptions.create(
-                file=audio_file,
-                model="whisper-large-v3",
-                response_format="text",
-                language="en",
-                temperature=0.0,
-            )
+            request = {
+                "file": audio_file,
+                "model": "whisper-large-v3",
+                "response_format": "text",
+                "temperature": 0.0,
+            }
+            if language and language != "auto":
+                request["language"] = language
+
+            response = groq_client.audio.transcriptions.create(**request)
 
             timestamp = format_timestamp(0)
             transcript = f"{timestamp} {response.strip()}\n"
@@ -121,7 +151,10 @@ def _transcribe_cloud_whisper(audio_path: str, verbose: bool) -> str:
 
 
 def _transcribe_local_whisper(
-    audio_path: str, verbose: bool, model_size: str = "tiny"
+    audio_path: str,
+    verbose: bool,
+    model_size: str = "tiny",
+    language: str = "auto",
 ) -> str:
     try:
         import whisper
@@ -157,7 +190,10 @@ def _transcribe_local_whisper(
     spinner = ProgressSpinner("Transcribing with local Whisper", verbose)
     try:
         spinner.start()
-        result = model.transcribe(audio_path)
+        transcribe_options = {}
+        if language and language != "auto":
+            transcribe_options["language"] = language
+        result = model.transcribe(audio_path, **transcribe_options)
 
         transcript = ""
         for segment in result["segments"]:
@@ -180,6 +216,7 @@ def get_transcript(config: dict) -> str:
     whisper_model = config.get("whisper_model", "tiny")
     verbose = config.get("verbose", False)
     use_proxy = bool(config.get("use_proxy", False))
+    language = config.get("language", "auto")
 
     if not source_type or not source_path:
         raise TranscriptError("Source type and path/URL are required")
@@ -214,7 +251,7 @@ def get_transcript(config: dict) -> str:
             try:
                 return get_youtube_transcript(
                     video_id,
-                    config.get("language", "en"),
+                    language,
                     verbose,
                     use_proxy=use_proxy,
                 )
@@ -233,7 +270,13 @@ def get_transcript(config: dict) -> str:
             use_proxy=use_proxy,
         )
         try:
-            return transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
+            return transcribe_audio(
+                audio_path,
+                transcription_method,
+                verbose,
+                whisper_model,
+                language,
+            )
         finally:
             if os.path.exists(audio_path):
                 os.remove(audio_path)
@@ -247,7 +290,13 @@ def get_transcript(config: dict) -> str:
         )
         audio_path, should_delete = handler.get_processed_audio()
         try:
-            return transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
+            return transcribe_audio(
+                audio_path,
+                transcription_method,
+                verbose,
+                whisper_model,
+                language,
+            )
         finally:
             if should_delete and os.path.exists(audio_path):
                 os.remove(audio_path)
@@ -262,7 +311,13 @@ def get_transcript(config: dict) -> str:
             use_proxy=use_proxy,
         )
         try:
-            return transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
+            return transcribe_audio(
+                audio_path,
+                transcription_method,
+                verbose,
+                whisper_model,
+                language,
+            )
         finally:
             if os.path.exists(audio_path):
                 os.remove(audio_path)

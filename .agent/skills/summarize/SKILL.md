@@ -79,7 +79,7 @@ python -m summarizer [OPTIONS]
 | `--force-download` | Skip YouTube captions, download audio instead | `False` |
 | `--transcription` | `Cloud Whisper` (Groq API) or `Local Whisper` | `Cloud Whisper` |
 | `--whisper-model` | `tiny`, `base`, `small`, `medium`, `large` | `tiny` |
-| `--language` | Language code for captions (e.g., `en`, `it`, `es`) | `auto` |
+| `--language` | `auto` picks the first available YouTube caption track and lets Whisper detect language; explicit codes stay strict | `auto` |
 
 ### Processing Options
 
@@ -234,6 +234,7 @@ For comprehensive analysis, chain multiple styles on the same video:
 
 - If no API key is found, the tool checks `.env` for a key matching the provider URL keyword
 - If YouTube captions are unavailable, the tool falls back to audio download + Whisper transcription
+- `--language auto` does not force English. It uses the first available YouTube caption track and lets Whisper detect language.
 - Use `--verbose` to see detailed progress and debug issues
 - Cloud Whisper requires a Groq API key (free tier available)
 

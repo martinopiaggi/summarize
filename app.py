@@ -389,7 +389,7 @@ label, .stRadio label, .stCheckbox label, .stSelectbox label {{
 """
 
 LANGUAGES = [
-    ("auto", "Auto-detect"),
+    ("auto", "Automatic"),
     ("en", "English"),
     ("es", "Spanish"),
     ("fr", "French"),

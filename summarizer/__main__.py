@@ -134,7 +134,10 @@ Examples:
     parser.add_argument(
         "--max-tokens", type=int, help="Maximum tokens in model output"
     )
-    parser.add_argument("--language", help="Language code (e.g., 'en')")
+    parser.add_argument(
+        "--language",
+        help="Language code for captions/transcription, or 'auto' for automatic selection",
+    )
     parser.add_argument(
         "--transcription",
         choices=["Cloud Whisper", "Local Whisper"],

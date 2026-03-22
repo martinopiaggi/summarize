@@ -231,7 +231,10 @@ python -m summarizer \
 # Non-YouTube URL (requires Cobalt)
 python -m summarizer --type "Video URL" --source "https://www.instagram.com/reel/..."
 
-# Specify a language for YouTube captions
+# Let captions/transcription choose the language automatically (default)
+python -m summarizer --source "URL" --language "auto"
+
+# Lock YouTube captions or transcription to a specific language
 python -m summarizer --source "URL" --prompt-type "Distill Wisdom" --language "it"
 ```
 
@@ -260,7 +263,7 @@ python -m summarizer \
 | `--transcription` | `Cloud Whisper` (Groq API) or `Local Whisper` (local) | `Cloud Whisper` |
 | `--whisper-model` | `tiny`, `base`, `small`, `medium`, `large` | `tiny` |
 | `--audio-speed` | Pre-transcription playback speed | `1.0` |
-| `--language` | Language code for YouTube captions; useful when auto-detection picks the wrong track | `auto` |
+| `--language` | `auto` picks the first available YouTube caption track and lets Whisper detect language; explicit codes stay strict | `auto` |
 | `--parallel-calls` | Concurrent API requests | `30` |
 | `--max-tokens` | Max output tokens per chunk | `4096` |
 | `--cobalt-url` | Cobalt base URL for non-YouTube platforms and fallback downloads | `http://localhost:9000` |
