@@ -556,38 +556,87 @@ def add_to_history(source: str, provider: str, prompt_type: str, summary: str):
 
 
 def copy_to_clipboard(text: str):
-    """Render a button that copies text to clipboard using JavaScript."""
     import base64
 
     b64_text = base64.b64encode(text.encode()).decode()
 
     html = f'''
+    <div style="width: 100%;">
+        <textarea id="copyBuffer" style="
+            position: fixed;
+            left: -9999px;
+            top: 0;
+            opacity: 0;
+            pointer-events: none;
+        "></textarea>
+        <button id="copyBtn" style="
+            width: 100%;
+            padding: 0.6rem 1rem;
+            background: #fff;
+            color: #000;
+            border: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        ">COPY TO CLIPBOARD</button>
+    </div>
     <script>
-    function copyText() {{
+    (() => {{
+        const button = document.getElementById("copyBtn");
+        const buffer = document.getElementById("copyBuffer");
         const text = atob("{b64_text}");
-        navigator.clipboard.writeText(text).then(function() {{
-            document.getElementById("copyBtn").innerText = "COPIED";
-            document.getElementById("copyBtn").style.background = "#333";
-        }}).catch(function() {{
-            document.getElementById("copyBtn").innerText = "FAILED";
+
+        const setButtonState = (label, background = "#333") => {{
+            button.innerText = label;
+            button.style.background = background;
+        }};
+
+        const fallbackCopy = () => {{
+            buffer.value = text;
+            buffer.focus();
+            buffer.select();
+            buffer.setSelectionRange(0, buffer.value.length);
+
+            try {{
+                return document.execCommand("copy");
+            }} catch (error) {{
+                return false;
+            }}
+        }};
+
+        button.addEventListener("click", async () => {{
+            try {{
+                if (window.isSecureContext && navigator.clipboard?.writeText) {{
+                    await navigator.clipboard.writeText(text);
+                    setButtonState("COPIED");
+                    return;
+                }}
+
+                if (fallbackCopy()) {{
+                    setButtonState("COPIED");
+                    return;
+                }}
+
+                setButtonState("USE DOWNLOAD", "#600");
+            }} catch (error) {{
+                if (fallbackCopy()) {{
+                    setButtonState("COPIED");
+                    return;
+                }}
+
+                setButtonState(
+                    window.isSecureContext ? "FAILED" : "USE DOWNLOAD",
+                    "#600",
+                );
+            }}
         }});
-    }}
+    }})();
     </script>
-    <button id="copyBtn" onclick="copyText()" style="
-        width: 100%;
-        padding: 0.6rem 1rem;
-        background: #fff;
-        color: #000;
-        border: none;
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 700;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        cursor: pointer;
-        transition: all 0.2s;
-    ">COPY TO CLIPBOARD</button>
     '''
-    st.components.v1.html(html, height=45)
+    st.html(html, unsafe_allow_javascript=True)
 
 
 def main():
