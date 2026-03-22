@@ -29,8 +29,16 @@ class CobaltDownloader(BaseDownloader):
         spinner = ProgressSpinner("Requesting Cobalt download", verbose)
         try:
             spinner.start()
-            # Ask Cobalt for audio-only media to avoid downloading full video files.
-            request_payload = {"url": url, "downloadMode": "audio"}
+            # Ask Cobalt for audio-only media. Explicitly request opus/64kbps to
+            # avoid the mp3/128kbps defaults and reduce download size. Metadata is
+            # stripped since it is discarded during our own re-encode step anyway.
+            request_payload = {
+                "url": url,
+                "downloadMode": "audio",
+                "audioFormat": "opus",
+                "audioBitrate": "64",
+                "disableMetadata": True,
+            }
             response = requests.post(
                 f"{self.base_url}/api/json",
                 json=request_payload,
