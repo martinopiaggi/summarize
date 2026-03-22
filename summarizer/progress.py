@@ -3,7 +3,17 @@
 import sys
 import time
 import threading
-from typing import Optional
+from typing import Callable, Optional
+
+_callback_local = threading.local()
+
+
+def set_progress_callback(fn: Callable[[str, str], None]) -> None:
+    _callback_local.fn = fn
+
+
+def clear_progress_callback() -> None:
+    _callback_local.fn = None
 
 
 class ProgressSpinner:
@@ -122,26 +132,6 @@ class SimpleProgress:
 
 
 def print_status(message: str, status: str = "INFO", verbose: bool = False) -> None:
-    """
-    Print a status message with appropriate formatting.
-
-    Args:
-        message: The message to print
-        status: Status type (INFO, SUCCESS, ERROR, WARNING, PROCESSING)
-        verbose: If False, only shows errors and final success
-    """
-    if not verbose:
-        # Only show errors and final success in non-verbose mode
-        if status in ["ERROR", "SUCCESS"]:
-            status_symbols = {
-                "SUCCESS": "[+]",
-                "ERROR": "[-]",
-            }
-            symbol = status_symbols.get(status, "[*]")
-            print(f"{symbol} {message}")
-        return
-
-    timestamp = time.strftime("%H:%M:%S")
     status_symbols = {
         "INFO": "[i]",
         "SUCCESS": "[+]",
@@ -150,4 +140,18 @@ def print_status(message: str, status: str = "INFO", verbose: bool = False) -> N
         "PROCESSING": "[~]",
     }
     symbol = status_symbols.get(status, "[*]")
+
+    if not verbose:
+        if status in ("ERROR", "SUCCESS"):
+            print(f"{symbol} {message}")
+            cb = getattr(_callback_local, "fn", None)
+            if cb:
+                cb(message, status)
+        return
+
+    timestamp = time.strftime("%H:%M:%S")
     print(f"[{timestamp}] {symbol} {message}")
+
+    cb = getattr(_callback_local, "fn", None)
+    if cb:
+        cb(message, status)

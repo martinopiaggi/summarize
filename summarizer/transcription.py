@@ -12,7 +12,6 @@ from .proxy import get_youtube_transcript_proxy_config
 
 
 def format_timestamp(seconds: float) -> str:
-    """Convert seconds to HH:MM:SS format."""
     hours = int(seconds // 3600)
     minutes = int((seconds % 3600) // 60)
     secs = int(seconds % 60)
@@ -20,14 +19,6 @@ def format_timestamp(seconds: float) -> str:
 
 
 def extract_youtube_id(url: str) -> str:
-    """
-    Extract YouTube video ID from URL.
-
-    Supports various YouTube URL formats including:
-    - youtube.com/watch?v=ID
-    - youtu.be/ID
-    - youtube.com/embed/ID
-    """
     regex = r"(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})"
     match = re.search(regex, url)
     if not match:
@@ -41,20 +32,6 @@ def get_youtube_transcript(
     verbose: bool = False,
     use_proxy: bool = False,
 ) -> str:
-    """
-    Get transcript from YouTube captions.
-
-    Uses Webshare rotating residential proxies when requested. This helps avoid
-    IP bans when running from cloud providers.
-
-    Args:
-        video_id: YouTube video ID
-        language: Language code for captions
-        verbose: Enable verbose output
-
-    Returns:
-        Formatted transcript with timestamps
-    """
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
     except ImportError:
@@ -75,7 +52,6 @@ def get_youtube_transcript(
             ytt_api = YouTubeTranscriptApi()
 
         transcript = ytt_api.fetch(video_id, languages=[language]).to_raw_data()
-
         spinner.stop()
         print_status("YouTube transcript fetched successfully", "SUCCESS", verbose)
 
@@ -96,18 +72,6 @@ def transcribe_audio(
     verbose: bool = False,
     whisper_model: str = "tiny",
 ) -> str:
-    """
-    Transcribe audio file using specified method.
-
-    Args:
-        audio_path: Path to the audio file
-        method: Transcription method ("Cloud Whisper" or "Local Whisper")
-        verbose: Enable verbose output
-        whisper_model: Whisper model size for local transcription (tiny, base, small, medium, large)
-
-    Returns:
-        Transcription text with timestamps
-    """
     if method == "Cloud Whisper":
         return _transcribe_cloud_whisper(audio_path, verbose)
     elif method == "Local Whisper":
@@ -117,7 +81,6 @@ def transcribe_audio(
 
 
 def _transcribe_cloud_whisper(audio_path: str, verbose: bool) -> str:
-    """Transcribe using Groq's Cloud Whisper API."""
     api_key = os.getenv("groq")
     if not api_key:
         raise APIKeyError("Groq API key not found in environment (set 'groq' in .env)")
@@ -160,13 +123,6 @@ def _transcribe_cloud_whisper(audio_path: str, verbose: bool) -> str:
 def _transcribe_local_whisper(
     audio_path: str, verbose: bool, model_size: str = "tiny"
 ) -> str:
-    """Transcribe using local Whisper model.
-    
-    Args:
-        audio_path: Path to audio file
-        verbose: Enable verbose output
-        model_size: Whisper model size (tiny, base, small, medium, large)
-    """
     try:
         import whisper
         import torch
@@ -175,7 +131,6 @@ def _transcribe_local_whisper(
             "Local Whisper requires 'openai-whisper' package: pip install openai-whisper"
         )
 
-    # Auto-detect GPU
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if verbose:
         if device == "cuda":
@@ -184,7 +139,6 @@ def _transcribe_local_whisper(
         else:
             print_status("No GPU detected, using CPU", "INFO", verbose)
 
-    # Validate model size
     valid_models = ["tiny", "base", "small", "medium", "large"]
     if model_size not in valid_models:
         print_status(f"Invalid model '{model_size}', using 'tiny'", "WARNING", verbose)
@@ -220,15 +174,6 @@ def _transcribe_local_whisper(
 
 
 def get_transcript(config: dict) -> str:
-    """
-    Get transcript based on source type and configuration.
-
-    Args:
-        config: Configuration dictionary with source details
-
-    Returns:
-        Transcript text with timestamps
-    """
     source_type = config.get("type_of_source")
     source_path = config.get("source_url_or_path")
     transcription_method = config.get("transcription_method", "Cloud Whisper")
@@ -239,7 +184,6 @@ def get_transcript(config: dict) -> str:
     if not source_type or not source_path:
         raise TranscriptError("Source type and path/URL are required")
 
-    # TXT source: read file directly as transcript text (no audio/video processing)
     if source_type == "TXT":
         if not os.path.exists(source_path):
             raise TranscriptError(f"Text file not found: {source_path}")
@@ -264,13 +208,24 @@ def get_transcript(config: dict) -> str:
     if source_type == "YouTube Video":
         if is_youtube_url(source_path) and config.get("use_youtube_captions", True):
             video_id = extract_youtube_id(source_path)
-            return get_youtube_transcript(
-                video_id,
-                config.get("language", "en"),
-                verbose,
-                use_proxy=use_proxy,
-            )
+            print_status("Attempting YouTube captions", "INFO", verbose)
+            if use_proxy:
+                print_status("Proxy enabled for caption fetch", "INFO", verbose)
+            try:
+                return get_youtube_transcript(
+                    video_id,
+                    config.get("language", "en"),
+                    verbose,
+                    use_proxy=use_proxy,
+                )
+            except TranscriptError as e:
+                print_status(f"Captions failed: {e}", "WARNING", verbose)
+                print_status(
+                    "Falling back to audio download + transcription", "PROCESSING", verbose
+                )
 
+        if use_proxy:
+            print_status("Proxy enabled for audio download", "INFO", verbose)
         audio_path = DownloadManager(config.get("cobalt_base_url")).download_audio(
             source_path,
             verbose=verbose,
@@ -278,8 +233,7 @@ def get_transcript(config: dict) -> str:
             use_proxy=use_proxy,
         )
         try:
-            transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
-            return transcript
+            return transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
         finally:
             if os.path.exists(audio_path):
                 os.remove(audio_path)
@@ -293,13 +247,14 @@ def get_transcript(config: dict) -> str:
         )
         audio_path, should_delete = handler.get_processed_audio()
         try:
-            transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
-            return transcript
+            return transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
         finally:
             if should_delete and os.path.exists(audio_path):
                 os.remove(audio_path)
 
     if source_type == "Video URL":
+        if use_proxy:
+            print_status("Proxy enabled for video URL download", "INFO", verbose)
         audio_path = DownloadManager(config.get("cobalt_base_url")).download_audio(
             source_path,
             verbose=verbose,
@@ -307,8 +262,7 @@ def get_transcript(config: dict) -> str:
             use_proxy=use_proxy,
         )
         try:
-            transcript = transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
-            return transcript
+            return transcribe_audio(audio_path, transcription_method, verbose, whisper_model)
         finally:
             if os.path.exists(audio_path):
                 os.remove(audio_path)

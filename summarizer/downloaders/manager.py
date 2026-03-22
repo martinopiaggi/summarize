@@ -28,21 +28,41 @@ class DownloadManager:
         audio_speed: float = 1.0,
         use_proxy: bool = False,
     ) -> str:
+        from ..progress import print_status
+
         temp_root = temp_dir or tempfile.gettempdir()
         last_error = None
 
-        for downloader in self.downloaders:
+        if verbose:
+            proxy_state = "enabled" if use_proxy else "disabled"
+            print_status(f"Proxy {proxy_state} for download", "INFO", verbose)
+
+        for i, downloader in enumerate(self.downloaders):
             if downloader.supports(url):
+                downloader_name = downloader.__class__.__name__.replace("Downloader", "")
+                if i > 0:
+                    print_status(f"Falling back to {downloader_name}", "WARNING", verbose)
+                else:
+                    print_status(f"Trying {downloader_name}", "INFO", verbose)
                 try:
-                    return downloader.download_audio(
+                    result_path = downloader.download_audio(
                         url,
                         temp_dir=temp_root,
                         verbose=verbose,
                         audio_speed=audio_speed,
                         use_proxy=use_proxy,
                     )
+                    if verbose and os.path.exists(result_path):
+                        size_kb = os.path.getsize(result_path) / 1024
+                        print_status(
+                            f"Audio file ready: {size_kb:.0f} KB", "INFO", verbose
+                        )
+                    return result_path
                 except AudioProcessingError as exc:
                     last_error = exc
+                    print_status(
+                        f"{downloader_name} failed: {str(exc)[:120]}", "WARNING", verbose
+                    )
                     # pytubefix is fragile on YouTube bot checks; try the next backend.
                     continue
 

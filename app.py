@@ -477,8 +477,11 @@ def run_summarization(
     source_type: str = "YouTube Video",
     transcription_method: str = "Cloud Whisper",
     whisper_model: str = "tiny",
+    verbose: bool = False,
+    status_container=None,
 ) -> str:
     from summarizer.core import main
+    from summarizer.progress import set_progress_callback, clear_progress_callback
     _, _, defaults = load_config()
 
     config = {
@@ -497,9 +500,29 @@ def run_summarization(
         "use_proxy": bool(defaults.get("use_proxy", False)),
         "base_url": provider_config.get("base_url"),
         "model": provider_config.get("model"),
-        "verbose": False,
+        "verbose": verbose,
     }
-    return main(config)
+
+    STATUS_ICONS = {
+        "INFO": "ℹ",
+        "SUCCESS": "✓",
+        "ERROR": "✗",
+        "WARNING": "⚠",
+        "PROCESSING": "⟳",
+    }
+
+    if verbose and status_container is not None:
+        def _callback(message: str, status: str) -> None:
+            icon = STATUS_ICONS.get(status, "•")
+            status_container.write(f"`{icon}` {message}")
+        set_progress_callback(_callback)
+
+    try:
+        return main(config)
+    finally:
+        if verbose and status_container is not None:
+            clear_progress_callback()
+
 
 
 def init_session_state():
@@ -666,6 +689,12 @@ def main():
 
         # -- Settings (less common options) --
         with st.expander("SETTINGS"):
+            default_verbose = bool(defaults.get("verbose", False))
+            verbose = st.checkbox(
+                "Verbose output",
+                value=default_verbose,
+                help="Show detailed progress messages including fallback attempts.",
+            )
             force_download = st.checkbox(
                 "Force audio download",
                 value=False,
@@ -751,7 +780,11 @@ def main():
             if not video_url.startswith("http"):
                 st.warning("URL must start with http or https")
             else:
-                with st.spinner("Processing..."):
+                if verbose:
+                    status_ctx = st.status("Processing...", expanded=True)
+                else:
+                    status_ctx = st.spinner("Processing...")
+                with status_ctx:
                     try:
                         source_type = (
                             "YouTube Video"
@@ -769,13 +802,19 @@ def main():
                             source_type,
                             transcription_method,
                             whisper_model,
+                            verbose,
+                            status_container=status_ctx if verbose else None,
                         )
+                        if verbose:
+                            status_ctx.update(label="Complete", state="complete", expanded=False)
                         add_to_history(
                             video_url, selected_provider, prompt_type, summary
                         )
                         st.session_state.current_summary = summary
                         st.session_state.show_history_item = None
                     except Exception as e:
+                        if verbose:
+                            status_ctx.update(label="Failed", state="error", expanded=True)
                         st.error(f"Error: {str(e)}")
                         with st.expander("DETAILS"):
                             st.code(traceback.format_exc())
@@ -790,7 +829,11 @@ def main():
             if uploaded:
                 file_ext = Path(uploaded.name).suffix.lower()
                 is_text_file = file_ext in TEXT_EXTENSIONS
-                with st.spinner("Processing..."):
+                if verbose:
+                    status_ctx = st.status("Processing...", expanded=True)
+                else:
+                    status_ctx = st.spinner("Processing...")
+                with status_ctx:
                     try:
                         with tempfile.NamedTemporaryFile(
                             delete=False, suffix=file_ext, mode="wb"
@@ -808,7 +851,11 @@ def main():
                             "TXT" if is_text_file else "Local File",
                             transcription_method,
                             whisper_model,
+                            verbose,
+                            status_container=status_ctx if verbose else None,
                         )
+                        if verbose:
+                            status_ctx.update(label="Complete", state="complete", expanded=False)
                         add_to_history(
                             uploaded.name, selected_provider, prompt_type, summary
                         )
@@ -816,6 +863,8 @@ def main():
                         st.session_state.show_history_item = None
                         os.unlink(tmp_path)
                     except Exception as e:
+                        if verbose:
+                            status_ctx.update(label="Failed", state="error", expanded=True)
                         st.error(f"Error: {str(e)}")
                         with st.expander("DETAILS"):
                             st.code(traceback.format_exc())

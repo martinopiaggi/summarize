@@ -72,6 +72,14 @@ def main(config: dict) -> str:
             print_status(
                 f"Prompt type: {config.get('prompt_type', 'unknown')}", "INFO", verbose
             )
+            print_status(
+                f"Provider: {config.get('base_url', 'unknown')} / {config.get('model', 'unknown')}",
+                "INFO",
+                verbose,
+            )
+            proxy_state = "enabled" if config.get("use_proxy") else "disabled"
+            print_status(f"Proxy: {proxy_state}", "INFO", verbose)
+
 
         # Get API key
         with ProgressSpinner("Validating API configuration", verbose) as spinner:

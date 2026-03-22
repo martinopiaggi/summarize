@@ -50,4 +50,4 @@ temp/
 cobalt.env
 cobalt.proxy.env
 !cobalt.proxy.env.example
-
+summarizer.yaml
