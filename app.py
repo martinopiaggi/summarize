@@ -556,9 +556,9 @@ def add_to_history(source: str, provider: str, prompt_type: str, summary: str):
 
 
 def copy_to_clipboard(text: str):
-    import base64
+    import json
 
-    b64_text = base64.b64encode(text.encode()).decode()
+    json_text = json.dumps(text)
 
     html = f'''
     <div style="width: 100%;">
@@ -587,7 +587,7 @@ def copy_to_clipboard(text: str):
     (() => {{
         const button = document.getElementById("copyBtn");
         const buffer = document.getElementById("copyBuffer");
-        const text = atob("{b64_text}");
+        const text = {json_text};
 
         const setButtonState = (label, background = "#333") => {{
             button.innerText = label;
