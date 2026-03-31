@@ -6,7 +6,7 @@ from typing import Optional
 
 from .exceptions import TranscriptError, APIKeyError
 from .progress import ProgressSpinner, print_status
-from .handlers import get_handler
+from .handlers import get_handler, is_dropbox_url, is_google_drive_url
 from .downloaders import DownloadManager, is_youtube_url
 from .proxy import get_youtube_transcript_proxy_config
 
@@ -241,6 +241,46 @@ def get_transcript(config: dict) -> str:
         raise TranscriptError("audio_speed must be a positive number")
     if audio_speed <= 0:
         raise TranscriptError("audio_speed must be greater than 0")
+
+    if is_dropbox_url(source_path):
+        handler = get_handler(
+            "Dropbox Video Link",
+            source_path,
+            audio_speed=audio_speed,
+            use_proxy=use_proxy,
+        )
+        audio_path, should_delete = handler.get_processed_audio()
+        try:
+            return transcribe_audio(
+                audio_path,
+                transcription_method,
+                verbose,
+                whisper_model,
+                language,
+            )
+        finally:
+            if should_delete and os.path.exists(audio_path):
+                os.remove(audio_path)
+
+    if is_google_drive_url(source_path):
+        handler = get_handler(
+            "Google Drive Video Link",
+            source_path,
+            audio_speed=audio_speed,
+            use_proxy=use_proxy,
+        )
+        audio_path, should_delete = handler.get_processed_audio()
+        try:
+            return transcribe_audio(
+                audio_path,
+                transcription_method,
+                verbose,
+                whisper_model,
+                language,
+            )
+        finally:
+            if should_delete and os.path.exists(audio_path):
+                os.remove(audio_path)
 
     if source_type == "YouTube Video":
         if is_youtube_url(source_path) and config.get("use_youtube_captions", True):

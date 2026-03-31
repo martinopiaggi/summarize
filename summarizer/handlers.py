@@ -1,12 +1,102 @@
 """Video source handlers for different platforms."""
+import html
 import os
+import re
 import tempfile
 import subprocess
 from typing import Tuple, Optional, List
+from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 import requests
 
 from .exceptions import SourceNotFoundError, UnsupportedSourceError, AudioProcessingError
 from .proxy import get_webshare_proxies, should_proxy_url
+
+
+DROPBOX_HOST_SUFFIXES = ("dropbox.com", "dropboxusercontent.com")
+GOOGLE_DRIVE_HOST_SUFFIXES = ("drive.google.com", "docs.google.com", "drive.usercontent.google.com")
+
+
+def is_dropbox_url(url: str) -> bool:
+    host = urlparse(url or "").netloc.lower()
+    return any(host == suffix or host.endswith(f".{suffix}") for suffix in DROPBOX_HOST_SUFFIXES)
+
+
+def normalize_dropbox_url(url: str) -> str:
+    if not is_dropbox_url(url):
+        return url
+
+    parsed = urlparse(url)
+    if parsed.netloc.lower().endswith("dropboxusercontent.com"):
+        return url
+
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query.pop("raw", None)
+    query["dl"] = "1"
+    return urlunparse(parsed._replace(query=urlencode(query, doseq=True)))
+
+
+def is_google_drive_url(url: str) -> bool:
+    host = urlparse(url or "").netloc.lower()
+    return any(host == suffix or host.endswith(f".{suffix}") for suffix in GOOGLE_DRIVE_HOST_SUFFIXES)
+
+
+def extract_google_drive_file_id(url: str) -> Optional[str]:
+    if not is_google_drive_url(url):
+        return None
+
+    parsed = urlparse(url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    file_id = query.get("id")
+    if file_id:
+        return file_id
+
+    match = re.search(r"/file/d/([^/]+)", parsed.path)
+    if match:
+        return match.group(1)
+
+    return None
+
+
+def build_google_drive_download_url(file_id: str, extra_query: Optional[dict] = None) -> str:
+    query = {"export": "download", "id": file_id}
+    if extra_query:
+        query.update(extra_query)
+    return f"https://drive.google.com/uc?{urlencode(query, doseq=True)}"
+
+
+def extract_google_drive_confirm_url(response: requests.Response, file_id: str) -> Optional[str]:
+    cookie_token = None
+    for name, value in response.cookies.items():
+        if name.startswith("download_warning"):
+            cookie_token = value
+            break
+    if cookie_token:
+        return build_google_drive_download_url(file_id, {"confirm": cookie_token})
+
+    content_type = response.headers.get("Content-Type", "")
+    if "html" not in content_type.lower():
+        return None
+
+    body = response.text
+    action_match = re.search(r'action="([^"]+)"', body)
+    if action_match:
+        action_url = html.unescape(action_match.group(1))
+        hidden_fields = {
+            name: value
+            for name, value in re.findall(r'type="hidden"\s+name="([^"]+)"\s+value="([^"]*)"', body)
+        }
+        if hidden_fields:
+            parsed_action = urlparse(urljoin("https://drive.google.com", action_url))
+            action_query = dict(parse_qsl(parsed_action.query, keep_blank_values=True))
+            action_query.update(hidden_fields)
+            return urlunparse(parsed_action._replace(query=urlencode(action_query, doseq=True)))
+        return urljoin("https://drive.google.com", action_url)
+
+    href_match = re.search(r'href="([^"]*confirm=[^"]+)"', body)
+    if href_match:
+        return urljoin("https://drive.google.com", html.unescape(href_match.group(1)))
+
+    return None
 
 
 class VideoSourceHandler:
@@ -113,8 +203,64 @@ class LocalFileHandler(VideoSourceHandler):
 
 class GoogleDriveHandler(VideoSourceHandler):
     """Handler for Google Drive video files."""
+
+    def _download_shared_file(self, temp_video: str) -> Tuple[str, bool]:
+        file_id = extract_google_drive_file_id(self.source_path)
+        if not file_id:
+            raise SourceNotFoundError("Could not extract a Google Drive file ID from the shared link")
+
+        download_url = build_google_drive_download_url(file_id)
+        proxies = None
+        if should_proxy_url(download_url, self.use_proxy):
+            proxies = get_webshare_proxies(True)
+
+        session = requests.Session()
+        response = None
+        try:
+            response = session.get(
+                download_url,
+                stream=True,
+                timeout=120,
+                proxies=proxies,
+            )
+            response.raise_for_status()
+
+            confirm_url = extract_google_drive_confirm_url(response, file_id)
+            if confirm_url:
+                response.close()
+                response = session.get(
+                    confirm_url,
+                    stream=True,
+                    timeout=120,
+                    proxies=proxies,
+                )
+                response.raise_for_status()
+
+            with response, open(temp_video, "wb") as f:
+                for chunk in response.iter_content(chunk_size=1024 * 256):
+                    if chunk:
+                        f.write(chunk)
+        except Exception as exc:
+            raise AudioProcessingError(f"Failed to download Google Drive file: {exc}")
+        finally:
+            if response is not None:
+                response.close()
+            session.close()
+
+        temp_wav = os.path.join(self.temp_dir, "gdrive_audio.wav")
+        convert_to_wav(temp_video, temp_wav)
+        processed_path = os.path.join(self.temp_dir, "gdrive_processed.mp3")
+        process_audio_file(temp_wav, processed_path, playback_speed=self.audio_speed)
+        self.cleanup(temp_video)
+        self.cleanup(temp_wav)
+
+        return processed_path, True
     
     def get_processed_audio(self) -> Tuple[str, bool]:
+        if is_google_drive_url(self.source_path):
+            temp_video = os.path.join(self.temp_dir, "gdrive_video.mp4")
+            return self._download_shared_file(temp_video)
+
         try:
             from google.colab import drive
             drive.mount('/content/drive')
@@ -141,13 +287,14 @@ class DropboxHandler(VideoSourceHandler):
     
     def get_processed_audio(self) -> Tuple[str, bool]:
         temp_video = os.path.join(self.temp_dir, "dropbox_video.mp4")
+        download_url = normalize_dropbox_url(self.source_path)
         proxies = None
-        if should_proxy_url(self.source_path, self.use_proxy):
+        if should_proxy_url(download_url, self.use_proxy):
             proxies = get_webshare_proxies(True)
 
         try:
             with requests.get(
-                self.source_path,
+                download_url,
                 stream=True,
                 timeout=120,
                 proxies=proxies,
