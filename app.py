@@ -511,7 +511,7 @@ def run_summarization(
         "PROCESSING": "⟳",
     }
 
-    if verbose and status_container is not None:
+    if status_container is not None:
         def _callback(message: str, status: str) -> None:
             icon = STATUS_ICONS.get(status, "•")
             status_container.write(f"`{icon}` {message}")
@@ -520,7 +520,7 @@ def run_summarization(
     try:
         return main(config)
     finally:
-        if verbose and status_container is not None:
+        if status_container is not None:
             clear_progress_callback()
 
 
@@ -829,10 +829,7 @@ def main():
             if not video_url.startswith("http"):
                 st.warning("URL must start with http or https")
             else:
-                if verbose:
-                    status_ctx = st.status("Processing...", expanded=True)
-                else:
-                    status_ctx = st.spinner("Processing...")
+                status_ctx = st.status("Processing...", expanded=False)
                 with status_ctx:
                     try:
                         source_type = (
@@ -852,18 +849,16 @@ def main():
                             transcription_method,
                             whisper_model,
                             verbose,
-                            status_container=status_ctx if verbose else None,
+                            status_container=status_ctx,
                         )
-                        if verbose:
-                            status_ctx.update(label="Complete", state="complete", expanded=False)
+                        status_ctx.update(label="Complete", state="complete", expanded=False)
                         add_to_history(
                             video_url, selected_provider, prompt_type, summary
                         )
                         st.session_state.current_summary = summary
                         st.session_state.show_history_item = None
                     except Exception as e:
-                        if verbose:
-                            status_ctx.update(label="Failed", state="error", expanded=True)
+                        status_ctx.update(label="Failed", state="error", expanded=True)
                         st.error(f"Error: {str(e)}")
                         with st.expander("DETAILS"):
                             st.code(traceback.format_exc())
@@ -878,10 +873,7 @@ def main():
             if uploaded:
                 file_ext = Path(uploaded.name).suffix.lower()
                 is_text_file = file_ext in TEXT_EXTENSIONS
-                if verbose:
-                    status_ctx = st.status("Processing...", expanded=True)
-                else:
-                    status_ctx = st.spinner("Processing...")
+                status_ctx = st.status("Processing...", expanded=False)
                 with status_ctx:
                     try:
                         with tempfile.NamedTemporaryFile(
@@ -901,10 +893,9 @@ def main():
                             transcription_method,
                             whisper_model,
                             verbose,
-                            status_container=status_ctx if verbose else None,
+                            status_container=status_ctx,
                         )
-                        if verbose:
-                            status_ctx.update(label="Complete", state="complete", expanded=False)
+                        status_ctx.update(label="Complete", state="complete", expanded=False)
                         add_to_history(
                             uploaded.name, selected_provider, prompt_type, summary
                         )
@@ -912,8 +903,7 @@ def main():
                         st.session_state.show_history_item = None
                         os.unlink(tmp_path)
                     except Exception as e:
-                        if verbose:
-                            status_ctx.update(label="Failed", state="error", expanded=True)
+                        status_ctx.update(label="Failed", state="error", expanded=True)
                         st.error(f"Error: {str(e)}")
                         with st.expander("DETAILS"):
                             st.code(traceback.format_exc())

@@ -141,17 +141,15 @@ def print_status(message: str, status: str = "INFO", verbose: bool = False) -> N
     }
     symbol = status_symbols.get(status, "[*]")
 
+    # CLI output: verbose controls what gets printed to stdout
     if not verbose:
         if status in ("ERROR", "SUCCESS"):
             print(f"{symbol} {message}")
-            cb = getattr(_callback_local, "fn", None)
-            if cb:
-                cb(message, status)
-        return
+    else:
+        timestamp = time.strftime("%H:%M:%S")
+        print(f"[{timestamp}] {symbol} {message}")
 
-    timestamp = time.strftime("%H:%M:%S")
-    print(f"[{timestamp}] {symbol} {message}")
-
+    # Callback (e.g. Streamlit status panel): always fires for all messages
     cb = getattr(_callback_local, "fn", None)
     if cb:
         cb(message, status)
