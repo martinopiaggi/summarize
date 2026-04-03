@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(py|yml|yaml|json|md\\)$\")",
+      "WebFetch(domain:github.com)",
+      "Bash(gh api:*)",
+      "Bash(python -c \"import sys,json; [print\\(i['name'], i['type']\\) for i in json.load\\(sys.stdin\\)]\")"
+    ]
+  }
+}
