@@ -589,9 +589,10 @@ def copy_to_clipboard(text: str):
         const buffer = document.getElementById("copyBuffer");
         const text = {json_text};
 
-        const setButtonState = (label, background = "#333") => {{
+        const setButtonState = (label, background = "#fff", color = "#000") => {{
             button.innerText = label;
             button.style.background = background;
+            button.style.color = color;
         }};
 
         const fallbackCopy = () => {{
@@ -611,25 +612,26 @@ def copy_to_clipboard(text: str):
             try {{
                 if (window.isSecureContext && navigator.clipboard?.writeText) {{
                     await navigator.clipboard.writeText(text);
-                    setButtonState("COPIED");
+                    setButtonState("COPIED", "#22c55e", "#fff");
                     return;
                 }}
 
                 if (fallbackCopy()) {{
-                    setButtonState("COPIED");
+                    setButtonState("COPIED", "#22c55e", "#fff");
                     return;
                 }}
 
                 setButtonState("USE DOWNLOAD", "#600");
             }} catch (error) {{
                 if (fallbackCopy()) {{
-                    setButtonState("COPIED");
+                    setButtonState("COPIED", "#22c55e", "#fff");
                     return;
                 }}
 
                 setButtonState(
                     window.isSecureContext ? "FAILED" : "USE DOWNLOAD",
                     "#600",
+                    "#fff",
                 );
             }}
         }});
