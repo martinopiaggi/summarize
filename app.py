@@ -525,9 +525,14 @@ def run_summarization(
 
 
 
-def init_session_state():
+def init_session_state(defaults=None):
+    if defaults is None:
+        defaults = {}
     if "history" not in st.session_state:
         st.session_state.history = []
+        if defaults.get("keep_history"):
+            output_dir = defaults.get("output_dir", "summaries")
+            st.session_state.history = load_history_from_disk(output_dir)
     if "current_summary" not in st.session_state:
         st.session_state.current_summary = None
     if "show_history_item" not in st.session_state:
@@ -542,17 +547,118 @@ def init_session_state():
 
 
 def add_to_history(source: str, provider: str, prompt_type: str, summary: str):
+    label = _extract_label(summary, source) or provider
     st.session_state.history.insert(
         0,
         {
             "source": source[:50],
-            "provider": provider,
+            "provider": label[:30],
             "prompt_type": prompt_type,
             "summary": summary,
             "timestamp": datetime.now().strftime("%H:%M"),
         },
     )
     st.session_state.history = st.session_state.history[:10]
+
+
+def _extract_label(text: str, source: str) -> str:
+    """Extract a short display label from summary content, falling back to source domain."""
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if not stripped:
+            continue
+        # Skip timestamps (00:00:00 ...), URLs, code fences
+        if len(stripped) > 2 and stripped[:2].isdigit() and ":" in stripped[:8]:
+            continue
+        if stripped.startswith("http"):
+            continue
+        if stripped.startswith("```"):
+            continue
+        # Skip ASCII art (low letter ratio)
+        alpha = sum(1 for c in stripped if c.isalpha())
+        if len(stripped) > 5 and alpha < len(stripped) * 0.4:
+            continue
+        # Strip markdown formatting
+        label = stripped.replace("**", "").strip()
+        label = label.lstrip("#-|>*~`").strip()
+        # Skip short all-caps section labels (TITLE, IDEAS, STEPS, etc.)
+        if label.isupper() and len(label) < 20:
+            continue
+        if label:
+            return label
+    # Fall back to domain name from source URL
+    if source.startswith("http"):
+        try:
+            return source.split("/")[2].split(".")[-2]
+        except (IndexError, ValueError):
+            pass
+    return ""
+
+
+def load_history_from_disk(output_dir: str) -> list:
+    """Load summary history from the output directory."""
+    history = []
+    output_path = Path(output_dir)
+    if not output_path.exists():
+        return history
+
+    md_files = sorted(
+        output_path.glob("*.md"),
+        key=lambda f: f.stat().st_mtime,
+        reverse=True,
+    )
+
+    for f in md_files[:10]:
+        try:
+            content = f.read_text(encoding="utf-8")
+            lines = content.split("\n")
+
+            source = ""
+            if lines and lines[0].startswith("# Summary for: "):
+                source = lines[0][len("# Summary for: "):]
+
+            timestamp = ""
+            if len(lines) > 2 and lines[2].startswith("Generated on: "):
+                ts_str = lines[2][len("Generated on: "):]
+                try:
+                    dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+                    timestamp = dt.strftime("%b %d %H:%M")
+                except ValueError:
+                    timestamp = ts_str[:16]
+
+            summary_text = "\n".join(lines[4:]).strip() if len(lines) > 4 else content
+
+            label = _extract_label(summary_text, source)
+            if not label:
+                label = f.stem.rsplit("_", 2)[0]
+            label = label[:30]
+
+            history.append({
+                "source": source[:50] if source else f.stem[:50],
+                "provider": label,
+                "prompt_type": "",
+                "summary": summary_text,
+                "timestamp": timestamp or datetime.fromtimestamp(f.stat().st_mtime).strftime("%b %d %H:%M"),
+            })
+        except Exception:
+            continue
+
+    return history
+
+
+def save_summary_to_disk(source: str, summary: str, output_dir: str):
+    """Save summary to the output directory (same format as CLI)."""
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    ts = datetime.now()
+    clean_source = source.split("?")[0].split("/")[-1]
+    if not clean_source:
+        clean_source = "summary"
+    filename = f"{clean_source}_{ts.strftime('%Y%m%d_%H%M%S')}.md"
+
+    header = f"# Summary for: {source}\n\nGenerated on: {ts.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    (output_path / filename).write_text(header + summary, encoding="utf-8")
 
 
 def copy_to_clipboard(text: str):
@@ -643,11 +749,11 @@ def copy_to_clipboard(text: str):
 
 def main():
     st.set_page_config(page_title="SUMMARIZE", page_icon="S", layout="centered")
-    init_session_state()
-    st.markdown(get_custom_css(st.session_state.theme), unsafe_allow_html=True)
 
     # Load config from YAML -- this is re-read every run so EDIT CONFIG changes apply immediately
     providers, default_provider, defaults = load_config()
+    init_session_state(defaults)
+    st.markdown(get_custom_css(st.session_state.theme), unsafe_allow_html=True)
     provider_names = list(providers.keys())
 
     # Get prompt types from prompts.json (single source of truth)
@@ -799,7 +905,7 @@ def main():
             st.markdown("### HISTORY")
             for i, item in enumerate(st.session_state.history[:5]):
                 if st.button(
-                    f"{item['timestamp']} / {item['provider']}",
+                    item['provider'],
                     key=f"hist_{i}",
                     use_container_width=True,
                 ):
@@ -859,6 +965,8 @@ def main():
                         )
                         st.session_state.current_summary = summary
                         st.session_state.show_history_item = None
+                        if defaults.get("keep_history"):
+                            save_summary_to_disk(video_url, summary, defaults.get("output_dir", "summaries"))
                     except Exception as e:
                         status_ctx.update(label="Failed", state="error", expanded=True)
                         st.error(f"Error: {str(e)}")
@@ -903,6 +1011,8 @@ def main():
                         )
                         st.session_state.current_summary = summary
                         st.session_state.show_history_item = None
+                        if defaults.get("keep_history"):
+                            save_summary_to_disk(uploaded.name, summary, defaults.get("output_dir", "summaries"))
                         os.unlink(tmp_path)
                     except Exception as e:
                         status_ctx.update(label="Failed", state="error", expanded=True)

@@ -36,3 +36,4 @@ defaults:
   parallel-calls: 30
   max-tokens: 4096
   output-dir: summaries
+  keep-history: true

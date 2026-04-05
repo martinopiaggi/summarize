@@ -178,5 +178,6 @@ defaults:
   audio-speed: 1.0
   use-proxy: false
   output-dir: summaries
+  keep-history: false
   cobalt-base-url: http://localhost:9000
 """
