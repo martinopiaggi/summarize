@@ -99,14 +99,11 @@ def main(config: dict) -> str:
         if not chunks:
             raise TranscriptError("Failed to create content chunks")
 
-        if verbose:
-            print_status(
-                f"Created {len(chunks)} content chunks (chunk size: {config.get('chunk_size', 10000)})",
-                "SUCCESS",
-                verbose,
-            )
-        else:
-            print_status(f"Created {len(chunks)} chunks", "SUCCESS", verbose)
+        print_status(
+            f"Number of chunks: {len(chunks)} (chunk size: {config.get('chunk_size', 10000)})",
+            "SUCCESS",
+            verbose,
+        )
 
         # Load template
         with ProgressSpinner("Loading prompt template", verbose) as spinner:

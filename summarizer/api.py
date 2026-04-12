@@ -119,9 +119,9 @@ def parse_response_content(response: Dict[str, Any], base_url: str) -> str:
 
 
 async def process_chunk(
-    chunk: str, 
-    template: str, 
-    config: Dict, 
+    chunk: str,
+    template: str,
+    config: Dict,
     max_retries: int = 3
 ) -> str:
     """
@@ -224,8 +224,8 @@ async def process_chunk(
 
 
 async def process_chunks(
-    chunks: List[Tuple[str, str]], 
-    template: str, 
+    chunks: List[Tuple[str, str]],
+    template: str,
     config: Dict
 ) -> List[Tuple[str, str]]:
     """
@@ -250,7 +250,10 @@ async def process_chunks(
         progress = SimpleProgress(len(chunks), "Summarizing")
         progress.start()
 
-    async def process_with_semaphore(chunk_data: Tuple[str, str]) -> Tuple[str, str]:
+    async def process_with_semaphore(
+        chunk_index: int,
+        chunk_data: Tuple[str, str],
+    ) -> Tuple[int, str, str]:
         timestamp, chunk_text = chunk_data
         async with semaphore:
             summary = await process_chunk(chunk_text, template, config)
@@ -259,12 +262,12 @@ async def process_chunks(
                 progress.update(completed[0])
             else:
                 progress.update(completed[0])
-            return timestamp, summary
+            return chunk_index, timestamp, summary
 
     tasks = []
-    for chunk_data in chunks:
+    for chunk_index, chunk_data in enumerate(chunks, start=1):
         if chunk_data[1].strip():
-            task = asyncio.create_task(process_with_semaphore(chunk_data))
+            task = asyncio.create_task(process_with_semaphore(chunk_index, chunk_data))
             tasks.append(task)
 
     if not tasks:
@@ -275,16 +278,37 @@ async def process_chunks(
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         valid_results = []
+        dropped_chunks = []
         for result in results:
             if isinstance(result, Exception):
                 logger.error(f"Chunk processing error: {result}")
-            elif result[1] and result[1].strip():
-                valid_results.append(result)
+                dropped_chunks.append(("error", str(result)))
+            elif result[2] and result[2].strip():
+                _, timestamp, summary = result
+                valid_results.append((timestamp, summary))
+            else:
+                dropped_chunks.append((result[0], "empty response"))
 
         if not verbose:
             progress.finish(len(valid_results) > 0)
-            
-        print_status(f"Completed processing {len(valid_results)}/{len(tasks)} chunks", "SUCCESS", verbose)
+
+        status = "SUCCESS" if len(valid_results) == len(tasks) else "WARNING"
+        print_status(
+            f"Completed processing {len(valid_results)}/{len(tasks)} chunks",
+            status,
+            verbose,
+        )
+        if dropped_chunks:
+            dropped_summary = ", ".join(
+                f"#{chunk_id}" if chunk_id != "error" else "exception"
+                for chunk_id, _ in dropped_chunks[:10]
+            )
+            extra = " ..." if len(dropped_chunks) > 10 else ""
+            print_status(
+                f"Dropped {len(dropped_chunks)} chunk summaries: {dropped_summary}{extra}",
+                "WARNING",
+                verbose,
+            )
         return valid_results
     except Exception as e:
         if not verbose:

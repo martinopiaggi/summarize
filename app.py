@@ -402,6 +402,64 @@ LANGUAGES = [
 ]
 
 CONFIG_PATH = Path.cwd() / "summarizer.yaml"
+MIN_CHUNK_SIZE = 20
+MAX_CHUNK_SIZE = 1000000
+UPLOADED_FILE_STATE_KEY = "uploaded_file_state"
+
+
+def normalize_config_section(section):
+    """Normalize YAML keys so kebab-case and snake_case behave the same."""
+    if not isinstance(section, dict):
+        return {}
+
+    aliases = {
+        "parallel_calls": "parallel_api_calls",
+        "max_tokens": "max_output_tokens",
+        "cobalt_url": "cobalt_base_url",
+    }
+
+    normalized = {}
+    for key, value in section.items():
+        normalized_key = str(key).replace("-", "_")
+        normalized[aliases.get(normalized_key, normalized_key)] = value
+    return normalized
+
+
+def coerce_int(value, fallback, minimum=None, maximum=None):
+    """Convert a value to int with optional bounds."""
+    try:
+        result = int(value)
+    except (TypeError, ValueError):
+        result = int(fallback)
+
+    if minimum is not None and result < minimum:
+        result = minimum
+    if maximum is not None and result > maximum:
+        result = maximum
+    return result
+
+
+def remember_uploaded_file(uploaded_file) -> None:
+    """Persist uploaded files across Streamlit reruns."""
+    if uploaded_file is None:
+        return
+
+    st.session_state[UPLOADED_FILE_STATE_KEY] = {
+        "name": uploaded_file.name,
+        "type": uploaded_file.type,
+        "bytes": uploaded_file.getvalue(),
+    }
+
+
+def get_uploaded_file_state():
+    """Return the currently remembered upload, if any."""
+    return st.session_state.get(UPLOADED_FILE_STATE_KEY)
+
+
+def clear_uploaded_file_state() -> None:
+    """Forget the remembered upload and clear the widget state."""
+    st.session_state.pop(UPLOADED_FILE_STATE_KEY, None)
+    st.session_state.pop("uploaded_file_widget", None)
 
 
 def _get_config_path():
@@ -415,14 +473,15 @@ def load_config():
     if CONFIG_PATH.exists():
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-            defaults = config.get("defaults", {})
-            normalized = {
-                key.replace("-", "_"): value for key, value in defaults.items()
+            defaults = normalize_config_section(config.get("defaults", {}))
+            providers = {
+                name: normalize_config_section(provider_cfg)
+                for name, provider_cfg in (config.get("providers", {}) or {}).items()
             }
             return (
-                config.get("providers", {}),
+                providers,
                 config.get("default_provider", ""),
-                normalized,
+                defaults,
             )
     return (
         {
@@ -444,8 +503,8 @@ def get_cobalt_url():
     if CONFIG_PATH.exists():
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-            defaults = config.get("defaults", {})
-            url = defaults.get("cobalt-base-url") or defaults.get("cobalt_base_url")
+            defaults = normalize_config_section(config.get("defaults", {}))
+            url = defaults.get("cobalt_base_url")
             if url:
                 return url
     return "http://localhost:9000"
@@ -484,6 +543,30 @@ def run_summarization(
     from summarizer.progress import set_progress_callback, clear_progress_callback
     _, _, defaults = load_config()
 
+    parallel_api_calls = coerce_int(
+        provider_config.get(
+            "parallel_api_calls",
+            defaults.get("parallel_api_calls", 30),
+        ),
+        30,
+        minimum=1,
+        maximum=100,
+    )
+    max_output_tokens = coerce_int(
+        provider_config.get(
+            "max_output_tokens",
+            defaults.get("max_output_tokens", 4096),
+        ),
+        4096,
+        minimum=1,
+    )
+    effective_chunk_size = coerce_int(
+        chunk_size,
+        defaults.get("chunk_size", 10000),
+        minimum=MIN_CHUNK_SIZE,
+        maximum=MAX_CHUNK_SIZE,
+    )
+
     config = {
         "source_url_or_path": source,
         "type_of_source": source_type,
@@ -493,9 +576,9 @@ def run_summarization(
         "audio_speed": audio_speed,
         "language": language,
         "prompt_type": prompt_type,
-        "chunk_size": chunk_size,
-        "parallel_api_calls": 30,
-        "max_output_tokens": 4096,
+        "chunk_size": effective_chunk_size,
+        "parallel_api_calls": parallel_api_calls,
+        "max_output_tokens": max_output_tokens,
         "cobalt_base_url": get_cobalt_url(),
         "use_proxy": bool(defaults.get("use_proxy", False)),
         "base_url": provider_config.get("base_url"),
@@ -539,6 +622,8 @@ def init_session_state(defaults=None):
         st.session_state.show_history_item = None
     if "theme" not in st.session_state:
         st.session_state.theme = "system"
+    if UPLOADED_FILE_STATE_KEY not in st.session_state:
+        st.session_state[UPLOADED_FILE_STATE_KEY] = None
     
     # Check if we need to restart for theme change
     if "theme_restart" in st.session_state:
@@ -815,16 +900,26 @@ def main():
         st.caption(f"model: {model_label}")
 
         # Use provider-level chunk-size if defined, else global default
-        effective_chunk_size = provider_config.get("chunk-size", default_chunk_size)
+        chunk_size_override = provider_config.get("chunk_size")
+        chunk_size = coerce_int(
+            chunk_size_override if chunk_size_override is not None else default_chunk_size,
+            default_chunk_size,
+            minimum=MIN_CHUNK_SIZE,
+            maximum=MAX_CHUNK_SIZE,
+        )
+        chunk_size_source = "provider override" if chunk_size_override is not None else "default"
+        st.caption(f"chunk size: {chunk_size:,} ({chunk_size_source})")
 
-        try:
-            chunk_size = int(effective_chunk_size)
-        except (TypeError, ValueError):
-            chunk_size = int(default_chunk_size)
-        if chunk_size < 500:
-            chunk_size = 500
-        elif chunk_size > 1000000:
-            chunk_size = 1000000
+        parallel_api_calls = coerce_int(
+            provider_config.get(
+                "parallel_api_calls",
+                defaults.get("parallel_api_calls", 30),
+            ),
+            30,
+            minimum=1,
+            maximum=100,
+        )
+        st.caption(f"parallel calls: {parallel_api_calls}")
 
         st.divider()
 
@@ -978,10 +1073,20 @@ def main():
             "Drop file",
             type=["mp4", "mp3", "wav", "m4a", "webm", "txt", "md", "vtt", "srt", "csv", "log", "rst", "html", "xml", "json"],
             label_visibility="collapsed",
+            key="uploaded_file_widget",
         )
-        if st.button("RUN", type="primary", disabled=uploaded is None, key="run_file"):
-            if uploaded:
-                file_ext = Path(uploaded.name).suffix.lower()
+        remember_uploaded_file(uploaded)
+        uploaded_state = get_uploaded_file_state()
+
+        if uploaded_state:
+            st.caption(f"Ready to rerun with: {uploaded_state['name']}")
+            if st.button("CLEAR FILE", use_container_width=True, key="clear_uploaded_file"):
+                clear_uploaded_file_state()
+                st.rerun()
+
+        if st.button("RUN", type="primary", disabled=uploaded_state is None, key="run_file"):
+            if uploaded_state:
+                file_ext = Path(uploaded_state["name"]).suffix.lower()
                 is_text_file = file_ext in TEXT_EXTENSIONS
                 status_ctx = st.status("Processing...", expanded=False)
                 with status_ctx:
@@ -989,7 +1094,7 @@ def main():
                         with tempfile.NamedTemporaryFile(
                             delete=False, suffix=file_ext, mode="wb"
                         ) as tmp:
-                            tmp.write(uploaded.read())
+                            tmp.write(uploaded_state["bytes"])
                             tmp_path = tmp.name
                         summary = run_summarization(
                             tmp_path,
@@ -1007,12 +1112,12 @@ def main():
                         )
                         status_ctx.update(label="Complete", state="complete", expanded=False)
                         add_to_history(
-                            uploaded.name, selected_provider, prompt_type, summary
+                            uploaded_state["name"], selected_provider, prompt_type, summary
                         )
                         st.session_state.current_summary = summary
                         st.session_state.show_history_item = None
                         if defaults.get("keep_history"):
-                            save_summary_to_disk(uploaded.name, summary, defaults.get("output_dir", "summaries"))
+                            save_summary_to_disk(uploaded_state["name"], summary, defaults.get("output_dir", "summaries"))
                         os.unlink(tmp_path)
                     except Exception as e:
                         status_ctx.update(label="Failed", state="error", expanded=True)
