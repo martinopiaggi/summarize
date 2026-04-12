@@ -584,6 +584,7 @@ def run_summarization(
         "base_url": provider_config.get("base_url"),
         "model": provider_config.get("model"),
         "verbose": verbose,
+        "cache_transcript": bool(defaults.get("cache_transcript", True)),
     }
 
     STATUS_ICONS = {

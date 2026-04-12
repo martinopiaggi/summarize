@@ -9,6 +9,7 @@ from .progress import ProgressSpinner, print_status
 from .handlers import get_handler, is_dropbox_url, is_google_drive_url
 from .downloaders import DownloadManager, is_youtube_url
 from .proxy import get_youtube_transcript_proxy_config
+from .transcript_cache import get_cached_transcript, put_cached_transcript
 
 
 def format_timestamp(seconds: float) -> str:
@@ -210,6 +211,42 @@ def _transcribe_local_whisper(
 
 
 def get_transcript(config: dict) -> str:
+    """Cache-aware transcript retrieval.
+
+    Checks the in-memory cache first (when ``cache_transcript`` is enabled in
+    the config, which is the default).  On a miss the transcript is fetched
+    normally and stored for later reuse.
+    """
+    verbose = config.get("verbose", False)
+    cache_enabled = config.get("cache_transcript", True)
+
+    if cache_enabled:
+        cached, key = get_cached_transcript(config)
+        if cached is not None:
+            short_key = key[:12]
+            print_status(
+                f"Transcript cache hit ({short_key}) — skipping transcription",
+                "SUCCESS",
+                verbose,
+            )
+            return cached
+
+    transcript = _fetch_transcript(config)
+
+    if cache_enabled and transcript and transcript.strip():
+        key = put_cached_transcript(config, transcript)
+        short_key = key[:12]
+        print_status(
+            f"Transcript cached in memory ({short_key})",
+            "INFO",
+            verbose,
+        )
+
+    return transcript
+
+
+def _fetch_transcript(config: dict) -> str:
+    """Fetch transcript from the source (no cache)."""
     source_type = config.get("type_of_source")
     source_path = config.get("source_url_or_path")
     transcription_method = config.get("transcription_method", "Cloud Whisper")

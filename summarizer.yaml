@@ -1,17 +1,18 @@
-default_provider: gemini
+default_provider: openrouter
 
 providers:
 
   openrouter:
     base_url: https://openrouter.ai/api/v1
-    model: openai/gpt-oss-120b
+    model: openai/gpt-oss-20b
+  
   gemini:
     base_url: https://generativelanguage.googleapis.com/v1beta/openai
-    model: gemini-2.5-flash-lite
+    model: gemini-flash-lite-latest
 
   groq:
     base_url: https://api.groq.com/openai/v1
-    model: openai/gpt-oss-20b
+    model: openai/gpt-oss-120b
 
   ollama: 
     base_url: http://localhost:11434/v1
@@ -23,12 +24,12 @@ providers:
 
   hyperbolic:
     base_url: https://api.hyperbolic.xyz/v1
-    model: openai/gpt-oss-20b
+    model: deepseek-ai/DeepSeek-V3-0324
 
   perplexity:
-    base_url: https://api.perplexity.ai
-    model: sonar-pro
-    chunk-size: 100000
+    base_url: https://openrouter.ai/api/v1
+    model: perplexity/sonar
+    chunk-size: 128000
 
 defaults:
   prompt-type: Distill Wisdom
@@ -37,3 +38,4 @@ defaults:
   max-tokens: 4096
   output-dir: summaries
   keep-history: true
+  cache-transcript: true

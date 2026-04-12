@@ -21,6 +21,7 @@ DEFAULT_CONFIG = {
     "parallel_api_calls": 30,
     "max_output_tokens": 4096,
     "cobalt_base_url": os.getenv("COBALT_BASE_URL", "http://localhost:9000"),
+    "cache_transcript": True,
 }
 
 # API provider patterns - extensible mapping of URL patterns to env var names

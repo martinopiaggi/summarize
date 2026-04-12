@@ -105,6 +105,7 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "audio_speed": 1.0,
         "output_dir": "summaries",
         "cobalt_base_url": os.getenv("COBALT_BASE_URL", "http://localhost:9000"),
+        "cache_transcript": True,
     }
 
     # Apply file config defaults
@@ -180,4 +181,5 @@ defaults:
   output-dir: summaries
   keep-history: false
   cobalt-base-url: http://localhost:9000
+  cache-transcript: true
 """

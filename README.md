@@ -25,32 +25,41 @@ Works with any OpenAI-compatible LLM provider, including locally hosted endpoint
                |    Source Type?    |
                +---------+----------+
                          |
-       +-----------------+-------------+
-       |                 |             |
-       |             X.com/IG     Local File
-    YouTube           TikTok     Google Drive
-       |                etc.       Dropbox
-       |                 |             |
-       v            +----+-----+       |
-+------+----------+ | Cobalt   |       |
-| Captions Exist? | +----+-----+       |
-+----+----+-------+      |             |
-    Yes   No             |             |
-     |    +--------------+--------+----+
-     |                            |
-     |                            v
-     |                   +--------+--------+
-     |                   |     Whisper     |
-     |                   |    endpoint?    |
-     |                   +--------+--------+
-     |                            |
-     |                +-----------+-----------+
-     |                |                       |
-     |           Cloud Whisper          Local Whisper
-     |                |                       |
-     |                +----------+------------+
-     |                           |
-     +---------------------------+
+                         v
+               +---------+----------+
+               | Transcript Cache   |------> HIT -------+
+               +---------+----------+                   |
+                         | MISS                         |
+       +-----------------+-------------+                |
+       |                 |             |                |
+       |             X.com/IG     Local File            |
+    YouTube           TikTok     Google Drive           |
+       |                etc.       Dropbox              |
+       |                 |             |                |
+       v            +----+-----+       |                |
++------+----------+ | Cobalt   |       |                |
+| Captions Exist? | +----+-----+       |                |
++----+----+-------+      |             |                |
+    Yes   No             |             |                |
+     |    +--------------+--------+----+                |
+     |                            |                     |
+     |                            v                     |
+     |                   +--------+--------+            |
+     |                   |     Whisper     |            |
+     |                   |    endpoint?    |            |
+     |                   +--------+--------+            |
+     |                            |                     |
+     |                +-----------+-----------+         |
+     |                |                       |         |
+     |           Cloud Whisper          Local Whisper   |
+     |                |                       |         |
+     |                +----------+------------+         |
+     |                           |                      |
+     +---------------------------+                      |
+                                 |                      |
+                           store in cache               |
+                                 |                      |
+                                 +----------------------+
                                  |
                             Transcript
                                  |
@@ -71,6 +80,7 @@ Works with any OpenAI-compatible LLM provider, including locally hosted endpoint
 - [`prompts.json`](./summarizer/prompts.json): Summary style templates
 
 **Notes:**
+- Transcripts are **cached in memory** by default (keyed by SHA-256 of source + config). Re-summarizing the same video with a different style or provider skips transcription entirely. The cache lives in process memory and clears on exit. Disable with `cache-transcript: false` in [`summarizer.yaml`](./summarizer.yaml)
 - Cloud Whisper uses **Groq Cloud API** and requires a Groq API key
 - The Docker image does **not** include Local Whisper and is aimed at lightweight VPS deployment
 
@@ -123,12 +133,13 @@ Cobalt standalone: `docker compose -f docker-compose.cobalt.yml up -d`
 Define your LLM providers and defaults. CLI flags override everything.
 
 ```yaml
+# example of summarizer.yaml
 default_provider: gemini
 
 providers:
   gemini:
     base_url: https://generativelanguage.googleapis.com/v1beta/openai
-    model: gemini-2.5-flash-lite
+    model: gemini-flash-lite-latest
     chunk-size: 128000
 
   groq:
@@ -141,7 +152,11 @@ providers:
 
   openrouter:
     base_url: https://openrouter.ai/api/v1
-    model: google/gemini-2.0-flash-001
+    model: openai/gpt-oss-20b
+
+  openrouter120:
+    base_url: https://openrouter.ai/api/v1
+    model: openai/gpt-oss-120b
 
 defaults:
   prompt-type: Questions and answers
@@ -151,6 +166,7 @@ defaults:
   audio-speed: 1.0
   use-proxy: false
   output-dir: summaries
+  cache-transcript: true
 ```
 
 ### API Keys (`.env`)

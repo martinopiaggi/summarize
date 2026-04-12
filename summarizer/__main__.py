@@ -416,6 +416,7 @@ def cli():
         "base_url": merged.get("base_url"),
         "model": merged.get("model"),
         "verbose": verbose,
+        "cache_transcript": bool(merged.get("cache_transcript", True)),
     }
 
     if merged.get("api_key"):
