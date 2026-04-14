@@ -24,7 +24,7 @@ providers:
 
   hyperbolic:
     base_url: https://api.hyperbolic.xyz/v1
-    model: deepseek-ai/DeepSeek-V3-0324
+    model: Qwen/Qwen3-Coder-480B-A35B-Instruct
 
   perplexity:
     base_url: https://openrouter.ai/api/v1
