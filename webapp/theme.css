@@ -1,0 +1,354 @@
+.stApp {
+    font-family: 'Space Grotesk', sans-serif !important;
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
+}
+
+.stApp [data-testid="stAppViewContainer"] {
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
+}
+
+.stApp [data-testid="stSidebar"] {
+    background-color: var(--secondary) !important;
+    color: var(--text) !important;
+}
+
+header[data-testid="stHeader"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"] {
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
+}
+
+[data-testid="stHeader"] svg,
+[data-testid="stToolbar"] svg {
+    fill: var(--text) !important;
+    color: var(--text) !important;
+}
+
+.main-header {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 2.5rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.05em !important;
+    text-transform: uppercase !important;
+    border-bottom: 2px solid var(--text) !important;
+    color: var(--text) !important;
+    padding-bottom: 0.5rem !important;
+    margin-bottom: 2rem !important;
+}
+
+.stTextInput > div > div > input,
+.stNumberInput > div {
+    border-radius: 0 !important;
+    background-color: var(--secondary) !important;
+    border: 1px solid var(--text) !important;
+    color: var(--text) !important;
+    caret-color: var(--text) !important;
+}
+
+.stTextInput [data-baseweb="input"] input {
+    background-color: transparent !important;
+    color: var(--text) !important;
+    caret-color: var(--text) !important;
+}
+
+.stTextInput [data-baseweb="input"],
+.stTextInput [data-baseweb="input"] > div {
+    background-color: var(--secondary) !important;
+    border: 1px solid var(--text) !important;
+    border-radius: 0 !important;
+}
+
+.stNumberInput > div > div > input {
+    border-radius: 0 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    background-color: transparent !important;
+    color: var(--text) !important;
+    border: none !important;
+}
+
+/* Number input (BaseWeb) background fix */
+.stNumberInput [data-baseweb="input"] {
+    background-color: var(--secondary) !important;
+    border: 1px solid var(--text) !important;
+    border-radius: 0 !important;
+}
+
+.stNumberInput [data-baseweb="input"] > div {
+    background-color: transparent !important;
+}
+
+.stNumberInput [data-baseweb="input"] input {
+    background-color: transparent !important;
+    color: var(--text) !important;
+}
+
+.stButton > button {
+    border-radius: 0 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    background-color: var(--secondary) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--text) !important;
+}
+
+.stSelectbox > div > div {
+    border-radius: 0 !important;
+    background-color: var(--secondary) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--text) !important;
+}
+
+.stSelectbox [data-baseweb="select"] > div {
+    background-color: var(--secondary) !important;
+    color: var(--text) !important;
+}
+
+.stSelectbox input {
+    cursor: pointer !important;
+    caret-color: transparent !important;
+    user-select: none !important;
+    color: var(--text) !important;
+}
+
+.stSelectbox [role="button"],
+.stSelectbox [data-baseweb="select"] [data-baseweb="popover"] {
+    background-color: var(--secondary) !important;
+    color: var(--text) !important;
+}
+
+/* Dropdown menu items */
+.stSelectbox ul[data-baseweb="menu"],
+.stSelectbox li[data-baseweb="menu"] {
+    background-color: var(--secondary) !important;
+    color: var(--text) !important;
+}
+
+/* Selectbox menu popover (portal) */
+[data-baseweb="popover"] ul[data-baseweb="menu"],
+[data-baseweb="popover"] li[data-baseweb="menu"],
+[data-baseweb="popover"] [role="listbox"],
+[data-baseweb="popover"] [role="option"] {
+    background-color: var(--secondary) !important;
+    color: var(--text) !important;
+}
+
+.stSelectbox [data-baseweb="select"] span {
+    color: var(--text) !important;
+}
+
+/* Button hover states */
+.stButton > button:hover {
+    background-color: var(--text) !important;
+    color: var(--bg) !important;
+}
+
+/* Selectbox hover */
+.stSelectbox > div > div:hover {
+    border: 1px solid var(--text) !important;
+}
+
+.stRadio [data-baseweb="radio"] > div > div {
+    border: 1px solid var(--text) !important;
+    background-color: transparent !important;
+}
+
+.stCheckbox [data-baseweb="checkbox"] > div > div {
+    border: 1px solid var(--text) !important;
+    background-color: transparent !important;
+}
+
+.stExpander {
+    background-color: var(--secondary) !important;
+    border: 1px solid var(--text) !important;
+}
+
+.stTabs [data-baseweb="tab"] {
+    border-radius: 0 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    text-transform: uppercase !important;
+    color: var(--text) !important;
+    border-bottom: 2px solid transparent !important;
+}
+
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    border-bottom: 2px solid var(--text) !important;
+    color: var(--text) !important;
+}
+
+.streamlit-expanderHeader {
+    font-family: 'JetBrains Mono', monospace !important;
+    text-transform: uppercase !important;
+    border-radius: 0 !important;
+    color: var(--text) !important;
+    background-color: transparent !important;
+}
+
+.streamlit-expanderHeader:hover {
+    background-color: transparent !important;
+    color: var(--text) !important;
+}
+
+.stSidebar [data-baseweb="radio"] {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.stSidebar [data-baseweb="radio"] > div {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.stSidebar [role="radiogroup"],
+.stSidebar [data-baseweb="radiogroup"] {
+    background-color: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.stSidebar .stRadio [data-baseweb="button-group"],
+.stSidebar .stRadio [data-baseweb="button-group"] > div {
+    background-color: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: 0 !important;
+}
+
+.stSidebar .stRadio [data-baseweb="radio"] > div > div {
+    border: none !important;
+}
+
+/* Theme toggle - clean segmented control */
+.stSidebar [key="theme_selector"] [data-baseweb="button-group"] {
+    display: flex !important;
+    gap: 0 !important;
+    background: transparent !important;
+    border: 1px solid var(--text) !important;
+    padding: 2px !important;
+}
+
+.stSidebar [key="theme_selector"] [data-baseweb="button-group"] > div {
+    flex: 1 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--text) !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    padding: 0.4rem 0.2rem !important;
+}
+
+.stSidebar [key="theme_selector"] [data-baseweb="button-group"] > div:hover {
+    background: rgba(128, 128, 128, 0.2) !important;
+}
+
+.stSidebar [key="theme_selector"] [data-baseweb="button-group"] > div[aria-checked="true"] {
+    background: var(--text) !important;
+    color: var(--bg) !important;
+}
+
+.stSidebar [key="theme_selector"] [role="radio"] {
+    display: none !important;
+}
+
+.stSidebar [data-testid="stExpander"] {
+    border-radius: 0 !important;
+    border: 1px solid var(--text) !important;
+}
+
+.stSidebar [data-testid="stExpander"] summary,
+.stSidebar [data-testid="stExpander"] details {
+    background-color: var(--secondary) !important;
+    color: var(--text) !important;
+    border-radius: 0 !important;
+}
+
+.stSidebar [data-testid="stExpander"] summary {
+    display: flex !important;
+    align-items: center !important;
+    padding: 0.4rem 0.6rem !important;
+    text-align: left !important;
+    color: var(--text) !important;
+}
+
+.stSidebar [data-testid="stExpander"] summary p,
+.stSidebar [data-testid="stExpander"] summary span {
+    color: var(--text) !important;
+}
+
+.stSidebar [data-testid="stExpander"] summary * {
+    color: var(--text) !important;
+}
+
+.stSidebar .stTextArea > div > div {
+    background-color: var(--secondary) !important;
+}
+
+.stSidebar .stTextArea > div > div > textarea {
+    background-color: transparent !important;
+    color: var(--text) !important;
+}
+
+.stSidebar .stCheckbox [data-baseweb="checkbox"] > div,
+.stSidebar .stCheckbox [data-baseweb="checkbox"] svg {
+    background-color: transparent !important;
+    border-color: var(--text) !important;
+    color: var(--text) !important;
+    fill: var(--text) !important;
+}
+
+.stCaption {
+    font-family: 'JetBrains Mono', monospace !important;
+    text-transform: uppercase !important;
+    color: var(--text) !important;
+}
+
+.stSidebar .stCaption {
+    color: var(--text) !important;
+}
+
+.stMarkdown {
+    color: var(--text) !important;
+}
+
+label, .stRadio label, .stCheckbox label, .stSelectbox label {
+    color: var(--text) !important;
+}
+
+.stFileUploader label,
+.stFileUploader [data-testid="stFileUploaderDropzone"] span,
+.stFileUploader [data-testid="stFileUploaderDropzone"] small,
+.stFileUploader [data-testid="stFileUploaderDropzone"] p {
+    color: var(--text) !important;
+}
+
+.stFileUploader [data-testid="stFileUploaderDropzone"] {
+    background-color: var(--secondary) !important;
+    border: 1px solid var(--text) !important;
+}
+
+.stTextInput input::placeholder,
+.stTextArea textarea::placeholder {
+    color: var(--text) !important;
+    opacity: 0.7 !important;
+}
+
+.stSidebar .stRadio [data-baseweb="radio"] span,
+.stSidebar .stRadio [data-baseweb="radio"] label,
+.stSidebar .stRadio [data-baseweb="radio"] p {
+    color: var(--text) !important;
+}
+
+.element-container .stMarkdown h1,
+.element-container .stMarkdown h2,
+.element-container .stMarkdown h3 {
+    font-family: 'JetBrains Mono', monospace !important;
+    color: var(--text) !important;
+}
