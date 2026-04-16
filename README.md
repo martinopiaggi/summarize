@@ -1,5 +1,9 @@
 # Video Transcript Summarizer
 
+<p align="center">
+    <img alt="sample" src="./summarize_sample.gif">
+</p>
+
 Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter, Reddit, Facebook, Google Drive, Dropbox, and local files.
 
 Works with any OpenAI-compatible LLM provider, including locally hosted endpoints.
