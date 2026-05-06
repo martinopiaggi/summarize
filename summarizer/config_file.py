@@ -109,6 +109,8 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "enable_visual": False,
         "visual_max_duration": 180,
         "visual_max_dimension": 768,
+        "video_engine": "auto",
+        "gemini_model": "gemini-2.5-flash",
     }
 
     # Apply file config defaults

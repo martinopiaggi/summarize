@@ -35,6 +35,10 @@ from .api import (
     parse_response_content,
 )
 from .multimodal import extract_video_frames, MAX_FRAMES_HARD_CAP
+from .engines.gemini_video import (
+    analyze_video_with_gemini,
+    GeminiVideoEngineError,
+)
 from .prompts import load_prompt_template, get_available_prompts
 from .exceptions import (
     SummarizerError,
@@ -124,6 +128,84 @@ def _fetch_visual_and_transcript(config: dict, verbose: bool):
                 except OSError:
                     pass
 
+
+def _run_gemini_video_engine(config: dict, verbose: bool) -> str:
+    """End-to-end summary using Gemini Files API for the full video.
+
+    Downloads the source via YtdlpDownloader (we need a real video file
+    on disk), uploads to Gemini, asks for the summary using the same
+    prompt template the standard pipeline uses, returns the formatted
+    string. Raises on any error so a caller in 'auto' mode can fall back.
+    """
+    source_url = config.get("source_url_or_path", "")
+    downloader = YtdlpDownloader()
+    media = downloader.download_with_metadata(
+        source_url,
+        verbose=verbose,
+        audio_speed=float(config.get("audio_speed", 1.0)),
+    )
+    audio_path = media.get("audio_path")
+    video_path = media.get("video_path")
+    caption = media.get("caption")
+    duration = media.get("duration")
+
+    try:
+        if not video_path or not os.path.isfile(video_path):
+            raise GeminiVideoEngineError(
+                "yt-dlp did not produce a video file (audio-only stream?)"
+            )
+
+        max_duration = float(config.get("visual_max_duration", 180))
+        if duration and duration > max_duration:
+            print_status(
+                f"Visual analysis is not available for videos longer than "
+                f"{int(max_duration)}s (this video is {duration:.0f}s). "
+                f"Skipping Gemini Files engine.",
+                "WARNING",
+                verbose,
+            )
+            raise GeminiVideoEngineError(
+                f"Video exceeds visual_max_duration ({duration:.0f}s > {max_duration:.0f}s)"
+            )
+
+        prompt_template = load_prompt_template(
+            config.get("prompt_type", "Questions and answers")
+        )
+
+        print_status(
+            "Uploading video to Gemini Files API",
+            "PROCESSING",
+            verbose,
+        )
+        summary = analyze_video_with_gemini(
+            video_path,
+            prompt_text=prompt_template,
+            caption=caption,
+            output_language=config.get("output_language"),
+            model=config.get("gemini_model", "gemini-2.5-flash"),
+            api_key=config.get("gemini_api_key"),
+            max_output_tokens=int(config.get("max_output_tokens", 4096)),
+            verbose=verbose,
+        )
+        print_status("Gemini Files engine completed", "SUCCESS", verbose)
+
+        # Match the formatting of the standard pipeline so downstream
+        # code (file naming, history) is unchanged. format_summary_with_timestamps
+        # expects (timestamp, summary) 2-tuples — synthesise one for the
+        # whole video at t=0.
+        formatted = format_summary_with_timestamps(
+            [("00:00:00", summary)], config
+        )
+        return formatted
+    finally:
+        for path in (audio_path, video_path):
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -168,15 +250,41 @@ def main(config: dict) -> str:
             config["api_key"] = get_api_key(config)
         print_status("API configuration validated", "SUCCESS", verbose)
 
-        # Decide whether to take the multimodal path. It activates only when
-        # the user opted in (`enable_visual: true`) AND the URL is one yt-dlp
-        # can give us a video file for (IG/TikTok/X/Reddit/FB).
+        # Pick the video-analysis engine. For yt-dlp-eligible URLs (IG,
+        # TikTok, X, Reddit, FB):
+        #   - 'gemini-files'    : upload full video to Gemini Files API
+        #   - 'groq-multimodal' : 5 evenly-spaced frames + Whisper transcript
+        #   - 'auto' (default)  : try Gemini first, fall back to multimodal
+        # For everything else (YouTube via captions, local files, etc.) the
+        # video_engine value is ignored and we go through get_transcript().
         visual_context = None
         caption = None
         source_url = config.get("source_url_or_path", "") or ""
+        ytdlp_eligible = _is_ytdlp_visual_eligible(source_url)
+        engine = (config.get("video_engine") or "auto").lower()
+
+        if ytdlp_eligible and engine in ("auto", "gemini-files"):
+            try:
+                return _run_gemini_video_engine(config, verbose)
+            except GeminiVideoEngineError as exc:
+                if engine == "gemini-files":
+                    # User explicitly asked for Gemini and we cannot serve
+                    # it — surface the error instead of silently degrading.
+                    raise SummarizerError(
+                        f"Gemini Files engine failed: {exc}"
+                    ) from exc
+                # auto mode: warn and fall through to multimodal/audio.
+                print_status(
+                    f"Gemini Files engine failed ({exc}). "
+                    f"Falling back to Groq + 5 frames.",
+                    "WARNING",
+                    verbose,
+                )
+
         if (
-            config.get("enable_visual")
-            and _is_ytdlp_visual_eligible(source_url)
+            ytdlp_eligible
+            and config.get("enable_visual")
+            and engine in ("auto", "groq-multimodal")
         ):
             transcript, visual_context, caption = _fetch_visual_and_transcript(
                 config, verbose

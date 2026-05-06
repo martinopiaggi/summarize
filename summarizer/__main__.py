@@ -187,6 +187,20 @@ Examples:
         type=int,
         help="Resize each frame so the longest side is at most this (default: 768)",
     )
+    parser.add_argument(
+        "--video-engine",
+        choices=["auto", "gemini-files", "groq-multimodal"],
+        help=(
+            "Engine for video analysis on yt-dlp-eligible URLs. "
+            "'gemini-files' uploads the full video to Gemini Files API. "
+            "'groq-multimodal' samples 5 frames + Whisper transcript. "
+            "'auto' (default) tries gemini-files first and falls back to groq-multimodal on failure."
+        ),
+    )
+    parser.add_argument(
+        "--gemini-model",
+        help="Gemini model id used by gemini-files engine (default: gemini-2.5-flash)",
+    )
 
     return parser.parse_args()
 
@@ -374,6 +388,8 @@ def cli():
         "enable_visual": args.enable_visual,
         "visual_max_duration": args.visual_max_duration,
         "visual_max_dimension": args.visual_max_dimension,
+        "video_engine": args.video_engine,
+        "gemini_model": args.gemini_model,
     }
 
     # Merge configs
@@ -450,6 +466,8 @@ def cli():
         "enable_visual": bool(merged.get("enable_visual", False)),
         "visual_max_duration": int(merged.get("visual_max_duration", 180)),
         "visual_max_dimension": int(merged.get("visual_max_dimension", 768)),
+        "video_engine": str(merged.get("video_engine") or "auto").lower(),
+        "gemini_model": merged.get("gemini_model", "gemini-2.5-flash"),
         "output_language": merged.get("output_language"),
     }
 

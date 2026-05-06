@@ -8,6 +8,7 @@ core_requirements = [
     "groq>=0.4.2",
     "openai>=1.3.7",
     "yt-dlp>=2025.4.30",
+    "google-genai>=1.0.0",
     "aiohttp>=3.9.0",
     "requests>=2.31.0",
     "wget>=3.2",
