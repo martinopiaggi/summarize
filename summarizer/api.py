@@ -151,15 +151,23 @@ async def process_chunk(
 
     processed_template = template.format(text=chunk.strip())
 
+    system_content = (
+        "You are a helpful assistant specializing in video content analysis. "
+        "Always provide direct responses based on the given transcript without asking for more content."
+    )
+    output_language = config.get("output_language")
+    if output_language and str(output_language).strip().lower() not in ("auto", "none", ""):
+        system_content += (
+            f" Always write your response in {output_language}, "
+            f"regardless of the language of the transcript."
+        )
+
     data = {
         "model": config["model"],
         "messages": [
             {
                 "role": "system",
-                "content": (
-                    "You are a helpful assistant specializing in video content analysis. "
-                    "Always provide direct responses based on the given transcript without asking for more content."
-                )
+                "content": system_content,
             },
             {
                 "role": "user",
