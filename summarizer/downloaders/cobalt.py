@@ -40,13 +40,19 @@ class CobaltDownloader(BaseDownloader):
                 "disableMetadata": True,
             }
             response = requests.post(
-                f"{self.base_url}/api/json",
+                f"{self.base_url}/",
                 json=request_payload,
                 headers={"Accept": "application/json"},
                 timeout=60,
             )
-            response.raise_for_status()
-            payload = response.json()
+            # Cobalt v11 returns HTTP 4xx with a structured JSON error body. Try
+            # to parse the body before raising so the caller sees a meaningful
+            # error code instead of a generic 'Bad Request'.
+            try:
+                payload = response.json()
+            except Exception:
+                response.raise_for_status()
+                raise TranscriptError("Cobalt returned non-JSON response")
             spinner.stop()
         except Exception as e:
             spinner.stop()
@@ -54,7 +60,15 @@ class CobaltDownloader(BaseDownloader):
 
         if isinstance(payload, dict):
             if payload.get("status") == "error":
-                raise TranscriptError(payload.get("text") or "Cobalt returned an error")
+                err = payload.get("error")
+                if isinstance(err, dict):
+                    msg = err.get("code") or "Cobalt returned an error"
+                    ctx = err.get("context") or {}
+                    if ctx:
+                        msg = f"{msg} ({ctx})"
+                else:
+                    msg = payload.get("text") or "Cobalt returned an error"
+                raise TranscriptError(msg)
 
             download_url = (
                 payload.get("url")
