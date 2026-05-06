@@ -2,6 +2,8 @@
 
 import asyncio
 import logging
+import os
+from urllib.parse import urlparse
 
 # Re-export for backward compatibility
 from .config import DEFAULT_CONFIG as CONFIG, get_api_key, validate_config
@@ -23,6 +25,7 @@ from .transcription import (
     format_timestamp,
 )
 from .downloaders import download_youtube_audio
+from .downloaders.ytdlp import YtdlpDownloader, YTDLP_PRIMARY_HOSTS
 from .api import (
     chunk_text,
     extract_and_clean_chunks,
@@ -31,6 +34,7 @@ from .api import (
     format_summary_with_timestamps,
     parse_response_content,
 )
+from .multimodal import extract_video_frames, MAX_FRAMES_HARD_CAP
 from .prompts import load_prompt_template, get_available_prompts
 from .exceptions import (
     SummarizerError,
@@ -41,6 +45,84 @@ from .exceptions import (
     AudioProcessingError,
     SourceNotFoundError,
 )
+
+
+def _is_ytdlp_visual_eligible(url: str) -> bool:
+    """Return True if the URL host is one yt-dlp can give us a video file for."""
+    host = (urlparse(url or "").hostname or "").lower()
+    return any(
+        host == h or host.endswith("." + h) for h in YTDLP_PRIMARY_HOSTS
+    )
+
+
+def _fetch_visual_and_transcript(config: dict, verbose: bool):
+    """Download video + audio + metadata once, extract frames, transcribe audio.
+
+    Returns (transcript, visual_context, caption) where visual_context is None
+    if duration exceeds the configured cap (a warning is printed and the
+    caller falls back transparently to audio-only reasoning).
+    """
+    source_url = config.get("source_url_or_path", "")
+    max_duration = float(config.get("visual_max_duration", 180))
+    max_dimension = int(config.get("visual_max_dimension", 768))
+
+    downloader = YtdlpDownloader()
+    media = downloader.download_with_metadata(
+        source_url,
+        verbose=verbose,
+        audio_speed=float(config.get("audio_speed", 1.0)),
+    )
+
+    audio_path = media.get("audio_path")
+    video_path = media.get("video_path")
+    caption = media.get("caption")
+    duration = media.get("duration")
+
+    visual_context = None
+    try:
+        if duration and duration > max_duration:
+            print_status(
+                f"Visual analysis is not available for videos longer than "
+                f"{int(max_duration)}s (this video is {duration:.0f}s). "
+                f"Falling back to audio-only summary.",
+                "WARNING",
+                verbose,
+            )
+        elif video_path and os.path.isfile(video_path):
+            print_status(
+                f"Extracting up to {MAX_FRAMES_HARD_CAP} frames for visual context",
+                "PROCESSING",
+                verbose,
+            )
+            visual_context = extract_video_frames(
+                video_path,
+                n_frames=MAX_FRAMES_HARD_CAP,
+                max_dimension=max_dimension,
+            )
+            print_status(
+                f"Visual context ready: {len(visual_context)} frames",
+                "SUCCESS",
+                verbose,
+            )
+
+        # Transcribe the audio track yt-dlp gave us. We bypass get_transcript()
+        # here because we already have the audio file on disk and don't want
+        # to re-download.
+        transcript = transcribe_audio(
+            audio_path,
+            config.get("transcription_method", "Cloud Whisper"),
+            verbose,
+            config.get("whisper_model", "tiny"),
+            config.get("language", "auto"),
+        )
+        return transcript, visual_context, caption
+    finally:
+        for path in (audio_path, video_path):
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
 
 # Setup logging
 logging.basicConfig(
@@ -86,10 +168,34 @@ def main(config: dict) -> str:
             config["api_key"] = get_api_key(config)
         print_status("API configuration validated", "SUCCESS", verbose)
 
-        # Get transcript
-        transcript = get_transcript(config)
+        # Decide whether to take the multimodal path. It activates only when
+        # the user opted in (`enable_visual: true`) AND the URL is one yt-dlp
+        # can give us a video file for (IG/TikTok/X/Reddit/FB).
+        visual_context = None
+        caption = None
+        source_url = config.get("source_url_or_path", "") or ""
+        if (
+            config.get("enable_visual")
+            and _is_ytdlp_visual_eligible(source_url)
+        ):
+            transcript, visual_context, caption = _fetch_visual_and_transcript(
+                config, verbose
+            )
+        else:
+            transcript = get_transcript(config)
+
         if not transcript or not transcript.strip():
             raise TranscriptError("No transcript content to process")
+
+        # If the platform gave us the author's caption, prepend it so the
+        # model has the same textual context a viewer would have when they
+        # opened the post.
+        if caption:
+            transcript = (
+                f"Caption from the author of the post:\n"
+                f"\"\"\"\n{caption}\n\"\"\"\n\n"
+                f"Audio transcript:\n{transcript}"
+            )
 
         # Extract chunks with timestamps
         with ProgressSpinner("Preparing content chunks", verbose) as spinner:
@@ -125,7 +231,7 @@ def main(config: dict) -> str:
 
         try:
             summaries = loop.run_until_complete(
-                process_chunks(chunks, template, config)
+                process_chunks(chunks, template, config, visual_context=visual_context)
             )
             if not summaries:
                 raise APIError("No valid summaries generated")

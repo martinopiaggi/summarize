@@ -106,6 +106,9 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "output_dir": "summaries",
         "cobalt_base_url": os.getenv("COBALT_BASE_URL", "http://localhost:9000"),
         "cache_transcript": True,
+        "enable_visual": False,
+        "visual_max_duration": 180,
+        "visual_max_dimension": 768,
     }
 
     # Apply file config defaults
