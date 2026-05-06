@@ -106,6 +106,11 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "output_dir": "summaries",
         "cobalt_base_url": os.getenv("COBALT_BASE_URL", "http://localhost:9000"),
         "cache_transcript": True,
+        "enable_visual": False,
+        "visual_max_duration": 180,
+        "visual_max_dimension": 768,
+        "video_engine": "auto",
+        "gemini_model": "gemini-2.5-flash",
     }
 
     # Apply file config defaults

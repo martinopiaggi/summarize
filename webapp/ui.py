@@ -117,6 +117,30 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
         model_label = provider_config.get("model", "n/a")
         st.caption(f"model: {model_label}")
 
+        # -- Video engine (only meaningful for IG/TikTok/X/Reddit/FB URLs) --
+        engine_options = ["auto", "gemini-files", "groq-multimodal"]
+        engine_default = (defaults.get("video_engine") or "auto").lower()
+        engine_idx = (
+            engine_options.index(engine_default)
+            if engine_default in engine_options
+            else 0
+        )
+        video_engine = st.selectbox(
+            "VIDEO ENGINE",
+            engine_options,
+            index=engine_idx,
+            help=(
+                "How Instagram / TikTok / X / Reddit / FB videos are analysed. "
+                "'gemini-files' uploads the full video to Gemini Files API "
+                "(richer audio + visual understanding). "
+                "'groq-multimodal' samples 5 frames + Whisper transcript and "
+                "sends them to Llama-4-Scout. "
+                "'auto' tries gemini-files first and falls back to "
+                "groq-multimodal if the upload or call fails. "
+                "Ignored for YouTube and local files."
+            ),
+        )
+
         # Use provider-level chunk-size if defined, else global default
         chunk_size_override = provider_config.get("chunk_size")
         chunk_size = coerce_int(
@@ -239,6 +263,7 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
         "transcription_method": transcription_method,
         "whisper_model": whisper_model,
         "audio_speed": audio_speed,
+        "video_engine": video_engine,
     }
 
 
@@ -257,6 +282,7 @@ def _run_and_store(source, display_name, source_type, force_download, sidebar, d
         sidebar["whisper_model"],
         sidebar["verbose"],
         status_container=status_ctx,
+        video_engine=sidebar.get("video_engine", "auto"),
     )
     status_ctx.update(label="Complete", state="complete", expanded=False)
     add_to_history(display_name, sidebar["provider"], sidebar["prompt_type"], summary)

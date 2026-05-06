@@ -6,6 +6,7 @@ from typing import Optional
 from ..exceptions import AudioProcessingError, UnsupportedSourceError
 from .cobalt import CobaltDownloader
 from .youtube import YouTubeDownloader
+from .ytdlp import YtdlpDownloader
 
 
 class DownloadManager:
@@ -17,6 +18,7 @@ class DownloadManager:
         )
         self.downloaders = [
             YouTubeDownloader(),
+            YtdlpDownloader(),
             CobaltDownloader(self.cobalt_base_url),
         ]
 

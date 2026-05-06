@@ -34,6 +34,8 @@ def run_summarization(
     whisper_model: str = "tiny",
     verbose: bool = False,
     status_container=None,
+    video_engine: str = "auto",
+    gemini_model: str = "gemini-2.5-flash",
 ) -> str:
     """Run the summarizer pipeline and return the generated markdown."""
     from summarizer.core import main
@@ -83,6 +85,14 @@ def run_summarization(
         "model": provider_config.get("model"),
         "verbose": verbose,
         "cache_transcript": bool(defaults.get("cache_transcript", True)),
+        # Multimodal / Gemini Files plumbing. Defaults come from the
+        # YAML defaults: section so the user controls the flow centrally.
+        "enable_visual": bool(defaults.get("enable_visual", False)),
+        "visual_max_duration": int(defaults.get("visual_max_duration", 180)),
+        "visual_max_dimension": int(defaults.get("visual_max_dimension", 768)),
+        "video_engine": str(video_engine or defaults.get("video_engine") or "auto").lower(),
+        "gemini_model": gemini_model or defaults.get("gemini_model", "gemini-2.5-flash"),
+        "output_language": defaults.get("output_language"),
     }
 
     if status_container is not None:

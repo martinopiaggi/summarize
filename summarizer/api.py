@@ -3,7 +3,7 @@ import re
 import asyncio
 import aiohttp
 import logging
-from typing import Dict, List, Tuple, Any
+from typing import Any, Dict, List, Optional, Tuple
 from .exceptions import APIError, ConfigurationError
 from .progress import ProgressBar, SimpleProgress, print_status
 from .proxy import get_webshare_proxy_url, should_proxy_url
@@ -122,17 +122,23 @@ async def process_chunk(
     chunk: str,
     template: str,
     config: Dict,
-    max_retries: int = 3
+    max_retries: int = 3,
+    visual_context: Optional[List[str]] = None,
 ) -> str:
     """
     Process a single chunk using the API.
-    
+
     Args:
         chunk: Text chunk to process
         template: Prompt template with {text} placeholder
         config: Configuration with API details
         max_retries: Number of retry attempts
-        
+        visual_context: Optional list of base64-encoded JPEG frames. When
+            provided, the user message becomes a multimodal content array so
+            the model sees both the transcript text and the images. Caller is
+            responsible for ensuring the frames count fits the model's image
+            limit (Llama-4-Scout on Groq: max 5).
+
     Returns:
         Generated summary text
     """
@@ -151,19 +157,40 @@ async def process_chunk(
 
     processed_template = template.format(text=chunk.strip())
 
+    system_content = (
+        "You are a helpful assistant specializing in video content analysis. "
+        "Always provide direct responses based on the given transcript without asking for more content."
+    )
+    output_language = config.get("output_language")
+    if output_language and str(output_language).strip().lower() not in ("auto", "none", ""):
+        system_content += (
+            f" Always write your response in {output_language}, "
+            f"regardless of the language of the transcript."
+        )
+
+    if visual_context:
+        # Multimodal payload: text + N image_url parts. The model receives
+        # the prompt and the visual frames in a single message so it can
+        # cross-reference what it sees with what it hears in the transcript.
+        user_content = [{"type": "text", "text": processed_template}]
+        for b64 in visual_context:
+            user_content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
+            })
+    else:
+        user_content = processed_template
+
     data = {
         "model": config["model"],
         "messages": [
             {
                 "role": "system",
-                "content": (
-                    "You are a helpful assistant specializing in video content analysis. "
-                    "Always provide direct responses based on the given transcript without asking for more content."
-                )
+                "content": system_content,
             },
             {
                 "role": "user",
-                "content": processed_template
+                "content": user_content,
             }
         ],
         "max_tokens": config["max_output_tokens"]
@@ -226,16 +253,21 @@ async def process_chunk(
 async def process_chunks(
     chunks: List[Tuple[str, str]],
     template: str,
-    config: Dict
+    config: Dict,
+    visual_context: Optional[List[str]] = None,
 ) -> List[Tuple[str, str]]:
     """
     Process all chunks in parallel with rate limiting.
-    
+
     Args:
         chunks: List of (timestamp, chunk_text) tuples
         template: Prompt template
         config: Configuration dictionary
-        
+        visual_context: Optional list of base64 JPEG frames forwarded to
+            every chunk. For typical short videos there is only one chunk
+            so this is fine; for very long sources that produce multiple
+            chunks the same frames will be re-sent each time.
+
     Returns:
         List of (timestamp, summary) tuples
     """
@@ -256,7 +288,10 @@ async def process_chunks(
     ) -> Tuple[int, str, str]:
         timestamp, chunk_text = chunk_data
         async with semaphore:
-            summary = await process_chunk(chunk_text, template, config)
+            summary = await process_chunk(
+                chunk_text, template, config,
+                visual_context=visual_context,
+            )
             completed[0] += 1
             if verbose:
                 progress.update(completed[0])
