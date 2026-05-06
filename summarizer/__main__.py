@@ -160,6 +160,33 @@ Examples:
         default=None,
         help="Route supported requests through Webshare proxies",
     )
+    parser.add_argument(
+        "--visual",
+        dest="enable_visual",
+        action="store_true",
+        default=None,
+        help=(
+            "Enable multimodal analysis: extract up to 5 evenly-spaced video "
+            "frames and send them with the transcript to a vision-capable model "
+            "(IG/TikTok/X/Reddit/FB only, videos <= visual-max-duration)"
+        ),
+    )
+    parser.add_argument(
+        "--no-visual",
+        dest="enable_visual",
+        action="store_false",
+        help="Force audio-only summarization even if enable-visual is set in config",
+    )
+    parser.add_argument(
+        "--visual-max-duration",
+        type=int,
+        help="Skip visual analysis for videos longer than this many seconds (default: 180)",
+    )
+    parser.add_argument(
+        "--visual-max-dimension",
+        type=int,
+        help="Resize each frame so the longest side is at most this (default: 768)",
+    )
 
     return parser.parse_args()
 
@@ -344,6 +371,9 @@ def cli():
         "output_dir": args.output_dir,
         "cobalt_base_url": args.cobalt_url,
         "use_proxy": args.use_proxy,
+        "enable_visual": args.enable_visual,
+        "visual_max_duration": args.visual_max_duration,
+        "visual_max_dimension": args.visual_max_dimension,
     }
 
     # Merge configs
@@ -417,6 +447,10 @@ def cli():
         "model": merged.get("model"),
         "verbose": verbose,
         "cache_transcript": bool(merged.get("cache_transcript", True)),
+        "enable_visual": bool(merged.get("enable_visual", False)),
+        "visual_max_duration": int(merged.get("visual_max_duration", 180)),
+        "visual_max_dimension": int(merged.get("visual_max_dimension", 768)),
+        "output_language": merged.get("output_language"),
     }
 
     if merged.get("api_key"):

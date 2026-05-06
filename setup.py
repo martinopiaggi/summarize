@@ -7,6 +7,7 @@ core_requirements = [
     "pytubefix>=1.6.3", 
     "groq>=0.4.2",
     "openai>=1.3.7",
+    "yt-dlp>=2025.4.30",
     "aiohttp>=3.9.0",
     "requests>=2.31.0",
     "wget>=3.2",
