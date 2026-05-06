@@ -22,6 +22,7 @@ RUN pip install --no-cache-dir . "streamlit>=1.32.0"
 
 # Copy application files
 COPY app.py .
+COPY webapp/ webapp/
 COPY .streamlit/ .streamlit/
 
 # Copy default config
