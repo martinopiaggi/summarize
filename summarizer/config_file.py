@@ -101,6 +101,7 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "max_output_tokens": 4096,
         "prompt_type": "Questions and answers",
         "language": "auto",
+        "output_language": "auto",
         "transcription_method": "Cloud Whisper",
         "audio_speed": 1.0,
         "output_dir": "summaries",
@@ -176,6 +177,7 @@ defaults:
   chunk-size: 10000
   parallel-calls: 30
   max-tokens: 4096
+  output-language: auto
   audio-speed: 1.0
   use-proxy: false
   output-dir: summaries

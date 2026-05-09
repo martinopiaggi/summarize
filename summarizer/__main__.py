@@ -139,6 +139,10 @@ Examples:
         help="Language code for captions/transcription, or 'auto' for automatic selection",
     )
     parser.add_argument(
+        "--output-language",
+        help="Language for the generated summary, or 'auto' to leave the prompt unchanged",
+    )
+    parser.add_argument(
         "--transcription",
         choices=["Cloud Whisper", "Local Whisper"],
         help="Transcription method when forcing download",
@@ -338,6 +342,7 @@ def cli():
         "parallel_api_calls": args.parallel_calls,
         "max_output_tokens": args.max_tokens,
         "language": args.language,
+        "output_language": args.output_language,
         "transcription_method": args.transcription,
         "whisper_model": args.whisper_model,
         "audio_speed": args.audio_speed,
@@ -381,6 +386,11 @@ def cli():
         print_status(f"Output directory: {merged.get('output_dir')}", "INFO", verbose)
         print_status(f"Model: {merged.get('model')}", "INFO", verbose)
         print_status(f"Prompt type: {merged.get('prompt_type')}", "INFO", verbose)
+        print_status(
+            f"Output language: {merged.get('output_language', 'auto')}",
+            "INFO",
+            verbose,
+        )
         print_status(f"Output format: {args.output_format}", "INFO", verbose)
         print_status(f"Audio speed: {audio_speed}x", "INFO", verbose)
 
@@ -408,6 +418,7 @@ def cli():
         "audio_speed": audio_speed,
         "use_proxy": bool(merged.get("use_proxy", False)),
         "language": merged.get("language"),
+        "output_language": merged.get("output_language"),
         "prompt_type": merged.get("prompt_type"),
         "chunk_size": merged.get("chunk_size"),
         "parallel_api_calls": merged.get("parallel_api_calls"),

@@ -79,7 +79,7 @@ Works with any OpenAI-compatible LLM provider, including locally hosted endpoint
                           +--------------+
 ```
 
-- [`summarizer.yaml`](./summarizer.yaml): Provider settings (`base_url`, `model`, `chunk-size`) and defaults
+- [`summarizer.yaml`](./summarizer.yaml): Provider settings (`base_url`, `model`, `chunk-size`) and defaults such as `output-language`
 - [`.env`](./.env): API keys matched by URL keyword
 - [`prompts.json`](./summarizer/prompts.json): Summary style templates
 
@@ -167,11 +167,14 @@ defaults:
   chunk-size: 10000
   parallel-calls: 30
   max-tokens: 4096
+  output-language: auto
   audio-speed: 1.0
   use-proxy: false
   output-dir: summaries
   cache-transcript: true
 ```
+
+`output-language` controls the language of the generated summary. Use `auto`, `none`, or an empty value to leave the model prompt unchanged. Use a human-readable language name such as `Italian`, `Spanish`, `German`, or `Japanese` to force summaries into that language.
 
 ### API Keys (`.env`)
 
@@ -256,6 +259,9 @@ python -m summarizer --source "URL" --language "auto"
 
 # Lock YouTube captions or transcription to a specific language
 python -m summarizer --source "URL" --prompt-type "Distill Wisdom" --language "it"
+
+# Write the summary in a specific language
+python -m summarizer --source "URL" --output-language "Italian"
 ```
 
 Without YAML, pass `--base-url` and `--model` explicitly:
@@ -284,6 +290,7 @@ python -m summarizer \
 | `--whisper-model` | `tiny`, `base`, `small`, `medium`, `large` | `tiny` |
 | `--audio-speed` | Pre-transcription playback speed | `1.0` |
 | `--language` | `auto` picks the first available YouTube caption track and lets Whisper detect language; explicit codes stay strict | `auto` |
+| `--output-language` | Language for the generated summary; use `auto`, `none`, or empty to leave the prompt unchanged | `auto` |
 | `--parallel-calls` | Concurrent API requests | `30` |
 | `--max-tokens` | Max output tokens per chunk | `4096` |
 | `--cobalt-url` | Cobalt base URL for non-YouTube platforms and fallback downloads | `http://localhost:9000` |

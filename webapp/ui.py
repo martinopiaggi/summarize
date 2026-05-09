@@ -154,6 +154,18 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
             format_func=lambda x: dict(LANGUAGES)[x],
             index=0,
         )
+        output_language = st.text_input(
+            "OUTPUT LANGUAGE",
+            value=str(
+                provider_config.get(
+                    "output_language",
+                    defaults.get("output_language", "auto"),
+                )
+                or "auto"
+            ),
+            placeholder="auto",
+            help="Language for the generated summary. Use auto to leave the prompt unchanged.",
+        )
 
         st.divider()
 
@@ -234,6 +246,7 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
         "prompt_type": prompt_type,
         "chunk_size": chunk_size,
         "language": language,
+        "output_language": output_language,
         "verbose": verbose,
         "force_download": force_download,
         "transcription_method": transcription_method,
@@ -251,6 +264,7 @@ def _run_and_store(source, display_name, source_type, force_download, sidebar, d
         sidebar["chunk_size"],
         force_download,
         sidebar["language"],
+        sidebar["output_language"],
         sidebar["audio_speed"],
         source_type,
         sidebar["transcription_method"],
