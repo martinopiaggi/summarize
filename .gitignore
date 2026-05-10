@@ -34,8 +34,7 @@ ENV/
 *.swp
 *.swo
 
-# Tests and pytest local artifacts
-tests/
+# Pytest local artifacts
 .pytest_cache/
 pytest-cache-files-*/
 

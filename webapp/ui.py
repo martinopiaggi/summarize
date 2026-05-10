@@ -4,6 +4,7 @@ This module composes everything in :mod:`webapp`. ``main()`` is the
 Streamlit entry point called by ``app.py``.
 """
 
+import hashlib
 import os
 import tempfile
 import traceback
@@ -35,6 +36,7 @@ from webapp.state import (
 )
 from webapp.summarization import run_summarization
 from webapp.theme import get_custom_css
+from webapp.tinypaste import TinypastePublishError, publish_to_tinypaste
 
 LANGUAGES = [
     ("auto", "Automatic"),
@@ -388,9 +390,15 @@ def _render_summary_panel():
     if not display_summary:
         return
 
+    summary_hash = hashlib.sha256(display_summary.encode("utf-8")).hexdigest()
+    if st.session_state.tinypaste_summary_hash != summary_hash:
+        st.session_state.tinypaste_summary_hash = summary_hash
+        st.session_state.tinypaste_url = None
+        st.session_state.tinypaste_error = None
+
     st.success("COMPLETE")
 
-    col_dl, col_copy = st.columns(2)
+    col_dl, col_copy, col_publish = st.columns(3)
     with col_dl:
         st.download_button(
             "DOWNLOAD",
@@ -401,6 +409,24 @@ def _render_summary_panel():
         )
     with col_copy:
         copy_to_clipboard(display_summary)
+    with col_publish:
+        if st.button(
+            "PUBLISH AND SHARE WITH TINYPASTE",
+            use_container_width=True,
+            key="publish_tinypaste",
+        ):
+            try:
+                st.session_state.tinypaste_url = publish_to_tinypaste(display_summary)
+                st.session_state.tinypaste_error = None
+            except TinypastePublishError as error:
+                st.session_state.tinypaste_url = None
+                st.session_state.tinypaste_error = str(error)
+
+    if st.session_state.tinypaste_url:
+        url = st.session_state.tinypaste_url
+        st.markdown(f"Published with tinypaste: [{url}]({url})")
+    elif st.session_state.tinypaste_error:
+        st.error(st.session_state.tinypaste_error)
 
     st.divider()
     render_summary_with_mermaid(display_summary)
