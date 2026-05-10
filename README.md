@@ -195,6 +195,15 @@ hyperbolic = YOUR_HYPERBOLIC_KEY
 # Used only when `defaults.use-proxy: true` or `--use-proxy` is enabled
 WEBSHARE_PROXY_USERNAME = YOUR_WEBSHARE_USERNAME
 WEBSHARE_PROXY_PASSWORD = YOUR_WEBSHARE_PASSWORD
+
+# Optional: yt-dlp authentication for social platforms
+# Cookies are preferred for 2FA accounts. Use a Netscape cookies.txt export.
+INSTAGRAM_COOKIES_FILE = C:\path\to\instagram-cookies.txt
+YTDLP_COOKIES_FILE = C:\path\to\cookies.txt
+
+# Optional: Instagram username/password login when cookies are not used
+INSTAGRAM_USER = YOUR_INSTAGRAM_USERNAME
+INSTAGRAM_PASS = YOUR_INSTAGRAM_PASSWORD
 ```
 
 If you pass an endpoint URL with `--base-url`, the API key is matched from `.env` by URL keyword. For example, `https://generativelanguage.googleapis.com/...` matches `generativelanguage`.
@@ -354,6 +363,9 @@ Notes:
 
 - YouTube transcript fetching uses Webshare automatically when those credentials are present.
 - `defaults.use-proxy: true` affects `pytubefix` and `yt-dlp` audio downloads.
+- yt-dlp authentication is independent from Webshare proxy settings.
+- Host-specific cookie files such as `INSTAGRAM_COOKIES_FILE` win over `YTDLP_COOKIES_FILE`.
+- Cookie-file authentication wins over username/password authentication.
 
 For the Cobalt container, the proxy is configured separately. That sits outside the Python app, but this repo includes a working example:
 
