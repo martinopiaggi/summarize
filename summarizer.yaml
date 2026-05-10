@@ -33,7 +33,7 @@ providers:
 
 defaults:
   prompt-type: Distill Wisdom
-  chunk-size: 128000
+  chunk-size: 32000
   parallel-calls: 30
   max-tokens: 4096
   output-dir: summaries

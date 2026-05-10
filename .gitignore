@@ -30,8 +30,14 @@ ENV/
 # IDE
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
+
+# Tests and pytest local artifacts
+tests/
+.pytest_cache/
+pytest-cache-files-*/
 
 # Project specific
 *.mp3
