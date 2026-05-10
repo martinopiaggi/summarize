@@ -39,13 +39,15 @@ class DownloadManager:
             proxy_state = "enabled" if use_proxy else "disabled"
             print_status(f"Proxy {proxy_state} for download", "INFO", verbose)
 
+        tried_downloader = False
         for i, downloader in enumerate(self.downloaders):
             if downloader.supports(url):
                 downloader_name = downloader.__class__.__name__.replace("Downloader", "")
-                if i > 0:
+                if tried_downloader:
                     print_status(f"Falling back to {downloader_name}", "WARNING", verbose)
                 else:
                     print_status(f"Trying {downloader_name}", "INFO", verbose)
+                tried_downloader = True
                 try:
                     result_path = downloader.download_audio(
                         url,

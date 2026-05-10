@@ -36,14 +36,14 @@ Works with any OpenAI-compatible LLM provider, including locally hosted endpoint
                          | MISS                         |
        +-----------------+-------------+                |
        |                 |             |                |
-       |             X.com/IG     Local File            |
-    YouTube           TikTok     Google Drive           |
-       |                etc.       Dropbox              |
+       |          IG/TikTok/X    Local File            |
+    YouTube       Reddit/FB      Google Drive          |
+       |          other URLs      Dropbox               |
        |                 |             |                |
        v            +----+-----+       |                |
-+------+----------+ | Cobalt   |       |                |
-| Captions Exist? | +----+-----+       |                |
-+----+----+-------+      |             |                |
++------+----------+ | yt-dlp / |       |                |
+| Captions Exist? | | Cobalt   |       |                |
++----+----+-------+ +----+-----+       |                |
     Yes   No             |             |                |
      |    +--------------+--------+----+                |
      |                            |                     |
@@ -86,6 +86,7 @@ Works with any OpenAI-compatible LLM provider, including locally hosted endpoint
 **Notes:**
 - Transcripts are **cached in memory** by default (keyed by SHA-256 of source + config). Re-summarizing the same video with a different style or provider skips transcription entirely. The cache lives in process memory and clears on exit. Disable with `cache-transcript: false` in [`summarizer.yaml`](./summarizer.yaml)
 - Cloud Whisper uses **Groq Cloud API** and requires a Groq API key
+- Non-YouTube social URLs use **yt-dlp first** for Instagram, TikTok, X/Twitter, Reddit, and Facebook. Cobalt is still used as the fallback downloader for other HTTP video URLs.
 - The Docker image does **not** include Local Whisper and is aimed at lightweight VPS deployment
 
 ## Installation and Usage
@@ -251,7 +252,9 @@ python -m summarizer \
   --force-download \
   -v
 
-# Non-YouTube URL (requires Cobalt)
+# Non-YouTube social URL
+# Instagram, TikTok, X/Twitter, Reddit, and Facebook use yt-dlp first.
+# Other HTTP video URLs fall back to Cobalt.
 python -m summarizer --type "Video URL" --source "https://www.instagram.com/reel/..."
 
 # Let captions/transcription choose the language automatically (default)
@@ -293,7 +296,7 @@ python -m summarizer \
 | `--output-language` | Language for the generated summary; use `auto`, `none`, or empty to leave the prompt unchanged | `auto` |
 | `--parallel-calls` | Concurrent API requests | `30` |
 | `--max-tokens` | Max output tokens per chunk | `4096` |
-| `--cobalt-url` | Cobalt base URL for non-YouTube platforms and fallback downloads | `http://localhost:9000` |
+| `--cobalt-url` | Cobalt base URL for fallback downloads after YouTube/yt-dlp handlers do not match or fail | `http://localhost:9000` |
 | `--output-dir` | Output directory | `summaries` |
 | `--no-save` | Print only, no file output | `False` |
 | `--verbose`, `-v` | Detailed output | `False` |
@@ -325,10 +328,11 @@ Model sizes: `tiny` (fastest) / `base` / `small` / `medium` / `large` (most accu
 
 ### Proxy Setup
 
-Proxy support matters in two separate places:
+Proxy support matters in three separate places:
 
 1. The Python app, when fetching YouTube transcripts or downloading YouTube audio with `pytubefix`
-2. The Cobalt container, when it connects to upstream CDNs/providers
+2. The Python app, when downloading supported social URLs with `yt-dlp`
+3. The Cobalt container, when it connects to upstream CDNs/providers
 
 For the Python app, this repo expects **Webshare** credentials:
 
@@ -349,7 +353,7 @@ defaults:
 Notes:
 
 - YouTube transcript fetching uses Webshare automatically when those credentials are present.
-- `defaults.use-proxy: true` affects `pytubefix` audio downloads.
+- `defaults.use-proxy: true` affects `pytubefix` and `yt-dlp` audio downloads.
 
 For the Cobalt container, the proxy is configured separately. That sits outside the Python app, but this repo includes a working example:
 
