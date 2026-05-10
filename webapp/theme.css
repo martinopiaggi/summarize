@@ -85,14 +85,33 @@ header[data-testid="stHeader"],
     color: var(--text) !important;
 }
 
-.stButton > button {
+.stButton > button,
+.stDownloadButton > button {
     border-radius: 0 !important;
     font-family: 'JetBrains Mono', monospace !important;
     font-weight: 700 !important;
+    font-size: 0.8125rem !important;
+    line-height: 1.15 !important;
     text-transform: uppercase !important;
     background-color: var(--secondary) !important;
     color: var(--text) !important;
     border: 1px solid var(--text) !important;
+    min-height: 2.5rem !important;
+    padding: 0.55rem 0.65rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+.stButton > button p,
+.stDownloadButton > button p {
+    font: inherit !important;
+    line-height: inherit !important;
+    text-transform: inherit !important;
+    color: inherit !important;
 }
 
 .stSelectbox > div > div {
@@ -141,7 +160,8 @@ header[data-testid="stHeader"],
 }
 
 /* Button hover states */
-.stButton > button:hover {
+.stButton > button:hover,
+.stDownloadButton > button:hover {
     background-color: var(--text) !important;
     color: var(--bg) !important;
 }

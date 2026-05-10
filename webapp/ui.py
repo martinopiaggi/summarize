@@ -398,7 +398,7 @@ def _render_summary_panel():
 
     st.success("COMPLETE")
 
-    col_dl, col_copy, col_publish = st.columns(3)
+    col_dl, col_copy, col_publish = st.columns([1, 1, 1.35])
     with col_dl:
         st.download_button(
             "DOWNLOAD",
@@ -408,7 +408,7 @@ def _render_summary_panel():
             use_container_width=True,
         )
     with col_copy:
-        copy_to_clipboard(display_summary)
+        copy_to_clipboard(display_summary, st.session_state.theme)
     with col_publish:
         if st.button(
             "PUBLISH AND SHARE WITH TINYPASTE",
