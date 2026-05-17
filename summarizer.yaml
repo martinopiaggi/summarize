@@ -26,6 +26,10 @@ providers:
     base_url: https://api.hyperbolic.xyz/v1
     model: Qwen/Qwen3-Coder-480B-A35B-Instruct
 
+  nvidia:
+    base_url: https://integrate.api.nvidia.com/v1
+    model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+
   perplexity:
     base_url: https://openrouter.ai/api/v1
     model: perplexity/sonar

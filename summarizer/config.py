@@ -27,6 +27,8 @@ DEFAULT_CONFIG = {
 # API provider patterns - extensible mapping of URL patterns to env var names
 API_PROVIDERS = {
     "generativelanguage.googleapis.com": "generativelanguage",
+    "integrate.api.nvidia.com": "NVIDIA_API_KEY",
+    "nvidia": "NVIDIA_API_KEY",
     "perplexity": "perplexity",
     "groq": "groq",
     "openai": "openai",

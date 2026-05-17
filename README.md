@@ -159,9 +159,14 @@ providers:
     base_url: https://openrouter.ai/api/v1
     model: openai/gpt-oss-20b
 
+# example of a second config on the same provider
   openrouter120:
     base_url: https://openrouter.ai/api/v1
     model: openai/gpt-oss-120b
+
+  nvidia:
+    base_url: https://integrate.api.nvidia.com/v1
+    model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
 
 defaults:
   prompt-type: Questions and answers
@@ -190,6 +195,7 @@ deepseek = YOUR_DEEPSEEK_KEY
 openrouter = YOUR_OPENROUTER_KEY
 perplexity = YOUR_PERPLEXITY_KEY
 hyperbolic = YOUR_HYPERBOLIC_KEY
+NVIDIA_API_KEY = YOUR_NVIDIA_KEY
 
 # Optional: Webshare credentials
 # Used only when `defaults.use-proxy: true` or `--use-proxy` is enabled
@@ -242,6 +248,11 @@ python -m summarizer \
   --source "https://youtube.com/watch?v=VIDEO_ID" \
   --provider openrouter \
   --prompt-type "Mermaid Diagram"
+
+# Use NVIDIA NIM
+python -m summarizer \
+  --source "https://youtube.com/watch?v=VIDEO_ID" \
+  --provider nvidia
 
 # Multiple videos
 python -m summarizer --source "URL1" "URL2" "URL3"
