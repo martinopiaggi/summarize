@@ -67,6 +67,10 @@ def get_api_key(cfg: Dict) -> str:
     if cfg.get("api_key"):
         return cfg["api_key"]
 
+    # LiteLLM reads API keys from provider env vars automatically
+    if cfg.get("base_url") == "litellm":
+        return "litellm"
+
     base_url = cfg.get("base_url", "").lower()
 
     if not base_url:
