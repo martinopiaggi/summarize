@@ -171,6 +171,16 @@ providers:
     base_url: https://api.openai.com/v1
     model: gpt-4o-mini
 
+  # LiteLLM: access 100+ providers via a single interface
+  # pip install 'summarizer[litellm]'
+  # See https://docs.litellm.ai/docs/providers for the full list
+  litellm-anthropic:
+    base_url: litellm
+    model: anthropic/claude-sonnet-4-6
+  litellm-groq:
+    base_url: litellm
+    model: groq/llama-3.3-70b-versatile
+
 # Default settings (can be overridden by CLI)
 defaults:
   prompt-type: Questions and answers

@@ -118,37 +118,8 @@ def parse_response_content(response: Dict[str, Any], base_url: str) -> str:
     return content
 
 
-async def process_chunk(
-    chunk: str,
-    template: str,
-    config: Dict,
-    max_retries: int = 3
-) -> str:
-    """
-    Process a single chunk using the API.
-    
-    Args:
-        chunk: Text chunk to process
-        template: Prompt template with {text} placeholder
-        config: Configuration with API details
-        max_retries: Number of retry attempts
-        
-    Returns:
-        Generated summary text
-    """
-    if not chunk.strip():
-        return ""
-
-    required_keys = ["api_key", "model", "base_url", "max_output_tokens"]
-    for key in required_keys:
-        if key not in config:
-            raise ConfigurationError(f"Missing required config parameter: {key}")
-
-    headers = {
-        "Authorization": f"Bearer {config['api_key']}",
-        "Content-Type": "application/json"
-    }
-
+def _build_messages(chunk: str, template: str, config: Dict) -> List[Dict[str, str]]:
+    """Build the messages list for a chunk summarization request."""
     processed_template = template.format(text=chunk.strip())
 
     system_content = (
@@ -162,18 +133,105 @@ async def process_chunk(
             f"regardless of the language of the transcript."
         )
 
+    return [
+        {"role": "system", "content": system_content},
+        {"role": "user", "content": processed_template},
+    ]
+
+
+async def _process_chunk_litellm(
+    chunk: str,
+    template: str,
+    config: Dict,
+    max_retries: int = 3,
+) -> str:
+    """Process a single chunk via LiteLLM (supports 100+ providers)."""
+    import litellm
+    from litellm.exceptions import (
+        AuthenticationError,
+        BadRequestError,
+        NotFoundError,
+        RateLimitError,
+        Timeout,
+    )
+
+    messages = _build_messages(chunk, template, config)
+    kwargs: Dict[str, Any] = {
+        "model": config["model"],
+        "messages": messages,
+        "max_tokens": config["max_output_tokens"],
+        "drop_params": True,
+    }
+    if config.get("api_key"):
+        kwargs["api_key"] = config["api_key"]
+
+    for attempt in range(max_retries):
+        try:
+            response = await litellm.acompletion(**kwargs)
+            content = response.choices[0].message.content or ""
+            if "please provide" in content.lower() or "please share" in content.lower():
+                return ""
+            return content.strip()
+        except asyncio.CancelledError:
+            return ""
+        except (AuthenticationError, NotFoundError, BadRequestError) as e:
+            raise APIError(f"LiteLLM request failed: {e}") from e
+        except (RateLimitError, Timeout) as e:
+            if attempt < max_retries - 1:
+                logger.warning(f"LiteLLM transient error (attempt {attempt + 1}/{max_retries}): {e}")
+                await asyncio.sleep(2 ** attempt)
+            else:
+                raise APIError(f"LiteLLM request failed after {max_retries} attempts: {e}") from e
+        except Exception as e:
+            if attempt < max_retries - 1:
+                logger.warning(f"Error processing chunk (attempt {attempt + 1}/{max_retries}): {e}")
+                await asyncio.sleep(2 ** attempt)
+            else:
+                logger.error(f"Error processing chunk after {max_retries} attempts: {e}")
+                return ""
+
+    return ""
+
+
+async def process_chunk(
+    chunk: str,
+    template: str,
+    config: Dict,
+    max_retries: int = 3
+) -> str:
+    """
+    Process a single chunk using the API.
+
+    Args:
+        chunk: Text chunk to process
+        template: Prompt template with {text} placeholder
+        config: Configuration with API details
+        max_retries: Number of retry attempts
+
+    Returns:
+        Generated summary text
+    """
+    if not chunk.strip():
+        return ""
+
+    # Use LiteLLM when base_url is "litellm"
+    if config.get("base_url") == "litellm":
+        return await _process_chunk_litellm(chunk, template, config, max_retries)
+
+    required_keys = ["api_key", "model", "base_url", "max_output_tokens"]
+    for key in required_keys:
+        if key not in config:
+            raise ConfigurationError(f"Missing required config parameter: {key}")
+
+    headers = {
+        "Authorization": f"Bearer {config['api_key']}",
+        "Content-Type": "application/json"
+    }
+
+    messages = _build_messages(chunk, template, config)
     data = {
         "model": config["model"],
-        "messages": [
-            {
-                "role": "system",
-                "content": system_content,
-            },
-            {
-                "role": "user",
-                "content": processed_template
-            }
-        ],
+        "messages": messages,
         "max_tokens": config["max_output_tokens"]
     }
 
@@ -227,7 +285,7 @@ async def process_chunk(
             else:
                 logger.error(f"Error processing chunk after {max_retries} attempts: {str(e)}")
                 return ""
-    
+
     return ""
 
 
