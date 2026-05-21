@@ -46,6 +46,10 @@ API_PROVIDERS = {
     "openrouter.ai": "openrouter",
 }
 
+LITELLM_PROVIDER_ENV_ALIASES = {
+    "gemini": ("GOOGLE_API_KEY", "generativelanguage"),
+}
+
 
 def get_api_key(cfg: Dict) -> str:
     """
@@ -67,8 +71,23 @@ def get_api_key(cfg: Dict) -> str:
     if cfg.get("api_key"):
         return cfg["api_key"]
 
-    # LiteLLM reads API keys from provider env vars automatically
+    # LiteLLM can read provider env vars automatically, but this app also
+    # supports lower-case .env keys such as "groq" and "openrouter".
     if cfg.get("base_url") == "litellm":
+        provider = cfg.get("model", "").split("/", 1)[0].lower()
+        env_candidates = []
+        if provider:
+            env_candidates.extend([f"{provider.upper()}_API_KEY", provider])
+        env_candidates.extend(LITELLM_PROVIDER_ENV_ALIASES.get(provider, ()))
+
+        seen = set()
+        for env_var in env_candidates:
+            if env_var in seen:
+                continue
+            seen.add(env_var)
+            api_key = os.getenv(env_var)
+            if api_key:
+                return api_key
         return "litellm"
 
     base_url = cfg.get("base_url", "").lower()

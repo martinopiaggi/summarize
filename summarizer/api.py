@@ -162,8 +162,9 @@ async def _process_chunk_litellm(
         "max_tokens": config["max_output_tokens"],
         "drop_params": True,
     }
-    if config.get("api_key"):
-        kwargs["api_key"] = config["api_key"]
+    api_key = config.get("api_key")
+    if api_key and api_key != "litellm":
+        kwargs["api_key"] = api_key
 
     for attempt in range(max_retries):
         try:
