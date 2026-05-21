@@ -79,12 +79,12 @@ Works with any OpenAI-compatible LLM provider, including locally hosted endpoint
                           +--------------+
 ```
 
-- [`summarizer.yaml`](./summarizer.yaml): Provider settings (`base_url`, `model`, `chunk-size`) and defaults such as `output-language`
+- `summarizer.yaml`: Local provider settings (`base_url`, `model`, `chunk-size`) and defaults such as `output-language`. Generate it with `python -m summarizer --init-config` or copy [`summarizer.example.yaml`](./summarizer.example.yaml).
 - [`.env`](./.env): API keys matched by URL keyword
 - [`prompts.json`](./summarizer/prompts.json): Summary style templates
 
 **Notes:**
-- Transcripts are **cached in memory** by default (keyed by SHA-256 of source + config). Re-summarizing the same video with a different style or provider skips transcription entirely. The cache lives in process memory and clears on exit. Disable with `cache-transcript: false` in [`summarizer.yaml`](./summarizer.yaml)
+- Transcripts are **cached in memory** by default (keyed by SHA-256 of source + config). Re-summarizing the same video with a different style or provider skips transcription entirely. The cache lives in process memory and clears on exit. Disable with `cache-transcript: false` in `summarizer.yaml`.
 - Cloud Whisper uses **Groq Cloud API** and requires a Groq API key
 - Non-YouTube social URLs use **yt-dlp first** for Instagram, TikTok, X/Twitter, Reddit, and Facebook. Cobalt is still used as the fallback downloader for other HTTP video URLs.
 - The Docker image does **not** include Local Whisper and is aimed at lightweight VPS deployment
@@ -120,12 +120,12 @@ Visit port 8501.
 ```bash
 git clone https://github.com/martinopiaggi/summarize.git
 cd summarize
-# Create [.env](./.env) with your API keys, then:
+# Create .env with your API keys and summarizer.yaml with your providers, then:
 docker compose up -d
 ```
 
 Open `http://localhost:8501` for the GUI. Summaries are saved to `./summaries/`.
-The CLI and GUI both read the same [`summarizer.yaml`](./summarizer.yaml).
+The CLI and GUI both read the same local `summarizer.yaml`.
 
 CLI via Docker: `docker compose run --rm summarizer python -m summarizer --source "URL"`
 
@@ -133,9 +133,9 @@ Cobalt standalone: `docker compose -f docker-compose.cobalt.yml up -d`
 
 ## Configuration
 
-### Providers ([`summarizer.yaml`](./summarizer.yaml))
+### Providers (`summarizer.yaml`)
 
-Define your LLM providers and defaults. CLI flags override everything.
+Define your LLM providers and defaults. CLI flags override everything. See [`summarizer.example.yaml`](./summarizer.example.yaml) for a complete starter file.
 
 ```yaml
 # example of summarizer.yaml
@@ -164,9 +164,18 @@ providers:
     base_url: https://openrouter.ai/api/v1
     model: openai/gpt-oss-120b
 
+  openai:
+    base_url: https://api.openai.com/v1
+    model: gpt-5.5
+
   nvidia:
     base_url: https://integrate.api.nvidia.com/v1
     model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+
+  perplexity:
+    base_url: https://openrouter.ai/api/v1
+    model: perplexity/sonar
+    chunk-size: 128000
 
 defaults:
   prompt-type: Questions and answers
@@ -221,7 +230,7 @@ Add custom styles by editing [`prompts.json`](./summarizer/prompts.json). Use `{
 
 ### CLI Examples
 
-With a configured [`summarizer.yaml`](./summarizer.yaml), the CLI is simple:
+With a configured local `summarizer.yaml`, the CLI is simple:
 
 ```bash
 # Uses the default provider from YAML
@@ -363,7 +372,7 @@ WEBSHARE_PROXY_USERNAME = YOUR_WEBSHARE_USERNAME
 WEBSHARE_PROXY_PASSWORD = YOUR_WEBSHARE_PASSWORD
 ```
 
-2. If you want `pytubefix` audio downloads to use that proxy, enable it in [`summarizer.yaml`](./summarizer.yaml):
+2. If you want `pytubefix` audio downloads to use that proxy, enable it in `summarizer.yaml`:
 
 ```yaml
 defaults:

@@ -169,7 +169,16 @@ providers:
   
   openai:
     base_url: https://api.openai.com/v1
-    model: gpt-4o-mini
+    model: gpt-5.5
+
+  nvidia:
+    base_url: https://integrate.api.nvidia.com/v1
+    model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+
+  perplexity:
+    base_url: https://openrouter.ai/api/v1
+    model: perplexity/sonar
+    chunk-size: 128000
 
   # LiteLLM: access 100+ providers via a single interface
   # pip install 'summarizer[litellm]'

@@ -1,0 +1,54 @@
+# Summarizer Configuration
+# Copy to ./summarizer.yaml or run: python -m summarizer --init-config
+
+default_provider: groq
+
+providers:
+  groq:
+    base_url: https://api.groq.com/openai/v1
+    model: llama-3.3-70b-versatile
+
+  gemini:
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai
+    model: gemini-2.5-flash-lite
+
+  deepseek:
+    base_url: https://api.deepseek.com/v1
+    model: deepseek-chat
+
+  openai:
+    base_url: https://api.openai.com/v1
+    model: gpt-5.5
+
+  nvidia:
+    base_url: https://integrate.api.nvidia.com/v1
+    model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+
+  perplexity:
+    base_url: https://openrouter.ai/api/v1
+    model: perplexity/sonar
+    chunk-size: 128000
+
+  # LiteLLM: access 100+ providers via a single interface
+  # pip install 'summarizer[litellm]'
+  # See https://docs.litellm.ai/docs/providers for the full list
+  litellm-anthropic:
+    base_url: litellm
+    model: anthropic/claude-sonnet-4-6
+
+  litellm-groq:
+    base_url: litellm
+    model: groq/llama-3.3-70b-versatile
+
+defaults:
+  prompt-type: Questions and answers
+  chunk-size: 10000
+  parallel-calls: 30
+  max-tokens: 4096
+  output-language: auto
+  audio-speed: 1.0
+  use-proxy: false
+  output-dir: summaries
+  keep-history: false
+  cobalt-base-url: http://localhost:9000
+  cache-transcript: true

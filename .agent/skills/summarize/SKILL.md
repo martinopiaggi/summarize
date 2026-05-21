@@ -38,7 +38,7 @@ The CLI prints the saved filename. Read it from `summaries/`:
 
 ## File Locations
 
-All paths are relative to the **project root** (where `summarizer.yaml` and `setup.py` are). Do NOT look in your home directory or the skill directory.
+All paths are relative to the **project root** (where `setup.py` is). The local config file is `summarizer.yaml`. Do NOT look in your home directory or the skill directory.
 
 | File | Location |
 |------|----------|
