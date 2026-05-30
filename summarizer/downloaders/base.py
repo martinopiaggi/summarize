@@ -18,3 +18,13 @@ class BaseDownloader:
         use_proxy: bool = False,
     ) -> str:
         raise NotImplementedError
+
+    def download_video(
+        self,
+        url: str,
+        temp_dir: Optional[str] = None,
+        verbose: bool = False,
+        use_proxy: bool = False,
+    ) -> str:
+        """Download full video (audio + video muxed). Returns path to video file."""
+        raise NotImplementedError

@@ -164,6 +164,15 @@ Examples:
         default=None,
         help="Route supported requests through Webshare proxies",
     )
+    parser.add_argument(
+        "--visual",
+        action="store_true",
+        default=None,
+        help=(
+            "Send video directly to a video-capable model instead of transcribing "
+            "audio. Providers with short video limits use temporal video chunks."
+        ),
+    )
 
     return parser.parse_args()
 
@@ -349,6 +358,7 @@ def cli():
         "output_dir": args.output_dir,
         "cobalt_base_url": args.cobalt_url,
         "use_proxy": args.use_proxy,
+        "visual": args.visual,
     }
 
     # Merge configs
@@ -428,6 +438,13 @@ def cli():
         "model": merged.get("model"),
         "verbose": verbose,
         "cache_transcript": bool(merged.get("cache_transcript", True)),
+        "visual": bool(merged.get("visual", False)),
+        "visual_compression": merged.get("visual_compression", "off"),
+        "visual_max_size_mb": merged.get("visual_max_size_mb"),
+        "visual_max_duration_seconds": merged.get("visual_max_duration_seconds"),
+        "visual_chunk_seconds": merged.get("visual_chunk_seconds", "auto"),
+        "visual_chunk_overlap_seconds": merged.get("visual_chunk_overlap_seconds", 0),
+        "visual_synthesis": bool(merged.get("visual_synthesis", False)),
     }
 
     if merged.get("api_key"):

@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 
 # Re-export for backward compatibility
 from .config import DEFAULT_CONFIG as CONFIG, get_api_key, validate_config
@@ -80,37 +81,10 @@ def main(config: dict) -> str:
             proxy_state = "enabled" if config.get("use_proxy") else "disabled"
             print_status(f"Proxy: {proxy_state}", "INFO", verbose)
 
-
         # Get API key
         with ProgressSpinner("Validating API configuration", verbose) as spinner:
             config["api_key"] = get_api_key(config)
         print_status("API configuration validated", "SUCCESS", verbose)
-
-        # Get transcript
-        transcript = get_transcript(config)
-        if not transcript or not transcript.strip():
-            raise TranscriptError("No transcript content to process")
-
-        # Extract chunks with timestamps
-        with ProgressSpinner("Preparing content chunks", verbose) as spinner:
-            chunks = extract_and_clean_chunks(
-                transcript, config.get("chunk_size", 10000)
-            )
-        if not chunks:
-            raise TranscriptError("Failed to create content chunks")
-
-        print_status(
-            f"Number of chunks: {len(chunks)} (chunk size: {config.get('chunk_size', 10000)})",
-            "SUCCESS",
-            verbose,
-        )
-
-        # Load template
-        with ProgressSpinner("Loading prompt template", verbose) as spinner:
-            template = load_prompt_template(
-                config.get("prompt_type", "Questions and answers")
-            )
-        print_status("Template loaded", "SUCCESS", verbose)
 
         # Use nest_asyncio if in notebook environment
         try:
@@ -124,6 +98,94 @@ def main(config: dict) -> str:
         asyncio.set_event_loop(loop)
 
         try:
+            # Visual mode branch
+            if config.get("visual"):
+                from .visual import (
+                    get_visual_provider_profile,
+                    resolve_video_source,
+                    normalize_video,
+                    validate_video_limits,
+                    build_visual_segments,
+                    split_video_segments,
+                )
+                from .visual_api import process_video_segments
+
+                profile = get_visual_provider_profile(config)
+                original_path, should_delete = resolve_video_source(config)
+                normalized_path = normalize_video(original_path, profile, config)
+                segment_paths = []
+                try:
+                    segments = build_visual_segments(normalized_path, profile, config)
+                    if len(segments) > 1 and not profile.get("supports_chunking"):
+                        validate_video_limits(normalized_path, profile, config)
+
+                    segment_paths = split_video_segments(
+                        normalized_path,
+                        segments,
+                        config,
+                    )
+                    for segment in segment_paths:
+                        validate_video_limits(segment["path"], profile, config)
+
+                    summaries = loop.run_until_complete(
+                        process_video_segments(config, segment_paths, profile)
+                    )
+                    if not summaries:
+                        raise APIError("No valid summaries generated")
+                    summary = format_summary_with_timestamps(summaries, config)
+                    print_status("Summarization completed", "SUCCESS", verbose)
+                    return summary
+                finally:
+                    for segment in segment_paths:
+                        segment_path = segment.get("path")
+                        if (
+                            segment.get("should_delete")
+                            and segment_path
+                            and os.path.exists(segment_path)
+                        ):
+                            try:
+                                os.remove(segment_path)
+                            except OSError:
+                                pass
+                    # Clean up the original downloaded file
+                    if should_delete and os.path.exists(original_path):
+                        try:
+                            os.remove(original_path)
+                        except OSError:
+                            pass
+                    # Clean up any normalized temp file we created
+                    if normalized_path != original_path and os.path.exists(normalized_path):
+                        try:
+                            os.remove(normalized_path)
+                        except OSError:
+                            pass
+
+            # Get transcript
+            transcript = get_transcript(config)
+            if not transcript or not transcript.strip():
+                raise TranscriptError("No transcript content to process")
+
+            # Extract chunks with timestamps
+            with ProgressSpinner("Preparing content chunks", verbose) as spinner:
+                chunks = extract_and_clean_chunks(
+                    transcript, config.get("chunk_size", 10000)
+                )
+            if not chunks:
+                raise TranscriptError("Failed to create content chunks")
+
+            print_status(
+                f"Number of chunks: {len(chunks)} (chunk size: {config.get('chunk_size', 10000)})",
+                "SUCCESS",
+                verbose,
+            )
+
+            # Load template
+            with ProgressSpinner("Loading prompt template", verbose) as spinner:
+                template = load_prompt_template(
+                    config.get("prompt_type", "Questions and answers")
+                )
+            print_status("Template loaded", "SUCCESS", verbose)
+
             summaries = loop.run_until_complete(
                 process_chunks(chunks, template, config)
             )

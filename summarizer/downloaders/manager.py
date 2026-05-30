@@ -73,3 +73,49 @@ class DownloadManager:
         if last_error is not None:
             raise last_error
         raise UnsupportedSourceError("No downloader available for the provided URL")
+
+    def download_video(
+        self,
+        url: str,
+        temp_dir: Optional[str] = None,
+        verbose: bool = False,
+        use_proxy: bool = False,
+    ) -> str:
+        """Download full video file using the first compatible downloader."""
+        from ..progress import print_status
+
+        temp_root = temp_dir or tempfile.gettempdir()
+        last_error = None
+
+        tried_downloader = False
+        for i, downloader in enumerate(self.downloaders):
+            if downloader.supports(url):
+                downloader_name = downloader.__class__.__name__.replace("Downloader", "")
+                if tried_downloader:
+                    print_status(f"Falling back to {downloader_name}", "WARNING", verbose)
+                else:
+                    print_status(f"Trying {downloader_name}", "INFO", verbose)
+                tried_downloader = True
+                try:
+                    result_path = downloader.download_video(
+                        url,
+                        temp_dir=temp_root,
+                        verbose=verbose,
+                        use_proxy=use_proxy,
+                    )
+                    if verbose and os.path.exists(result_path):
+                        size_mb = os.path.getsize(result_path) / (1024 * 1024)
+                        print_status(
+                            f"Video file ready: {size_mb:.1f} MB", "INFO", verbose
+                        )
+                    return result_path
+                except AudioProcessingError as exc:
+                    last_error = exc
+                    print_status(
+                        f"{downloader_name} failed: {str(exc)[:120]}", "WARNING", verbose
+                    )
+                    continue
+
+        if last_error is not None:
+            raise last_error
+        raise UnsupportedSourceError("No downloader available for the provided URL")

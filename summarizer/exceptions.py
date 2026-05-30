@@ -39,3 +39,13 @@ class SourceNotFoundError(SummarizerError):
 class UnsupportedSourceError(SummarizerError):
     """Raised when the source type is not supported."""
     pass
+
+
+class VisualModeError(SummarizerError):
+    """Raised when visual mode cannot be used."""
+    pass
+
+
+class VideoValidationError(VisualModeError):
+    """Raised when a video fails provider limit checks."""
+    pass

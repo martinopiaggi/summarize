@@ -207,6 +207,14 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
                     "(e.g. 1.0, 2.0, 5.0). Higher values are faster but can reduce accuracy."
                 ),
             )
+            visual = st.checkbox(
+                "Visual mode",
+                value=False,
+                help=(
+                    "Send video directly to a video-capable model instead of "
+                    "transcribing audio. Short-window providers use video chunks."
+                ),
+            )
 
         # -- YAML editor --
         with st.expander("EDIT CONFIG"):
@@ -254,6 +262,7 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
         "transcription_method": transcription_method,
         "whisper_model": whisper_model,
         "audio_speed": audio_speed,
+        "visual": visual,
     }
 
 
@@ -273,6 +282,7 @@ def _run_and_store(source, display_name, source_type, force_download, sidebar, d
         sidebar["whisper_model"],
         sidebar["verbose"],
         status_container=status_ctx,
+        visual=sidebar.get("visual", False),
     )
     status_ctx.update(label="Complete", state="complete", expanded=False)
     add_to_history(display_name, sidebar["provider"], sidebar["prompt_type"], summary)

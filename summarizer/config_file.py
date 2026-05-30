@@ -107,6 +107,13 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "output_dir": "summaries",
         "cobalt_base_url": os.getenv("COBALT_BASE_URL", "http://localhost:9000"),
         "cache_transcript": True,
+        "visual": False,
+        "visual_compression": "off",
+        "visual_max_size_mb": None,
+        "visual_max_duration_seconds": None,
+        "visual_chunk_seconds": "auto",
+        "visual_chunk_overlap_seconds": 0,
+        "visual_synthesis": False,
     }
 
     # Apply file config defaults
@@ -203,4 +210,11 @@ defaults:
   keep-history: false
   cobalt-base-url: http://localhost:9000
   cache-transcript: true
+  visual: false
+  visual-compression: off
+  visual-chunk-seconds: auto
+  visual-chunk-overlap-seconds: 0
+  visual-synthesis: false
+  # visual-max-size-mb: 100
+  # visual-max-duration-seconds: 120
 """

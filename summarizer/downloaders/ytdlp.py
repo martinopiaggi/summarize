@@ -3,7 +3,7 @@
 import os
 import tempfile
 import uuid
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urlparse
 
 from ..exceptions import AudioProcessingError, TranscriptError
@@ -191,19 +191,18 @@ class YtdlpDownloader(BaseDownloader):
             )
             raise AudioProcessingError(f"yt-dlp download failed: {str(e)}")
 
-    def download_with_metadata(
+    def _download_raw_video(
         self,
         url: str,
         temp_dir: Optional[str] = None,
         verbose: bool = False,
-        audio_speed: float = 1.0,
         use_proxy: bool = False,
-    ) -> Dict[str, Optional[str]]:
+    ) -> Tuple[str, Dict[str, Any]]:
+        """Download video+audio. Returns (video_path, info_dict)."""
         yt_dlp = _load_ytdlp()
         temp_root = temp_dir or tempfile.gettempdir()
-        temp_name = f"ytdlp_full_{uuid.uuid4().hex}"
+        temp_name = f"ytdlp_video_{uuid.uuid4().hex}"
         temp_template = os.path.join(temp_root, f"{temp_name}.%(ext)s")
-        processed_audio = os.path.join(temp_root, f"{temp_name}_processed.mp3")
 
         ydl_opts = {
             "format": "bestvideo*+bestaudio/best",
@@ -227,14 +226,47 @@ class YtdlpDownloader(BaseDownloader):
                 raise TranscriptError("yt-dlp finished but produced no file")
 
             video_path = max(produced_files, key=lambda p: os.path.getsize(p))
+            print_status("yt-dlp video ready", "SUCCESS", verbose)
+            return video_path, info
+        except Exception as e:
+            spinner.stop()
+            _cleanup(produced_files + _find_produced_files(temp_root, temp_name))
+            raise AudioProcessingError(f"yt-dlp video download failed: {str(e)}")
+        finally:
+            # Cleanup produced files except the largest (video)
+            if produced_files:
+                video_path = max(produced_files, key=lambda p: os.path.getsize(p))
+                _cleanup(path for path in produced_files if path != video_path)
 
-            spinner = ProgressSpinner("Extracting audio track", verbose)
+    def download_video(
+        self,
+        url: str,
+        temp_dir: Optional[str] = None,
+        verbose: bool = False,
+        use_proxy: bool = False,
+    ) -> str:
+        video_path, _ = self._download_raw_video(url, temp_dir, verbose, use_proxy)
+        return video_path
+
+    def download_with_metadata(
+        self,
+        url: str,
+        temp_dir: Optional[str] = None,
+        verbose: bool = False,
+        audio_speed: float = 1.0,
+        use_proxy: bool = False,
+    ) -> Dict[str, Optional[str]]:
+        video_path, info = self._download_raw_video(url, temp_dir, verbose, use_proxy)
+        temp_root = temp_dir or tempfile.gettempdir()
+        temp_name = os.path.splitext(os.path.basename(video_path))[0]
+        processed_audio = os.path.join(temp_root, f"{temp_name}_processed.mp3")
+
+        spinner = ProgressSpinner("Extracting audio track", verbose)
+        try:
             spinner.start()
             process_audio_file(video_path, processed_audio, playback_speed=audio_speed)
             spinner.stop()
             print_status("yt-dlp audio + video ready", "SUCCESS", verbose)
-
-            _cleanup(path for path in produced_files if path != video_path)
 
             return {
                 "audio_path": processed_audio,
@@ -245,11 +277,8 @@ class YtdlpDownloader(BaseDownloader):
             }
         except Exception as e:
             spinner.stop()
-            _cleanup(
-                produced_files
-                + _find_produced_files(temp_root, temp_name)
-                + [processed_audio]
-            )
+            if os.path.exists(processed_audio):
+                os.remove(processed_audio)
             raise AudioProcessingError(
-                f"yt-dlp download_with_metadata failed: {str(e)}"
+                f"yt-dlp audio extraction failed: {str(e)}"
             )

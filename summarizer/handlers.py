@@ -204,6 +204,52 @@ class LocalFileHandler(VideoSourceHandler):
 class GoogleDriveHandler(VideoSourceHandler):
     """Handler for Google Drive video files."""
 
+    def download_raw_video(self, output_path: str) -> str:
+        """Download the raw video file without audio processing."""
+        file_id = extract_google_drive_file_id(self.source_path)
+        if not file_id:
+            raise SourceNotFoundError("Could not extract a Google Drive file ID from the shared link")
+
+        download_url = build_google_drive_download_url(file_id)
+        proxies = None
+        if should_proxy_url(download_url, self.use_proxy):
+            proxies = get_webshare_proxies(True)
+
+        session = requests.Session()
+        response = None
+        try:
+            response = session.get(
+                download_url,
+                stream=True,
+                timeout=120,
+                proxies=proxies,
+            )
+            response.raise_for_status()
+
+            confirm_url = extract_google_drive_confirm_url(response, file_id)
+            if confirm_url:
+                response.close()
+                response = session.get(
+                    confirm_url,
+                    stream=True,
+                    timeout=120,
+                    proxies=proxies,
+                )
+                response.raise_for_status()
+
+            with response, open(output_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=1024 * 256):
+                    if chunk:
+                        f.write(chunk)
+        except Exception as exc:
+            raise AudioProcessingError(f"Failed to download Google Drive file: {exc}")
+        finally:
+            if response is not None:
+                response.close()
+            session.close()
+
+        return output_path
+
     def _download_shared_file(self, temp_video: str) -> Tuple[str, bool]:
         file_id = extract_google_drive_file_id(self.source_path)
         if not file_id:
@@ -284,7 +330,31 @@ class GoogleDriveHandler(VideoSourceHandler):
 
 class DropboxHandler(VideoSourceHandler):
     """Handler for Dropbox video files."""
-    
+
+    def download_raw_video(self, output_path: str) -> str:
+        """Download the raw video file without audio processing."""
+        download_url = normalize_dropbox_url(self.source_path)
+        proxies = None
+        if should_proxy_url(download_url, self.use_proxy):
+            proxies = get_webshare_proxies(True)
+
+        try:
+            with requests.get(
+                download_url,
+                stream=True,
+                timeout=120,
+                proxies=proxies,
+            ) as response:
+                response.raise_for_status()
+                with open(output_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=1024 * 256):
+                        if chunk:
+                            f.write(chunk)
+        except Exception as exc:
+            raise AudioProcessingError(f"Failed to download Dropbox file: {exc}")
+
+        return output_path
+
     def get_processed_audio(self) -> Tuple[str, bool]:
         temp_video = os.path.join(self.temp_dir, "dropbox_video.mp4")
         download_url = normalize_dropbox_url(self.source_path)

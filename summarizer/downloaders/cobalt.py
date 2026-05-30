@@ -22,23 +22,33 @@ class CobaltDownloader(BaseDownloader):
         parsed = urlparse(url or "")
         return parsed.scheme in ("http", "https")
 
-    def _resolve_download_url(self, url: str, verbose: bool) -> str:
+    def _resolve_download_url(
+        self, url: str, verbose: bool, mode: str = "audio"
+    ) -> str:
         if not self.base_url:
             raise TranscriptError("Cobalt base URL not configured")
 
         spinner = ProgressSpinner("Requesting Cobalt download", verbose)
         try:
             spinner.start()
-            # Ask Cobalt for audio-only media. Explicitly request opus/64kbps to
-            # avoid the mp3/128kbps defaults and reduce download size. Metadata is
-            # stripped since it is discarded during our own re-encode step anyway.
-            request_payload = {
-                "url": url,
-                "downloadMode": "audio",
-                "audioFormat": "opus",
-                "audioBitrate": "64",
-                "disableMetadata": True,
-            }
+            if mode == "audio":
+                # Ask Cobalt for audio-only media. Explicitly request opus/64kbps to
+                # avoid the mp3/128kbps defaults and reduce download size. Metadata is
+                # stripped since it is discarded during our own re-encode step anyway.
+                request_payload = {
+                    "url": url,
+                    "downloadMode": "audio",
+                    "audioFormat": "opus",
+                    "audioBitrate": "64",
+                    "disableMetadata": True,
+                }
+            else:
+                # Video mode: let Cobalt pick the best available format
+                request_payload = {
+                    "url": url,
+                    "downloadMode": "auto",
+                    "disableMetadata": True,
+                }
             response = requests.post(
                 f"{self.base_url}/",
                 json=request_payload,
@@ -94,7 +104,7 @@ class CobaltDownloader(BaseDownloader):
         audio_speed: float = 1.0,
         use_proxy: bool = False,
     ) -> str:
-        download_url = self._resolve_download_url(url, verbose)
+        download_url = self._resolve_download_url(url, verbose, mode="audio")
         temp_root = temp_dir or tempfile.gettempdir()
         temp_name = f"cobalt_audio_{uuid.uuid4().hex}"
         temp_path = os.path.join(temp_root, f"{temp_name}.bin")
@@ -126,3 +136,33 @@ class CobaltDownloader(BaseDownloader):
             if os.path.exists(processed_path):
                 os.remove(processed_path)
             raise AudioProcessingError(f"Cobalt audio download failed: {str(e)}")
+
+    def download_video(
+        self,
+        url: str,
+        temp_dir: Optional[str] = None,
+        verbose: bool = False,
+        use_proxy: bool = False,
+    ) -> str:
+        download_url = self._resolve_download_url(url, verbose, mode="video")
+        temp_root = temp_dir or tempfile.gettempdir()
+        temp_name = f"cobalt_video_{uuid.uuid4().hex}"
+        temp_path = os.path.join(temp_root, f"{temp_name}.bin")
+
+        spinner = ProgressSpinner("Downloading video from Cobalt", verbose)
+        try:
+            spinner.start()
+            with requests.get(download_url, stream=True, timeout=120) as response:
+                response.raise_for_status()
+                with open(temp_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=1024 * 256):
+                        if chunk:
+                            f.write(chunk)
+            spinner.stop()
+            print_status("Cobalt video download completed", "SUCCESS", verbose)
+            return temp_path
+        except Exception as e:
+            spinner.stop()
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            raise AudioProcessingError(f"Cobalt video download failed: {str(e)}")

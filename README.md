@@ -258,10 +258,16 @@ python -m summarizer \
   --provider openrouter \
   --prompt-type "Mermaid Diagram"
 
-# Use NVIDIA NIM
+# Use NVIDIA NIM (audio-only default)
 python -m summarizer \
   --source "https://youtube.com/watch?v=VIDEO_ID" \
   --provider nvidia
+
+# Use NVIDIA NIM with visual mode
+python -m summarizer \
+  --source "https://youtube.com/watch?v=VIDEO_ID" \
+  --provider nvidia \
+  --visual
 
 # Multiple videos
 python -m summarizer --source "URL1" "URL2" "URL3"
@@ -329,8 +335,56 @@ python -m summarizer \
 | `--output-dir` | Output directory | `summaries` |
 | `--no-save` | Print only, no file output | `False` |
 | `--verbose`, `-v` | Detailed output | `False` |
+| `--visual` | Send video directly to a video-capable model (skips transcription; chunks long videos when needed) | `False` |
 
 Use `--verbose` to see detailed status output during config loading, downloads, transcription, and summarization.
+
+## Visual Mode
+
+By default, the app transcribes audio and summarizes the transcript. Visual mode skips transcription entirely and sends video (including audio and visual content) directly to a video-capable model. If a provider has a short per-request video window, the app splits the video into timestamped temporal chunks and sends each chunk as video.
+
+**Supported providers (MVP):**
+- **NVIDIA**: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` via `https://integrate.api.nvidia.com/v1`
+
+Visual mode is opt-in and does **not** change the default audio-only behavior. It also does not use the transcript cache because it bypasses transcription completely.
+
+**CLI examples:**
+
+```bash
+# YouTube video via NVIDIA visual mode
+python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --provider nvidia --visual
+
+# Local file via NVIDIA visual mode
+python -m summarizer --type "Local File" --source "./clip.mp4" --provider nvidia --visual
+```
+
+**Visual limits (NVIDIA MVP):**
+- Maximum duration per request: 120 seconds
+- Maximum file size: 100 MB
+- Supported formats: MP4, MOV, WEBM
+
+Long NVIDIA visual runs are split automatically. For example, an 820 second video becomes seven visual requests: six 120 second chunks and one 100 second chunk. The final output is timestamped by segment.
+
+You can enable automatic compression in `summarizer.yaml`:
+
+```yaml
+defaults:
+  visual-compression: auto
+  visual-chunk-seconds: auto
+  visual-chunk-overlap-seconds: 0
+  visual-synthesis: false
+```
+
+Or override limits/chunking per-provider when known:
+
+```yaml
+defaults:
+  visual-max-size-mb: 200
+  visual-max-duration-seconds: 300
+  visual-chunk-seconds: 100
+```
+
+`chunk-size` remains text-only and is ignored in visual mode.
 
 ## Extra
 

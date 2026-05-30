@@ -35,6 +35,7 @@ def run_summarization(
     whisper_model: str = "tiny",
     verbose: bool = False,
     status_container=None,
+    visual: bool = False,
 ) -> str:
     """Run the summarizer pipeline and return the generated markdown."""
     from summarizer.core import main
@@ -85,6 +86,33 @@ def run_summarization(
         "model": provider_config.get("model"),
         "verbose": verbose,
         "cache_transcript": bool(defaults.get("cache_transcript", True)),
+        "visual": visual,
+        "visual_compression": provider_config.get(
+            "visual_compression",
+            defaults.get("visual_compression", "off"),
+        ),
+        "visual_max_size_mb": provider_config.get(
+            "visual_max_size_mb",
+            defaults.get("visual_max_size_mb"),
+        ),
+        "visual_max_duration_seconds": provider_config.get(
+            "visual_max_duration_seconds",
+            defaults.get("visual_max_duration_seconds"),
+        ),
+        "visual_chunk_seconds": provider_config.get(
+            "visual_chunk_seconds",
+            defaults.get("visual_chunk_seconds", "auto"),
+        ),
+        "visual_chunk_overlap_seconds": provider_config.get(
+            "visual_chunk_overlap_seconds",
+            defaults.get("visual_chunk_overlap_seconds", 0),
+        ),
+        "visual_synthesis": bool(
+            provider_config.get(
+                "visual_synthesis",
+                defaults.get("visual_synthesis", False),
+            )
+        ),
     }
 
     if status_container is not None:
