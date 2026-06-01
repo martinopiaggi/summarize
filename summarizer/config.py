@@ -28,7 +28,6 @@ DEFAULT_CONFIG = {
     "visual_max_duration_seconds": None,
     "visual_chunk_seconds": "auto",
     "visual_chunk_overlap_seconds": 0,
-    "visual_synthesis": False,
     "visual_input_mode": None,
 }
 

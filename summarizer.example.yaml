@@ -84,6 +84,5 @@ defaults:
   visual-compression: off
   visual-chunk-seconds: auto
   visual-chunk-overlap-seconds: 0
-  visual-synthesis: false
   # visual-max-size-mb: 100
   # visual-max-duration-seconds: 120

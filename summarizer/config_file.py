@@ -113,7 +113,6 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "visual_max_duration_seconds": None,
         "visual_chunk_seconds": "auto",
         "visual_chunk_overlap_seconds": 0,
-        "visual_synthesis": False,
     }
 
     # Apply file config defaults
@@ -245,7 +244,6 @@ defaults:
   visual-compression: off
   visual-chunk-seconds: auto
   visual-chunk-overlap-seconds: 0
-  visual-synthesis: false
   # visual-max-size-mb: 100
   # visual-max-duration-seconds: 120
 """

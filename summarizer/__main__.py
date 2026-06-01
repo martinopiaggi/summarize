@@ -444,7 +444,6 @@ def cli():
         "visual_max_duration_seconds": merged.get("visual_max_duration_seconds"),
         "visual_chunk_seconds": merged.get("visual_chunk_seconds", "auto"),
         "visual_chunk_overlap_seconds": merged.get("visual_chunk_overlap_seconds", 0),
-        "visual_synthesis": bool(merged.get("visual_synthesis", False)),
     }
 
     if merged.get("api_key"):

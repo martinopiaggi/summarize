@@ -111,12 +111,6 @@ def run_summarization(
             "visual_chunk_overlap_seconds",
             defaults.get("visual_chunk_overlap_seconds", 0),
         ),
-        "visual_synthesis": bool(
-            provider_config.get(
-                "visual_synthesis",
-                defaults.get("visual_synthesis", False),
-            )
-        ),
     }
 
     if status_container is not None:

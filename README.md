@@ -423,7 +423,6 @@ defaults:
   visual-compression: auto
   visual-chunk-seconds: auto
   visual-chunk-overlap-seconds: 0
-  visual-synthesis: false
 ```
 
 Or override limits/chunking per-provider when known:
