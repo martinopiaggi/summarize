@@ -33,30 +33,55 @@ from .proxy import get_webshare_proxies, should_proxy_url
 VIDEO_PROVIDER_PROFILES = [
     {
         "name": "nvidia",
+        "visual_provider": "nvidia",
         "api_style": "openai_video_url",
         "base_url_contains": "integrate.api.nvidia.com",
         "model_contains": "nemotron-3-nano-omni",
         "max_duration_seconds": 120,
         "max_file_mb": 100,
         "formats": {"mp4", "mov", "webm"},
+        "supported_mime_types": {"video/mp4", "video/quicktime", "video/webm"},
         "supports_chunking": True,
+        "visual_input_mode": "base64",
+        "supported_url_hosts": [],
         "extra_body": {
             "chat_template_kwargs": {"enable_thinking": True},
             "reasoning_budget": 16384,
             "mm_processor_kwargs": {"use_audio_in_video": True},
         },
     },
+    {
+        "name": "openrouter",
+        "visual_provider": "openrouter",
+        "api_style": "openai_video_url",
+        "base_url_contains": "openrouter.ai",
+        "model_contains": "gemini",
+        "max_duration_seconds": 120,
+        "max_file_mb": 100,
+        "formats": {"mp4", "mpeg", "mov", "webm"},
+        "supported_mime_types": {"video/mp4", "video/mpeg", "video/quicktime", "video/webm"},
+        "supports_chunking": True,
+        "visual_input_mode": "base64",
+        "supported_url_hosts": ["youtube.com", "youtu.be"],
+        "extra_body": {},
+    },
 ]
 
 
 def get_visual_provider_profile(config: Dict) -> Dict:
     """Return the provider profile for visual mode or raise VisualModeError."""
+    explicit_provider = (config.get("visual_provider") or "").lower()
     base_url = (config.get("base_url") or "").lower()
     model = (config.get("model") or "").lower()
 
     for profile in VIDEO_PROVIDER_PROFILES:
+        # Explicit visual_provider config takes precedence
+        if explicit_provider and profile.get("visual_provider", "").lower() == explicit_provider:
+            return profile
+
         base_match = profile.get("base_url_contains", "").lower() in base_url
-        model_match = profile.get("model_contains", "").lower() in model
+        model_contains = profile.get("model_contains", "").lower()
+        model_match = model_contains in model if model_contains else False
         if base_match and model_match:
             return profile
 
@@ -65,6 +90,54 @@ def get_visual_provider_profile(config: Dict) -> Dict:
         "does not support visual mode. "
         "Choose a video-capable provider such as nvidia, gemini, or an OpenRouter video model."
     )
+
+
+def resolve_visual_url(config: Dict, profile: Dict) -> Optional[str]:
+    """
+    Return a direct video URL for URL mode, or None to fall back to base64.
+
+    Local files always use base64 mode even if the profile prefers URL mode.
+    """
+    input_mode = config.get("visual_input_mode") or profile.get("visual_input_mode", "base64")
+    if input_mode != "url":
+        return None
+
+    source_type = config.get("type_of_source", "YouTube Video")
+    source = config.get("source_url_or_path", "")
+
+    if source_type == "TXT":
+        raise VisualModeError(
+            "Visual mode does not support TXT sources because there is no video to send."
+        )
+
+    # Local files always use base64 mode
+    if source_type == "Local File":
+        return None
+
+    # Validate that the profile actually supports URL mode
+    supported_hosts = profile.get("supported_url_hosts", [])
+    if not supported_hosts:
+        raise VisualModeError(
+            f"URL mode is not supported by {profile['name']}. "
+            "Use base64 mode, or choose a provider that supports direct URL passing."
+        )
+
+    # Validate host against supported_url_hosts
+    parsed = urlparse(source)
+    host = (parsed.hostname or "").lower()
+
+    matched = any(
+        host == supported.lower() or host.endswith("." + supported.lower())
+        for supported in supported_hosts
+    )
+    if not matched:
+        raise VisualModeError(
+            f"URL mode for {profile['name']} does not support host '{host}'. "
+            f"Supported hosts: {', '.join(supported_hosts)}. "
+            "Use base64 mode, or provide a URL from a supported host."
+        )
+
+    return source
 
 
 def resolve_video_source(config: Dict) -> Tuple[str, bool]:
@@ -249,6 +322,34 @@ def probe_video(video_path: str) -> Dict:
     return result
 
 
+def _container_to_mime_type(container: str) -> str:
+    """Map a file extension to a video MIME type."""
+    mapping = {
+        "mp4": "video/mp4",
+        "mpeg": "video/mpeg",
+        "mpg": "video/mpeg",
+        "mov": "video/quicktime",
+        "qt": "video/quicktime",
+        "webm": "video/webm",
+        "avi": "video/x-msvideo",
+        "mkv": "video/x-matroska",
+    }
+    return mapping.get(container.lower(), f"video/{container.lower()}")
+
+
+def _format_set_contains(container: str, supported_formats) -> bool:
+    """Check whether a container extension or its MIME type is in supported_formats."""
+    if not supported_formats:
+        return True
+    container_mime = _container_to_mime_type(container)
+    return container in supported_formats or container_mime in supported_formats
+
+
+def _format_set_contains_mp4(supported_formats) -> bool:
+    """Check whether supported_formats includes MP4 (by extension or MIME type)."""
+    return "mp4" in supported_formats or "video/mp4" in supported_formats
+
+
 def validate_video_limits(video_path: str, profile: Dict, config: Dict) -> None:
     """Enforce provider video limits; raise VideoValidationError on violation."""
     probe = probe_video(video_path)
@@ -280,14 +381,20 @@ def validate_video_limits(video_path: str, profile: Dict, config: Dict) -> None:
             "Use a shorter clip, choose Gemini Files, or run audio-only mode."
         )
 
-    # Format check
+    # Format check (supported_mime_types takes precedence over legacy formats)
     container = probe.get("container", "")
-    supported_formats = profile.get("formats", set())
-    if supported_formats and container and container not in supported_formats:
-        raise VideoValidationError(
-            f"Video container '{container}' is not supported by {profile['name']}. "
-            f"Supported formats: {', '.join(sorted(supported_formats))}."
-        )
+    supported_formats = profile.get("supported_mime_types") or profile.get("formats", set())
+    if supported_formats and container:
+        if not _format_set_contains(container, supported_formats):
+            # Build human-readable list from MIME types if present
+            display_formats = sorted(
+                f if not f.startswith("video/") else f.replace("video/", "")
+                for f in supported_formats
+            )
+            raise VideoValidationError(
+                f"Video container '{container}' is not supported by {profile['name']}. "
+                f"Supported formats: {', '.join(display_formats)}."
+            )
 
 
 def format_visual_timestamp(seconds: float) -> str:
@@ -412,8 +519,9 @@ def split_video_segments(
             temp_dir,
             f"visual_segment_{uuid.uuid4().hex}_{segment['index']:03d}.mp4",
         )
+        time_range = f"{segment.get('timestamp', '')}-{segment.get('end_timestamp', '')}"
         spinner = ProgressSpinner(
-            f"Creating visual segment {segment['index']}/{segment['total']}",
+            f"Creating visual segment {segment['index']}/{segment['total']} ({time_range})",
             verbose,
         )
         try:
@@ -436,7 +544,7 @@ def split_video_segments(
             subprocess.run(cmd, check=True, capture_output=True, timeout=300)
             spinner.stop()
             print_status(
-                f"Visual segment {segment['index']}/{segment['total']} ready",
+                f"Visual segment {segment['index']}/{segment['total']} ({time_range}) ready",
                 "SUCCESS",
                 verbose,
             )
@@ -470,13 +578,12 @@ def normalize_video(video_path: str, profile: Dict, config: Dict) -> str:
     verbose = config.get("verbose", False)
     probe = probe_video(video_path)
     container = probe.get("container", "")
-    supported_formats = profile.get("formats", set())
+    supported_formats = profile.get("supported_mime_types") or profile.get("formats", set())
 
     needs_remux = (
         supported_formats
-        and "mp4" in supported_formats
-        and container != "mp4"
-        and container not in supported_formats
+        and _format_set_contains_mp4(supported_formats)
+        and not _format_set_contains(container, supported_formats)
     )
 
     if needs_remux or _should_compress(video_path, profile, config, probe):

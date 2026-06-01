@@ -10,7 +10,7 @@ providers:
 
   gemini:
     base_url: https://generativelanguage.googleapis.com/v1beta/openai
-    model: gemini-2.5-flash-lite
+    model: google/gemini-3.5-flash
 
   deepseek:
     base_url: https://api.deepseek.com/v1
@@ -24,14 +24,36 @@ providers:
     base_url: https://integrate.api.nvidia.com/v1
     model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
 
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-3.1-flash-lite
+
+  # OpenRouter base64 visual mode: downloads video, splits into temporal chunks,
+  # and sends each chunk as base64. Works with any video-capable OpenRouter model.
+  openrouter-gemini-video:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-3.1-flash-lite
+    visual-provider: openrouter
+    visual-api-style: openai-video-url
+    visual-input-mode: base64
+    visual-max-duration-seconds: 120
+    visual-max-size-mb: 100
+
+  # OpenRouter URL visual mode: sends the original YouTube URL directly.
+  # Only for supported hosts (youtube.com, youtu.be). No download or splitting.
+  openrouter-gemini-youtube:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-3.1-flash-lite
+    visual-provider: openrouter
+    visual-api-style: openai-video-url
+    visual-input-mode: url
+    visual-supported-url-hosts: [youtube.com, youtu.be]
+
   perplexity:
     base_url: https://openrouter.ai/api/v1
     model: perplexity/sonar
     chunk-size: 128000
 
-  # LiteLLM: access 100+ providers via a single interface
-  # pip install 'summarizer[litellm]'
-  # See https://docs.litellm.ai/docs/providers for the full list
   litellm-anthropic:
     base_url: litellm
     model: anthropic/claude-sonnet-4-6

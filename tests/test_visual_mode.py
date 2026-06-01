@@ -11,6 +11,7 @@ from summarizer.exceptions import VisualModeError, VideoValidationError
 from summarizer.visual import (
     VIDEO_PROVIDER_PROFILES,
     get_visual_provider_profile,
+    resolve_visual_url,
     resolve_video_source,
     encode_video_base64,
     validate_video_limits,
@@ -33,6 +34,67 @@ class TestGetVisualProviderProfile:
             "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
         })
         assert profile["name"] == "nvidia"
+
+    def test_openrouter_auto_detects_gemini_model(self):
+        profile = get_visual_provider_profile({
+            "base_url": "https://openrouter.ai/api/v1",
+            "model": "google/gemini-2.5-flash",
+        })
+        assert profile["name"] == "openrouter"
+
+    def test_openrouter_unsupported_model_not_auto_detected(self):
+        with pytest.raises(VisualModeError, match="does not support visual mode"):
+            get_visual_provider_profile({
+                "base_url": "https://openrouter.ai/api/v1",
+                "model": "openai/gpt-4o",
+            })
+
+    def test_explicit_visual_provider_matches_openrouter(self):
+        profile = get_visual_provider_profile({
+            "base_url": "https://openrouter.ai/api/v1",
+            "model": "openai/gpt-4o",
+            "visual_provider": "openrouter",
+        })
+        assert profile["name"] == "openrouter"
+
+    def test_explicit_visual_provider_overrides_matching(self):
+        profile = get_visual_provider_profile({
+            "base_url": "https://custom.proxy/openrouter",
+            "model": "some-model",
+            "visual_provider": "openrouter",
+        })
+        assert profile["name"] == "openrouter"
+
+    def test_provider_merge_does_not_implicitly_enable_visual(self):
+        from summarizer.config_file import merge_configs
+        file_config = {
+            "providers": {
+                "openrouter": {
+                    "base_url": "https://openrouter.ai/api/v1",
+                    "model": "openai/gpt-4o",
+                }
+            }
+        }
+        merged = merge_configs(file_config, {"provider": "openrouter"})
+        assert merged.get("visual_provider") is None
+        with pytest.raises(VisualModeError, match="does not support visual mode"):
+            get_visual_provider_profile(merged)
+
+    def test_explicit_visual_provider_in_config_enables_visual(self):
+        from summarizer.config_file import merge_configs
+        file_config = {
+            "providers": {
+                "openrouter": {
+                    "base_url": "https://openrouter.ai/api/v1",
+                    "model": "openai/gpt-4o",
+                    "visual-provider": "openrouter",
+                }
+            }
+        }
+        merged = merge_configs(file_config, {"provider": "openrouter"})
+        assert merged.get("visual_provider") == "openrouter"
+        profile = get_visual_provider_profile(merged)
+        assert profile["name"] == "openrouter"
 
     def test_unsupported_provider_raises(self):
         with pytest.raises(VisualModeError, match="does not support visual mode"):
@@ -290,6 +352,20 @@ class TestNormalizeVideo:
             args = mock_run.call_args[0][0]
             assert "-c" in args and "copy" in args
 
+    def test_remux_when_only_mime_types_present(self):
+        with patch("summarizer.visual.probe_video", return_value={
+            "duration": 60.0, "size_mb": 50.0, "container": "avi"
+        }), patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            result = normalize_video("/fake/video.avi", {
+                "name": "openrouter",
+                "supported_mime_types": {"video/mp4"},
+            }, {})
+            assert "normalized" in result
+            mock_run.assert_called_once()
+            args = mock_run.call_args[0][0]
+            assert "-c" in args and "copy" in args
+
 
 class TestEncodeVideoBase64:
     def test_encodes_mp4(self):
@@ -383,6 +459,228 @@ class TestBuildVisualPayload:
         finally:
             os.remove(path)
 
+    def test_url_mode_uses_direct_url(self):
+        payload = build_visual_payload(
+            {"model": "google/gemini-2.5-flash", "prompt_type": "Questions and answers"},
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            {"name": "openrouter", "visual_input_mode": "url"},
+        )
+        messages = payload["messages"]
+        content = messages[1]["content"]
+        video_part = next(item for item in content if item.get("type") == "video_url")
+        assert video_part["video_url"]["url"] == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+    def test_data_url_passthrough(self):
+        payload = build_visual_payload(
+            {"model": "test-model", "prompt_type": "Questions and answers"},
+            "data:video/mp4;base64,abc123",
+            {"name": "test", "max_file_mb": 100},
+        )
+        messages = payload["messages"]
+        content = messages[1]["content"]
+        video_part = next(item for item in content if item.get("type") == "video_url")
+        assert video_part["video_url"]["url"] == "data:video/mp4;base64,abc123"
+
+
+class TestResolveVisualUrl:
+    def test_url_mode_returns_youtube_url(self):
+        url = resolve_visual_url(
+            {
+                "type_of_source": "YouTube Video",
+                "source_url_or_path": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            },
+            {
+                "name": "openrouter",
+                "visual_input_mode": "url",
+                "supported_url_hosts": ["youtube.com", "youtu.be"],
+            },
+        )
+        assert url == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+    def test_url_mode_returns_youtu_be_url(self):
+        url = resolve_visual_url(
+            {
+                "type_of_source": "Video URL",
+                "source_url_or_path": "https://youtu.be/dQw4w9WgXcQ",
+            },
+            {
+                "name": "openrouter",
+                "visual_input_mode": "url",
+                "supported_url_hosts": ["youtube.com", "youtu.be"],
+            },
+        )
+        assert url == "https://youtu.be/dQw4w9WgXcQ"
+
+    def test_url_mode_rejects_unsupported_host(self):
+        with pytest.raises(VisualModeError, match="does not support host"):
+            resolve_visual_url(
+                {
+                    "type_of_source": "Video URL",
+                    "source_url_or_path": "https://example.com/video.mp4",
+                },
+                {
+                    "name": "openrouter",
+                    "visual_input_mode": "url",
+                    "supported_url_hosts": ["youtube.com", "youtu.be"],
+                },
+            )
+
+    def test_local_file_always_uses_base64(self):
+        url = resolve_visual_url(
+            {
+                "type_of_source": "Local File",
+                "source_url_or_path": "/fake/video.mp4",
+            },
+            {
+                "name": "openrouter",
+                "visual_input_mode": "url",
+                "supported_url_hosts": ["youtube.com", "youtu.be"],
+            },
+        )
+        assert url is None
+
+    def test_base64_profile_returns_none(self):
+        url = resolve_visual_url(
+            {
+                "type_of_source": "YouTube Video",
+                "source_url_or_path": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            },
+            {
+                "name": "nvidia",
+                "visual_input_mode": "base64",
+                "supported_url_hosts": [],
+            },
+        )
+        assert url is None
+
+    def test_config_visual_input_mode_overrides_profile_to_url(self):
+        url = resolve_visual_url(
+            {
+                "type_of_source": "YouTube Video",
+                "source_url_or_path": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "visual_input_mode": "url",
+            },
+            {
+                "name": "openrouter",
+                "visual_input_mode": "base64",
+                "supported_url_hosts": ["youtube.com", "youtu.be"],
+            },
+        )
+        assert url == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+    def test_config_visual_input_mode_overrides_profile_to_base64(self):
+        url = resolve_visual_url(
+            {
+                "type_of_source": "YouTube Video",
+                "source_url_or_path": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "visual_input_mode": "base64",
+            },
+            {
+                "name": "openrouter",
+                "visual_input_mode": "url",
+                "supported_url_hosts": ["youtube.com", "youtu.be"],
+            },
+        )
+        assert url is None
+
+    def test_nothyoutube_host_rejected(self):
+        with pytest.raises(VisualModeError, match="does not support host"):
+            resolve_visual_url(
+                {
+                    "type_of_source": "Video URL",
+                    "source_url_or_path": "https://notyoutube.com/video.mp4",
+                    "visual_input_mode": "url",
+                },
+                {
+                    "name": "openrouter",
+                    "visual_input_mode": "url",
+                    "supported_url_hosts": ["youtube.com", "youtu.be"],
+                },
+            )
+
+    def test_url_mode_on_provider_without_url_support_raises(self):
+        with pytest.raises(VisualModeError, match="URL mode is not supported"):
+            resolve_visual_url(
+                {
+                    "type_of_source": "YouTube Video",
+                    "source_url_or_path": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "visual_input_mode": "url",
+                },
+                {
+                    "name": "nvidia",
+                    "visual_input_mode": "base64",
+                    "supported_url_hosts": [],
+                },
+            )
+
+    def test_txt_rejected_in_url_mode(self):
+        with pytest.raises(VisualModeError, match="TXT sources"):
+            resolve_visual_url(
+                {
+                    "type_of_source": "TXT",
+                    "source_url_or_path": "/fake/file.txt",
+                },
+                {
+                    "name": "openrouter",
+                    "visual_input_mode": "url",
+                    "supported_url_hosts": ["youtube.com", "youtu.be"],
+                },
+            )
+
+
+class TestPayloadGuard:
+    def test_oversized_segment_raises_before_encoding(self):
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
+            # Write enough data to exceed 100 MB when base64-encoded
+            # 100 MB limit -> ~74.6 MB raw file before base64 overhead
+            f.write(b"x" * (80 * 1024 * 1024))
+            path = f.name
+        try:
+            from summarizer.visual_api import build_visual_payload
+            with pytest.raises(VideoValidationError, match="payload is estimated at"):
+                build_visual_payload(
+                    {"model": "test-model", "prompt_type": "Questions and answers"},
+                    path,
+                    {"name": "test-provider", "max_file_mb": 100},
+                )
+        finally:
+            os.remove(path)
+
+    def test_config_override_allows_larger_payload(self):
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
+            f.write(b"x" * (80 * 1024 * 1024))
+            path = f.name
+        try:
+            from summarizer.visual_api import build_visual_payload
+            # 150 MB config override should allow an ~107 MB base64 payload
+            build_visual_payload(
+                {
+                    "model": "test-model",
+                    "prompt_type": "Questions and answers",
+                    "visual_max_size_mb": 150,
+                },
+                path,
+                {"name": "test-provider", "max_file_mb": 100},
+            )
+        finally:
+            os.remove(path)
+
+    def test_small_segment_passes_guard(self):
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
+            f.write(b"fake video data")
+            path = f.name
+        try:
+            from summarizer.visual_api import build_visual_payload
+            payload = build_visual_payload(
+                {"model": "test-model", "prompt_type": "Questions and answers"},
+                path,
+                {"name": "test-provider", "max_file_mb": 100},
+            )
+            assert "model" in payload
+            assert "messages" in payload
+        finally:
+            os.remove(path)
+
 
 class TestProcessVideoSegments:
     def test_returns_timestamped_summaries(self):
@@ -408,6 +706,83 @@ class TestProcessVideoSegments:
             ("00:00:00", "summary for 00:00:00"),
             ("00:02:00", "summary for 00:02:00"),
         ]
+
+
+class TestSupportedMimeTypes:
+    def test_reject_unsupported_mime_type_using_supported_mime_types(self):
+        with patch("summarizer.visual.probe_video", return_value={
+            "duration": 60.0, "size_mb": 50.0, "container": "avi"
+        }):
+            with pytest.raises(VideoValidationError, match="container 'avi' is not supported"):
+                validate_video_limits("/fake.avi", {
+                    "name": "openrouter",
+                    "max_duration_seconds": 120,
+                    "max_file_mb": 100,
+                    "formats": set(),
+                    "supported_mime_types": {"video/mp4", "video/webm"},
+                }, {})
+
+    def test_accept_supported_mime_type_mp4(self):
+        with patch("summarizer.visual.probe_video", return_value={
+            "duration": 60.0, "size_mb": 50.0, "container": "mp4"
+        }):
+            validate_video_limits("/fake.mp4", {
+                "name": "openrouter",
+                "max_duration_seconds": 120,
+                "max_file_mb": 100,
+                "formats": set(),
+                "supported_mime_types": {"video/mp4", "video/webm"},
+            }, {})
+
+    def test_accept_supported_mime_type_webm(self):
+        with patch("summarizer.visual.probe_video", return_value={
+            "duration": 60.0, "size_mb": 50.0, "container": "webm"
+        }):
+            validate_video_limits("/fake.webm", {
+                "name": "openrouter",
+                "max_duration_seconds": 120,
+                "max_file_mb": 100,
+                "formats": set(),
+                "supported_mime_types": {"video/mp4", "video/webm"},
+            }, {})
+
+
+class TestLimitBehavior:
+    def test_openrouter_explicit_limits_override_none_profile(self):
+        with patch("summarizer.visual.probe_video", return_value={
+            "duration": 200.0, "size_mb": 50.0, "container": "mp4"
+        }):
+            # Profile has no limits, but config sets 300s — should pass
+            validate_video_limits("/fake.mp4", {
+                "name": "openrouter",
+                "max_duration_seconds": None,
+                "max_file_mb": None,
+                "supported_mime_types": {"video/mp4"},
+            }, {"visual_max_duration_seconds": 300})
+
+    def test_openrouter_no_limits_no_config_allows_any_duration(self):
+        with patch("summarizer.visual.probe_video", return_value={
+            "duration": 1000.0, "size_mb": 500.0, "container": "mp4"
+        }):
+            # No profile limits and no config limits = no duration/size check
+            validate_video_limits("/fake.mp4", {
+                "name": "openrouter",
+                "max_duration_seconds": None,
+                "max_file_mb": None,
+                "supported_mime_types": {"video/mp4"},
+            }, {})
+
+    def test_long_videos_split_by_configured_duration(self):
+        with patch("summarizer.visual.probe_video", return_value={
+            "duration": 820.0, "size_mb": 50.0, "container": "mp4"
+        }):
+            segments = build_visual_segments("/fake.mp4", {
+                "name": "openrouter",
+                "max_duration_seconds": 120,
+            }, {})
+            assert len(segments) == 7
+            assert segments[0]["timestamp"] == "00:00:00"
+            assert segments[-1]["timestamp"] == "00:12:00"
 
 
 class TestCoreVisualBranch:
@@ -459,3 +834,86 @@ class TestCoreVisualBranch:
 
         assert "visual summary" in result
         mock_get_transcript.assert_not_called()
+
+    def test_audio_only_mode_uses_transcript_not_visual(self):
+        with patch("summarizer.core.get_api_key", return_value="test-key"), \
+             patch("summarizer.core.get_transcript", return_value="transcript text") as mock_get_transcript, \
+             patch("summarizer.core.extract_and_clean_chunks", return_value=["chunk1"]), \
+             patch("summarizer.core.process_chunks", return_value=[("", "audio summary")]), \
+             patch("summarizer.visual.get_visual_provider_profile") as mock_get_visual_profile:
+            from summarizer.core import main
+
+            result = main({
+                "visual": False,
+                "base_url": "https://api.groq.com/openai/v1",
+                "model": "llama-3.3-70b-versatile",
+                "source_url_or_path": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "type_of_source": "YouTube Video",
+                "prompt_type": "Questions and answers",
+                "max_output_tokens": 4096,
+            })
+
+        assert "audio summary" in result
+        mock_get_transcript.assert_called_once()
+        mock_get_visual_profile.assert_not_called()
+
+    def test_visual_url_path_skips_download_and_calls_process_video(self):
+        async def fake_process_video(config, video_url, profile):
+            return f"url summary for {video_url}"
+
+        with patch("summarizer.core.get_api_key", return_value="test-key"), \
+             patch("summarizer.core.get_transcript") as mock_get_transcript, \
+             patch("summarizer.visual.get_visual_provider_profile", return_value={
+                 "name": "openrouter",
+                 "max_duration_seconds": None,
+                 "max_file_mb": None,
+                 "supported_mime_types": {"video/mp4"},
+                 "supports_chunking": False,
+                 "visual_input_mode": "url",
+                 "supported_url_hosts": ["youtube.com", "youtu.be"],
+             }), \
+             patch("summarizer.visual.resolve_video_source") as mock_resolve_video_source, \
+             patch("summarizer.visual_api.process_video", side_effect=fake_process_video):
+            from summarizer.core import main
+
+            result = main({
+                "visual": True,
+                "base_url": "https://openrouter.ai/api/v1",
+                "model": "google/gemini-2.5-flash",
+                "source_url_or_path": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "type_of_source": "YouTube Video",
+                "prompt_type": "Questions and answers",
+                "max_output_tokens": 4096,
+            })
+
+        assert "url summary for https://www.youtube.com/watch?v=dQw4w9WgXcQ" in result
+        mock_get_transcript.assert_not_called()
+        mock_resolve_video_source.assert_not_called()
+
+
+class TestCliConfigFlow:
+    def test_cli_preserves_visual_input_mode_from_provider(self):
+        import sys
+        with patch.object(sys, "argv", [
+            "summarizer",
+            "--source", "https://youtube.com/watch?v=VIDEO_ID",
+            "--provider", "openrouter-youtube",
+            "--visual",
+            "--no-save",
+        ]), \
+             patch("summarizer.__main__.process_url") as mock_process, \
+             patch("summarizer.__main__.load_config_file", return_value={
+                 "providers": {
+                     "openrouter-youtube": {
+                         "base_url": "https://openrouter.ai/api/v1",
+                         "model": "google/gemini-2.5-flash",
+                         "visual-input-mode": "url",
+                     }
+                 }
+             }), \
+             patch("summarizer.__main__.sys.exit"):
+            from summarizer.__main__ import cli
+            cli()
+            assert mock_process.called
+            base_config = mock_process.call_args[0][1]
+            assert base_config.get("visual_input_mode") == "url"

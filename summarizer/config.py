@@ -29,6 +29,8 @@ DEFAULT_CONFIG = {
     "visual_chunk_seconds": "auto",
     "visual_chunk_overlap_seconds": 0,
     "visual_synthesis": False,
+    "visual_provider": None,
+    "visual_input_mode": None,
 }
 
 # API provider patterns - extensible mapping of URL patterns to env var names.

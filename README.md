@@ -157,12 +157,18 @@ providers:
 
   openrouter:
     base_url: https://openrouter.ai/api/v1
-    model: openai/gpt-oss-20b
+    model: google/gemini-2.5-flash
 
-# example of a second config on the same provider
+  # example of a second config on the same provider
   openrouter120:
     base_url: https://openrouter.ai/api/v1
-    model: openai/gpt-oss-120b
+    model: google/gemini-2.5-pro
+
+  # example of URL mode for YouTube videos (no download/split)
+  openrouter-youtube:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-2.5-flash
+    visual-input-mode: url
 
   openai:
     base_url: https://api.openai.com/v1
@@ -341,12 +347,24 @@ Use `--verbose` to see detailed status output during config loading, downloads, 
 
 ## Visual Mode
 
-By default, the app transcribes audio and summarizes the transcript. Visual mode skips transcription entirely and sends video (including audio and visual content) directly to a video-capable model. If a provider has a short per-request video window, the app splits the video into timestamped temporal chunks and sends each chunk as video.
+By default, the app transcribes audio and summarizes the transcript. Visual mode skips transcription entirely and sends the video itself, including visible content and audio, to a video-capable model. Long videos are split into timestamped temporal chunks when the selected visual provider has a per-request duration limit.
 
-**Supported providers (MVP):**
+**Supported providers:**
 - **NVIDIA**: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` via `https://integrate.api.nvidia.com/v1`
+- **OpenRouter**: Gemini video models, e.g. `google/gemini-2.5-flash` via `https://openrouter.ai/api/v1`
+
+OpenRouter visual auto-detection is intentionally conservative: it matches OpenRouter Gemini models. If you use an OpenRouter-compatible proxy or another known video-capable OpenRouter model, set `visual-provider: openrouter` in that provider block.
 
 Visual mode is opt-in and does **not** change the default audio-only behavior. It also does not use the transcript cache because it bypasses transcription completely.
+
+There are two visual input modes:
+
+| Mode | Behavior | Use it for |
+| --- | --- | --- |
+| `base64` | Downloads or reads the video, normalizes it if needed, splits it into time chunks when required, and sends each chunk as a base64 `video_url` payload. | NVIDIA, local files, and OpenRouter sources that should be processed locally first. |
+| `url` | Sends the original supported source URL directly to the provider. It does not download, split, or validate the media locally. | OpenRouter Gemini with YouTube URLs. |
+
+`base64` is the default. URL mode is enabled per provider with `visual-input-mode: url`; local files always fall back to base64. URL mode only works for profiles that declare supported URL hosts, currently `youtube.com` and `youtu.be` for OpenRouter.
 
 **CLI examples:**
 
@@ -356,14 +374,36 @@ python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --provider 
 
 # Local file via NVIDIA visual mode
 python -m summarizer --type "Local File" --source "./clip.mp4" --provider nvidia --visual
+
+# OpenRouter base64 mode (default): video is downloaded, split, and sent as base64 chunks
+python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" \
+  --base-url "https://openrouter.ai/api/v1" \
+  --model "google/gemini-2.5-flash" \
+  --visual
+
+# OpenRouter URL mode: sends the original YouTube URL directly (no download/split)
+# Requires a provider config with visual-input-mode: url
+python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" \
+  --provider openrouter-youtube \
+  --visual
 ```
 
-**Visual limits (NVIDIA MVP):**
+**Visual limits (default conservative values):**
 - Maximum duration per request: 120 seconds
 - Maximum file size: 100 MB
-- Supported formats: MP4, MOV, WEBM
+- Supported formats: MP4, MPEG, MOV, WEBM
 
-Long NVIDIA visual runs are split automatically. For example, an 820 second video becomes seven visual requests: six 120 second chunks and one 100 second chunk. The final output is timestamped by segment.
+Long visual runs are split automatically when the provider supports chunking. For example, an 820 second NVIDIA video becomes seven visual requests: six 120 second chunks and one 100 second chunk. The final output is timestamped by segment.
+
+If you proxy a supported visual provider through your own endpoint, force the visual profile explicitly:
+
+```yaml
+providers:
+  my-openrouter-proxy:
+    base_url: https://my-proxy.example.com/v1
+    model: google/gemini-2.5-flash
+    visual-provider: openrouter
+```
 
 You can enable automatic compression in `summarizer.yaml`:
 

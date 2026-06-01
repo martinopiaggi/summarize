@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Tuple
 import aiohttp
 
 from .api import parse_response_content
-from .exceptions import APIError, ConfigurationError
+from .exceptions import APIError, ConfigurationError, VideoValidationError
 from .progress import print_status
 from .prompts import load_prompt_template
 from .proxy import get_webshare_proxy_url, should_proxy_url
@@ -67,9 +67,35 @@ def build_visual_messages(
     ]
 
 
+def _check_base64_payload_size(video_path: str, profile: Dict, config: Dict) -> None:
+    """Guard against oversized base64 payloads before encoding."""
+    import os
+
+    max_size_mb = config.get("visual_max_size_mb") or profile.get("max_file_mb")
+    if max_size_mb is None:
+        return
+
+    file_size_bytes = os.path.getsize(video_path)
+    estimated_payload_mb = (file_size_bytes * 1.34) / (1024 * 1024)
+
+    if estimated_payload_mb > max_size_mb:
+        raise VideoValidationError(
+            f"Video segment payload is estimated at {estimated_payload_mb:.1f} MB "
+            f"(base64 of {file_size_bytes / (1024 * 1024):.1f} MB file), "
+            f"but {profile['name']} visual mode has a {max_size_mb} MB limit. "
+            "Try a lower visual-chunk-seconds value, enable visual-compression: auto, "
+            "or use a lower-resolution source."
+        )
+
+
+def _is_url_or_data_url(value: str) -> bool:
+    """Return True if value looks like a http(s) or data URL."""
+    return value.startswith(("http://", "https://", "data:"))
+
+
 def build_visual_payload(
     config: Dict,
-    video_path: str,
+    video_path_or_url: str,
     profile: Dict,
 ) -> Dict[str, Any]:
     """Build the OpenAI-compatible JSON payload for visual mode."""
@@ -78,7 +104,12 @@ def build_visual_payload(
     model = config.get("model", "")
     max_output_tokens = config.get("max_output_tokens", 4096)
 
-    data_url = encode_video_base64(video_path)
+    if _is_url_or_data_url(video_path_or_url):
+        data_url = video_path_or_url
+    else:
+        _check_base64_payload_size(video_path_or_url, profile, config)
+        data_url = encode_video_base64(video_path_or_url)
+
     messages = build_visual_messages(config, data_url)
 
     payload: Dict[str, Any] = {
@@ -141,8 +172,9 @@ async def process_video_segments(
                 "visual_segment_total": segment.get("total"),
             }
         )
+        time_range = f"{segment.get('timestamp', '')}-{segment.get('end_timestamp', '')}"
         print_status(
-            f"Processing visual segment {segment.get('index')}/{segment.get('total')}",
+            f"Processing visual segment {segment.get('index')}/{segment.get('total')} ({time_range})",
             "PROCESSING",
             verbose,
         )
@@ -158,6 +190,17 @@ async def process_video_segments(
     return results
 
 
+def _segment_context(config: Dict) -> str:
+    """Build a short segment context string for error messages."""
+    index = config.get("visual_segment_index")
+    total = config.get("visual_segment_total")
+    start = config.get("visual_segment_start")
+    end = config.get("visual_segment_end")
+    if index is not None and total is not None:
+        return f" [segment {index}/{total} {start}-{end}]"
+    return ""
+
+
 async def _process_video_openai_url(
     config: Dict,
     video_path: str,
@@ -169,6 +212,7 @@ async def _process_video_openai_url(
     base_url = config.get("base_url", "")
     model = config.get("model", "")
     api_key = config.get("api_key", "")
+    seg_ctx = _segment_context(config)
 
     if not base_url or not model:
         raise ConfigurationError("base_url and model are required for visual mode")
@@ -189,7 +233,7 @@ async def _process_video_openai_url(
 
     data_url = payload["messages"][1]["content"][0]["video_url"]["url"]
     print_status(
-        f"Sending video to {model} ({len(data_url) / 1024 / 1024:.1f} MB payload)",
+        f"Sending video to {model} ({len(data_url) / 1024 / 1024:.1f} MB payload){seg_ctx}",
         "PROCESSING",
         verbose,
     )
@@ -208,12 +252,12 @@ async def _process_video_openai_url(
                         error_text = await response.text()
                         if attempt < max_retries - 1:
                             logger.warning(
-                                f"Visual API request failed (attempt {attempt + 1}/{max_retries}): {error_text}"
+                                f"Visual API request failed{seg_ctx} (attempt {attempt + 1}/{max_retries}): {error_text}"
                             )
                             await asyncio.sleep(2 ** attempt)
                             continue
                         raise APIError(
-                            f"Visual API request failed after {max_retries} attempts: {error_text}"
+                            f"Visual API request failed after {max_retries} attempts{seg_ctx}: {error_text}"
                         )
 
                     result = await response.json()
@@ -222,7 +266,7 @@ async def _process_video_openai_url(
                     if "please provide" in content.lower() or "please share" in content.lower():
                         return ""
 
-                    print_status("Visual summarization completed", "SUCCESS", verbose)
+                    print_status(f"Visual summarization completed{seg_ctx}", "SUCCESS", verbose)
                     return content
 
         except asyncio.CancelledError:
@@ -232,11 +276,11 @@ async def _process_video_openai_url(
         except Exception as e:
             if attempt < max_retries - 1:
                 logger.warning(
-                    f"Visual request error (attempt {attempt + 1}/{max_retries}): {e}"
+                    f"Visual request error{seg_ctx} (attempt {attempt + 1}/{max_retries}): {e}"
                 )
                 await asyncio.sleep(2 ** attempt)
             else:
-                logger.error(f"Visual request failed after {max_retries} attempts: {e}")
-                raise APIError(f"Visual API request failed: {e}")
+                logger.error(f"Visual request failed after {max_retries} attempts{seg_ctx}: {e}")
+                raise APIError(f"Visual API request failed{seg_ctx}: {e}")
 
     return ""

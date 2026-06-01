@@ -102,15 +102,30 @@ def main(config: dict) -> str:
             if config.get("visual"):
                 from .visual import (
                     get_visual_provider_profile,
+                    resolve_visual_url,
                     resolve_video_source,
                     normalize_video,
                     validate_video_limits,
                     build_visual_segments,
                     split_video_segments,
                 )
-                from .visual_api import process_video_segments
+                from .visual_api import process_video, process_video_segments
 
                 profile = get_visual_provider_profile(config)
+
+                # URL mode: send original URL directly without downloading/splitting
+                visual_url = resolve_visual_url(config, profile)
+                if visual_url:
+                    summary = loop.run_until_complete(
+                        process_video(config, visual_url, profile)
+                    )
+                    if not summary:
+                        raise APIError("No valid summary generated")
+                    formatted = format_summary_with_timestamps([("", summary)], config)
+                    print_status("Summarization completed", "SUCCESS", verbose)
+                    return formatted
+
+                # Base64 mode: download, normalize, split, encode
                 original_path, should_delete = resolve_video_source(config)
                 normalized_path = normalize_video(original_path, profile, config)
                 segment_paths = []

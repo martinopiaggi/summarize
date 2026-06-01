@@ -182,6 +182,16 @@ providers:
     base_url: https://integrate.api.nvidia.com/v1
     model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
 
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-2.5-flash
+
+  # URL mode example: sends YouTube URLs directly without downloading
+  openrouter-youtube:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-2.5-flash
+    visual-input-mode: url
+
   perplexity:
     base_url: https://openrouter.ai/api/v1
     model: perplexity/sonar
