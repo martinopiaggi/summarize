@@ -1,0 +1,11 @@
+# Batch Processing
+
+Pass multiple sources at once:
+
+```bash
+python -m summarizer --source "URL1" "URL2" "URL3" --provider gemini
+```
+
+Each source gets its own output file in `summaries/`.
+
+> **Tip:** Transcripts are cached in memory by default, so if you re-run the batch with different styles or providers, transcription is skipped for sources already processed.

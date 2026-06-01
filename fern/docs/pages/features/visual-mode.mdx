@@ -1,0 +1,95 @@
+# Visual Mode
+
+By default, the app transcribes audio and summarizes the transcript. Visual mode skips transcription entirely and sends the video itself — including visible content and audio — to a video-capable model. Long videos are split into timestamped temporal chunks using the configured visual limits.
+
+## Why Visual Mode Exists
+
+The idea for visual mode came from a community discussion in [PR #13](https://github.com/martinopiaggi/summarize/pull/13) and [PR #14](https://github.com/martinopiaggi/summarize/pull/14). Contributors pointed out a real gap: **a significant amount of key information appears as on-screen text overlaid on the video**, not spoken in the audio.
+
+> **Use cases where visual mode shines:**
+> - **Cooking reels** — ingredients, quantities, and steps written on screen
+> - **Travel tips** — locations, prices, and directions shown as text overlays
+> - **Meme videos** — visual humor and context that speech-to-text misses entirely
+> - **Educational content** — diagrams, code snippets, and formulas displayed visually
+> - **Any video where audio and visual together tell the full story**
+
+For long-form content like lectures and podcasts, audio-only summaries are usually more accurate. Visual mode is designed for content where **what you see matters as much as what you hear**.
+
+## Visual Input Modes
+
+| Mode | Behavior | Use it for |
+| --- | --- | --- |
+| `base64` (default) | Downloads or reads the video, normalizes it if needed, splits long videos into time chunks, and sends each chunk as a base64 `video_url` payload. | Any OpenAI-compatible video endpoint: NVIDIA, OpenRouter, custom proxies, etc. |
+| `url` | Sends the original YouTube URL directly to the provider without downloading or splitting. | Gemini models that can fetch YouTube URLs remotely. |
+
+`base64` is the default. URL mode is enabled per provider with `visual-input-mode: url`. Local files still use base64. Non-YouTube remote URLs are rejected in URL mode; use base64 mode for those sources.
+
+Direct Google Gemini's OpenAI-compatible endpoint (`generativelanguage.googleapis.com/v1beta/openai`) does not accept `video_url` content parts. For Gemini YouTube URL passthrough, use an OpenAI-compatible provider that supports `video_url`, such as OpenRouter.
+
+## Example Provider Configs
+
+```yaml
+providers:
+  openrouter-video:
+    base_url: https://openrouter.ai/api/v1
+    model: minimax/minimax-m3
+
+  openrouter-youtube:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-3.1-flash-lite
+    visual-input-mode: url
+
+  nvidia:
+    base_url: https://integrate.api.nvidia.com/v1
+    model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+```
+
+## CLI Examples
+
+```bash
+# YouTube video via NVIDIA visual mode
+python -m summarizer --source "URL" --provider nvidia --visual
+
+# Local file via NVIDIA visual mode
+python -m summarizer --type "Local File" --source "./clip.mp4" --provider nvidia --visual
+
+# Generic OpenRouter video model (base64 mode)
+python -m summarizer --source "URL" \
+  --base-url "https://openrouter.ai/api/v1" \
+  --model "minimax/minimax-m3" \
+  --visual
+
+# OpenRouter URL mode: sends the original YouTube URL directly
+python -m summarizer --source "URL" \
+  --provider openrouter-youtube \
+  --visual
+```
+
+## Visual Limits
+
+Default conservative values:
+- Maximum duration per request: 120 seconds
+- Maximum file size: 100 MB
+- Supported formats: MP4, MPEG, MOV, WEBM
+
+Long visual runs are split automatically when the provider supports chunking. For example, an 820 second NVIDIA video becomes seven visual requests: six 120 second chunks and one 100 second chunk. The final output is timestamped by segment.
+
+Enable automatic compression in `summarizer.yaml`:
+
+```yaml
+defaults:
+  visual-compression: auto
+  visual-chunk-seconds: auto
+  visual-chunk-overlap-seconds: 0
+```
+
+Or override limits per-provider:
+
+```yaml
+defaults:
+  visual-max-size-mb: 200
+  visual-max-duration-seconds: 300
+  visual-chunk-seconds: 100
+```
+
+`chunk-size` remains text-only and is ignored in visual mode.

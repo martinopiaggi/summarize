@@ -1,0 +1,63 @@
+# Transcription with Whisper
+
+## Cloud Whisper (Default)
+
+> **Tip:** Cloud Whisper uses the Groq API, which offers a generous free tier. A 10-minute video typically costs well under a cent.
+
+Uses Groq Cloud Whisper API for fast transcription with Whisper. Requires a Groq API key in `.env`.
+
+```bash
+python -m summarizer --source "URL"
+```
+
+Cloud Whisper is the default in both CLI and Docker.
+
+## Local Whisper
+
+Runs transcription with Whisper on your machine instead of using Groq Cloud Whisper. This removes the Groq API requirement, but CPU-only runs are much slower.
+
+```bash
+# Add Local Whisper support
+pip install -e .[whisper]
+
+# Optional: install CUDA-enabled PyTorch for GPU acceleration
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+
+# Use it
+python -m summarizer --source "URL" --force-download --transcription "Local Whisper" --whisper-model "small"
+```
+
+If you only need CPU transcription with Whisper, `pip install -e .[whisper]` is enough. GPU detection is automatic when PyTorch can see a CUDA device.
+
+### Model Sizes
+
+| Model | Speed | Accuracy |
+|-------|-------|----------|
+| `tiny` | Fastest | Lowest |
+| `base` | Fast | Low |
+| `small` | Moderate | Moderate |
+| `medium` | Slow | High |
+| `large` | Slowest | Highest |
+
+## Audio Speed
+
+Speed up audio before Whisper to reduce transcription time and cost. Groq Whisper is priced by audio duration, so a 2× speed-up roughly halves the API cost. This may reduce accuracy.
+
+```bash
+# Moderate speed-up
+python -m summarizer --source "URL" --force-download --audio-speed 2.0
+
+# Aggressive speed-up
+python -m summarizer --source "URL" --force-download --audio-speed 5.0
+```
+
+Set the default in `summarizer.yaml`:
+
+```yaml
+defaults:
+  audio-speed: 2.0
+```
+
+## Docker Note
+
+The Docker image does **not** include Local Whisper or GPU-oriented PyTorch. It targets lightweight VPS deployments where GPUs are usually unavailable. In Docker, Cloud Whisper is the practical default. Use Local Whisper on the host machine if you have the hardware.

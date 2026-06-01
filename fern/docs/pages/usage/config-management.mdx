@@ -1,0 +1,25 @@
+# Config Management
+
+Generate, override, or bypass the config file entirely.
+
+## Generate an example config
+
+```bash
+python -m summarizer --init-config
+```
+
+This creates a starter `summarizer.yaml` in the project root.
+
+## Use a custom config file
+
+```bash
+python -m summarizer --source "URL" --config ./my-config.yaml
+```
+
+## Ignore config entirely
+
+```bash
+python -m summarizer --source "URL" --no-config --base-url "..." --model "..."
+```
+
+> **Tip:** CLI flags always override `summarizer.yaml` values. `--no-config` forces the CLI to rely only on flags and `.env` for API keys.

@@ -1,0 +1,100 @@
+# Cobalt
+
+[Cobalt](https://github.com/imputnet/cobalt) is a self-hosted media downloader that runs as a separate container alongside summarize. It fetches video and audio from platforms that yt-dlp cannot handle, or situations where yt-dlp fails due to rate limits, geo-restrictions, or missing cookies.
+
+## When to Use Cobalt
+
+<CardGroup cols={2}>
+  <Card title="Generic HTTP video URLs" icon="fa-solid fa-link">
+    Cobalt handles direct video links from sites not covered by yt-dlp extractors.
+  </Card>
+  <Card title="yt-dlp failures" icon="fa-solid fa-triangle-exclamation">
+    When yt-dlp returns rate-limit errors, geo-blocks, or login-required messages, Cobalt may succeed via its own extraction pipeline.
+  </Card>
+  <Card title="Anonymous fetching" icon="fa-solid fa-user-secret">
+    Some platforms block anonymous yt-dlp requests but allow Cobalt's embed-based or API-based fetching.
+  </Card>
+  <Card title="No cookie setup" icon="fa-solid fa-cookie-bite">
+    If you do not want to manage per-platform cookie files, Cobalt can often download public content without them.
+  </Card>
+</CardGroup>
+
+> **Tip:** For **Instagram, TikTok, Twitter/X, Reddit, and Facebook**, yt-dlp is the **primary** downloader. It is faster, requires no extra container, and supports per-platform cookie authentication. Cobalt is only used as a fallback when yt-dlp fails or does not recognize the URL.
+
+## When yt-dlp Is Better
+
+| Use Case | Preferred Tool | Reason |
+|----------|---------------|--------|
+| Instagram, TikTok, X, Reddit, Facebook | yt-dlp | Native extractors, cookie auth, no container overhead |
+| Generic HTTP video links | Cobalt | Broader URL support |
+| yt-dlp rate-limited / blocked | Cobalt | Alternative extraction pipeline |
+| YouTube | pytubefix | Fastest, captions support |
+
+## Running Cobalt
+
+### Standalone
+
+```bash
+docker compose -f docker-compose.cobalt.yml up -d
+```
+
+This starts Cobalt on `http://localhost:9000`. The summarize app automatically points to this URL via the `COBALT_BASE_URL` environment variable.
+
+### With Proxy
+
+If Cobalt needs to connect through a proxy (for geo-unblocking or CDN access):
+
+1. Copy the template:
+
+   ```bash
+   cp cobalt.proxy.env.example cobalt.proxy.env
+   ```
+
+2. Fill in your proxy credentials:
+
+   ```ini
+   HTTP_PROXY=http://username:password@proxy-host:port/
+   HTTPS_PROXY=http://username:password@proxy-host:port/
+   NO_PROXY=localhost,127.0.0.1,cobalt,summarizer
+   ```
+
+3. Start with the proxy overlay:
+
+   ```bash
+   docker compose -f docker-compose.cobalt.yml -f docker-compose.proxy.yml up -d
+   ```
+
+### Full Stack (Summarize + Cobalt)
+
+```bash
+# Full stack, no proxy
+docker compose up -d
+
+# Full stack, with proxy
+docker compose -f docker-compose.yml -f docker-compose.proxy.yml up -d
+```
+
+## Docker Compose Reference
+
+| File | Purpose |
+|------|---------|
+| [`docker-compose.yml`](https://github.com/martinopiaggi/summarize/blob/main/docker-compose.yml) | Summarize + Cobalt together |
+| [`docker-compose.cobalt.yml`](https://github.com/martinopiaggi/summarize/blob/main/docker-compose.cobalt.yml) | Cobalt only |
+| [`docker-compose.proxy.yml`](https://github.com/martinopiaggi/summarize/blob/main/docker-compose.proxy.yml) | Adds `cobalt.proxy.env` to the Cobalt service |
+| [`cobalt.proxy.env.example`](https://github.com/martinopiaggi/summarize/blob/main/cobalt.proxy.env.example) | Proxy env template |
+| `cobalt.proxy.env` | Your local, ignored secrets file |
+
+## Configuration
+
+The summarize app talks to Cobalt through the `--cobalt-url` flag or the `COBALT_BASE_URL` environment variable:
+
+```bash
+python -m summarizer --source "URL" --cobalt-url "http://localhost:9000"
+```
+
+In Docker, this is set automatically:
+
+```yaml
+environment:
+  - COBALT_BASE_URL=http://cobalt:9000
+```

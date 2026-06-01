@@ -517,4 +517,4 @@ docker compose -f docker-compose.yml -f docker-compose.proxy.yml up -d
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+[MIT](LICENSE)

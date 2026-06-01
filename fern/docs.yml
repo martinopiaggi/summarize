@@ -1,0 +1,110 @@
+title: summarize
+
+instances:
+  - url: martino.docs.buildwithfern.com
+    edit-this-page:
+      github:
+        owner: martinopiaggi
+        repo: summarize
+        branch: main
+
+logo:
+  href: /
+  light: ./assets/images/logo-light.svg
+  dark: ./assets/images/logo-dark.svg
+  height: 32
+
+colors:
+  accent-primary:
+    light: "#6366F1"
+    dark: "#818CF8"
+  background:
+    light: "#FAFAFA"
+    dark: "#0F172A"
+  border:
+    light: "#E5E7EB"
+    dark: "#1E293B"
+  sidebar-background:
+    light: "#FFFFFF"
+    dark: "#0F172A"
+  header-background:
+    light: "#FFFFFF"
+    dark: "#0F172A"
+  card-background:
+    light: "#FFFFFF"
+    dark: "#1E293B"
+
+navbar-links:
+  - type: github
+    value: https://github.com/martinopiaggi/summarize
+  - type: filled
+    text: Get Started
+    href: /welcome
+
+layout:
+  header-height: 4rem
+  content-width: 48rem
+  sidebar-width: 18rem
+  searchbar-placement: header
+  tabs-placement: header
+  content-alignment: center
+
+footer-links:
+  github: https://github.com/martinopiaggi/summarize
+
+navigation:
+  - section: Overview
+    icon: fa-solid fa-house
+    contents:
+      - page: Welcome
+        path: ./docs/pages/welcome.mdx
+      - page: How It Works
+        path: ./docs/pages/how-it-works.mdx
+
+  - section: Getting Started
+    icon: fa-solid fa-rocket
+    contents:
+      - page: Installation
+        path: ./docs/pages/getting-started/installation.mdx
+      - page: Configuration
+        path: ./docs/pages/getting-started/configuration.mdx
+
+  - section: Usage
+    icon: fa-solid fa-terminal
+    contents:
+      - page: CLI Reference
+        path: ./docs/pages/usage/cli-reference.mdx
+      - page: Summary Styles
+        path: ./docs/pages/usage/summary-styles.mdx
+      - page: Batch Processing
+        path: ./docs/pages/usage/batch-processing.mdx
+      - page: Config Management
+        path: ./docs/pages/usage/config-management.mdx
+      - page: Retry Behavior
+        path: ./docs/pages/usage/retry-behavior.mdx
+      - page: Errors and Troubleshooting
+        path: ./docs/pages/usage/errors-and-troubleshooting.mdx
+
+  - section: Features
+    icon: fa-solid fa-star
+    contents:
+      - page: Visual Mode
+        path: ./docs/pages/features/visual-mode.mdx
+      - page: Transcription
+        path: ./docs/pages/features/transcription.mdx
+      - page: Webapp
+        path: ./docs/pages/features/webapp.mdx
+      - page: Caching
+        path: ./docs/pages/features/caching.mdx
+
+  - section: Integrations
+    icon: fa-solid fa-plug
+    contents:
+      - page: Publish a Summary
+        path: ./docs/pages/integrations/tinypaste.mdx
+      - page: Cobalt
+        path: ./docs/pages/integrations/cobalt.mdx
+      - page: Proxy
+        path: ./docs/pages/integrations/proxy.mdx
+      - page: Agent Skill
+        path: ./docs/pages/integrations/agent-skill.mdx

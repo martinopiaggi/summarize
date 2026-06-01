@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" fill="none">
+  <rect x="2" y="8" width="24" height="24" rx="6" fill="#6366F1"/>
+  <path d="M8 20h12M8 20l4-4M8 20l4 4" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="34" y="27" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#111827">summarize</text>
+</svg>

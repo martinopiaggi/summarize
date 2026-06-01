@@ -1,0 +1,83 @@
+# Installation
+
+<Tabs>
+  <Tab title="CLI">
+    ```bash
+    git clone https://github.com/martinopiaggi/summarize.git
+    cd summarize
+    pip install -e .
+    ```
+
+    After install, you can also use the console entry point:
+
+    ```bash
+    summarizer --source "URL"
+    ```
+
+    Run:
+    ```bash
+    python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
+    ```
+  </Tab>
+  <Tab title="Streamlit GUI">
+    ```bash
+    python -m streamlit run app.py
+    ```
+
+    Visit `http://localhost:8501`.
+  </Tab>
+  <Tab title="Docker">
+    ```bash
+    git clone https://github.com/martinopiaggi/summarize.git
+    cd summarize
+    # Create .env with your API keys and summarizer.yaml with your providers, then:
+    docker compose up -d
+    ```
+
+    Open `http://localhost:8501` for the GUI. Summaries are saved to `./summaries/`.
+
+    The CLI and GUI both read the same local `summarizer.yaml`.
+
+    CLI via Docker:
+    ```bash
+    docker compose run --rm summarizer python -m summarizer --source "URL"
+    ```
+
+    See the [Cobalt](cobalt) page for standalone and proxy setups.
+  </Tab>
+</Tabs>
+
+## Optional Extras
+
+<AccordionGroup>
+  <Accordion title="LiteLLM">
+    Route requests through LiteLLM to access 100+ providers with unified calling:
+
+    ```bash
+    pip install -e .[litellm]
+    ```
+
+    Then set `base_url: litellm` in `summarizer.yaml` and use provider-prefixed models:
+
+    ```yaml
+    providers:
+      litellm-anthropic:
+        base_url: litellm
+        model: anthropic/claude-sonnet-4-6
+    ```
+  </Accordion>
+  <Accordion title="Local Whisper">
+    ```bash
+    pip install -e .[whisper]
+    ```
+
+    See [Transcription](transcription) for GPU setup.
+  </Accordion>
+  <Accordion title="All extras">
+    ```bash
+    pip install -e .[all]
+    ```
+  </Accordion>
+</AccordionGroup>
+
+> **Tip:** Install with `pip install -e .[litellm]` to route through LiteLLM and access 100+ providers with unified calling.

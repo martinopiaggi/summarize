@@ -1,0 +1,50 @@
+# Caching
+
+The summarizer keeps an **in-memory transcript cache** so you can re-process the same video with different styles, providers, or languages without waiting for transcription again.
+
+## How It Works
+
+When you run the CLI or webapp:
+
+1. A **cache key** is built from the parameters that affect transcription output
+2. If a matching transcript exists in memory, it is returned instantly
+3. On a cache miss, the transcript is fetched normally and stored for later reuse
+
+Cache hits are reported in verbose mode:
+
+```
+[+] Transcript cache hit (a3f7b2d8e1c4) — skipping transcription
+```
+
+## Cache Key
+
+The key is a **SHA-256 hash** of these parameters joined together:
+
+| Parameter | Default |
+|-----------|---------|
+| `source_url_or_path` | — |
+| `language` | `auto` |
+| `transcription_method` | `Cloud Whisper` |
+| `whisper_model` | `tiny` |
+| `audio_speed` | `1.0` |
+| `use_youtube_captions` | `true` |
+
+Changing **any** of these values produces a different key and triggers a fresh transcription. Changing the summary style, provider, or output language does **not** affect the key, so those re-runs are instant.
+
+## Disabling the Cache
+
+Set `cache-transcript: false` in `summarizer.yaml`:
+
+```yaml
+defaults:
+  cache-transcript: false
+```
+
+Or pass `--no-config` and the cache is bypassed entirely.
+
+## Important Notes
+
+- The cache lives in **process memory only** and is cleared when the process exits.
+- There is no disk persistence. Restarting the CLI or the Streamlit server starts with an empty cache.
+- The cache does not apply to **visual mode** (`--visual`), which skips transcription entirely.
+- The cache applies to **TXT files** too, since they bypass audio processing and are treated as pre-existing transcripts.

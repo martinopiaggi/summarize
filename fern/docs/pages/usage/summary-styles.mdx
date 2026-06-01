@@ -1,0 +1,31 @@
+# Summary Styles
+
+Use `--prompt-type` in the CLI or select from the dropdown in the web interface. Add custom styles by editing [`summarizer/prompts.json`](https://github.com/martinopiaggi/summarize/blob/main/summarizer/prompts.json). Use `{text}` as the transcript placeholder.
+
+## Built-in Styles
+
+| Style | Purpose |
+|-------|---------|
+| `Questions and answers` | Essential questions that capture the main points, answered in detail |
+| `Summarization` | Standard summary with a concise title |
+| `Distill Wisdom` | Key insights, quotes, and references |
+| `DNA Extractor` | Core truth distilled to 200 words max |
+| `Fact Checker` | Claim verification with TRUE/FALSE/MISLEADING labels |
+| `Tutorial` | Step-by-step instructions from the content |
+| `Research` | Deep analysis with broader context and connections |
+| `Reflections` | Philosophical extensions beyond what is said |
+| `Mermaid Diagram` | Visual concept map in Mermaid.js syntax |
+| `Essay Writing in Paul Graham Style` | 250-word essay in Paul Graham's style |
+| `Only grammar correction with highlights` | Grammar cleanup with bold highlights |
+| `Distill Wisdom with diagrams` | Primarily textual insights with optional Mermaid diagrams |
+
+## Multi-Step Workflow
+
+For comprehensive analysis, chain multiple styles on the same video:
+
+1. `Summarization` — quick overview
+2. `Distill Wisdom` — extract key insights
+3. `Fact Checker` (with Perplexity) — verify claims
+4. `Mermaid Diagram` — visual reference
+
+Transcripts are cached in memory, so re-summarizing the same source skips transcription entirely.

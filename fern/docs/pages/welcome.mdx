@@ -1,0 +1,42 @@
+# Video Transcript Summarizer
+
+Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter/X, Reddit, Facebook, Google Drive, Dropbox, and local files. Works with any OpenAI-compatible LLM provider, including locally hosted endpoints.
+
+<CardGroup cols={2}>
+  <Card title="11+ Platforms" icon="fa-brands fa-youtube">
+    YouTube, Instagram, TikTok, Twitter/X, Reddit, Facebook, Google Drive, Dropbox, local files
+  </Card>
+  <Card title="Any LLM" icon="fa-solid fa-brain">
+    OpenAI, Groq, Gemini, Ollama, OpenRouter, NVIDIA, Perplexity, LiteLLM, and any OpenAI-compatible endpoint
+  </Card>
+  <Card title="Two Modes" icon="fa-solid fa-eye">
+    Audio transcription + text summary, or visual mode sending video directly to vision-capable models
+  </Card>
+  <Card title="12 Summary Styles" icon="fa-solid fa-palette">
+    Q&A, distillation, fact-checking, tutorials, Mermaid diagrams, essays, and more. Add your own instantly by editing `summarizer/prompts.json`.
+  </Card>
+  <Card title="Web UI" icon="fa-solid fa-window-maximize">
+    Streamlit interface with history, Mermaid rendering, themes, and one-click share
+  </Card>
+  <Card title="Docker Ready" icon="fa-brands fa-docker">
+    Full-stack Compose with optional Cobalt and proxy support
+  </Card>
+</CardGroup>
+
+## Requirements
+
+- **Python** 3.7+
+- **ffmpeg** (must be on `PATH`)
+- At least one **LLM API key** in `.env`
+- **Cobalt** fallback downloader for URLs that yt-dlp cannot handle (included in Docker Compose). See [Cobalt](cobalt).
+
+## Quick Start
+
+```bash
+git clone https://github.com/martinopiaggi/summarize.git
+cd summarize
+pip install -e .
+python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
+```
+
+The summary is saved to `summaries/watch_YYYYMMDD_HHMMSS.md`.

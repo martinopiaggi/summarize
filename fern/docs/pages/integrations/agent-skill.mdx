@@ -1,0 +1,28 @@
+# Agent Skill
+
+The repo includes a built-in agent skill at [`.agent/skills/summarize/SKILL.md`](https://github.com/martinopiaggi/summarize/blob/main/.agent/skills/summarize/SKILL.md) for AI agent integration.
+
+## What It Does
+
+Allows an AI agent to invoke the summarizer CLI as a tool. The agent can:
+
+- Summarize videos from URLs
+- Extract specific styles (wisdom, fact-check, tutorial)
+- Chain multiple styles for comprehensive analysis
+- Read the generated summary and present it to the user
+
+## File Locations (Relative to Project Root)
+
+| File | Location |
+|------|----------|
+| Config | `./summarizer.yaml` |
+| API keys | `./.env` |
+| Prompt templates | `./summarizer/prompts.json` |
+| Output summaries | `./summaries/<filename>.md` |
+
+## Key Rules for Agents
+
+- **Never fetch or scrape URLs directly** — Pass the URL to the CLI and let it handle downloading, transcription, and summarization internally.
+- **Always read the output file** from `summaries/` rather than expecting stdout.
+- **Use `--no-config`** only when every parameter is passed explicitly.
+- **Do not use `--no-save` on Windows** — Unicode output crashes stdout.

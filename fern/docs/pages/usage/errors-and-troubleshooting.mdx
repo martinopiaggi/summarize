@@ -1,0 +1,15 @@
+# Errors and Troubleshooting
+
+## Error Types
+
+| Exception | When It Happens |
+|-----------|-----------------|
+| `APIKeyError` | Missing or invalid API key |
+| `APIError` | LLM request failed after retries |
+| `ConfigurationError` | Invalid `summarizer.yaml` or missing required fields |
+| `TranscriptError` | Could not extract or transcribe audio |
+| `SourceNotFoundError` | Local file or URL is unreachable |
+| `UnsupportedSourceError` | No downloader supports the URL |
+| `VisualModeError` | Visual mode cannot be used for this source |
+| `VideoValidationError` | Video exceeds provider duration/size/format limits |
+| `AudioProcessingError` | ffmpeg or audio conversion failed |

@@ -1,0 +1,137 @@
+# CLI Reference
+
+<Callout type="info">
+  All flags override the corresponding settings in `summarizer.yaml`. Use `--verbose` to see detailed status output during config loading, downloads, transcription, and summarization.
+</Callout>
+
+## Examples
+
+<Tabs>
+  <Tab title="Basic">
+    ```bash
+    # Uses default provider from YAML
+    python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
+
+    # Console entry point (after pip install)
+    summarizer --source "URL"
+
+    # Specific provider
+    python -m summarizer --source "URL" --provider groq
+
+    # Extract key insights
+    python -m summarizer --source "URL" --provider gemini --prompt-type "Distill Wisdom"
+
+    # Generate a Mermaid diagram
+    python -m summarizer --source "URL" --provider openrouter --prompt-type "Mermaid Diagram"
+
+    # Batch process
+    python -m summarizer --source "URL1" "URL2" "URL3"
+
+    # Local file
+    python -m summarizer --type "Local File" --source "./lecture.mp4"
+
+    # Text file (skip audio entirely)
+    python -m summarizer --type "TXT" --source "./transcript.txt"
+
+    # No config (all explicit)
+    python -m summarizer \
+      --source "URL" \
+      --base-url "https://openrouter.ai/api/v1" \
+      --model "google/gemini-2.0-flash-exp:free" \
+      --api-key "sk-or-v1-YOUR_KEY" \
+      --prompt-type "Tutorial" \
+      --no-config
+    ```
+  </Tab>
+  <Tab title="Fact-checking">
+    ```bash
+    python -m summarizer \
+      --source "URL" \
+      --base-url "https://api.perplexity.ai" \
+      --model "sonar-pro" \
+      --prompt-type "Fact Checker"
+    ```
+  </Tab>
+  <Tab title="Audio and Language">
+    ```bash
+    # Speed up audio before Whisper (faster, may reduce accuracy)
+    python -m summarizer --source "URL" --force-download --audio-speed 2.0
+
+    # Aggressive speed-up (supported)
+    python -m summarizer --source "URL" --force-download --audio-speed 5.0
+
+    # Lock captions/transcription to Italian
+    python -m summarizer --source "URL" --language "it"
+
+    # Write the summary in Italian
+    python -m summarizer --source "URL" --output-language "Italian"
+    ```
+  </Tab>
+</Tabs>
+
+## Flag Reference
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--source` | Video URLs, file paths, or text files (multiple allowed) | Required |
+| `--provider` | Provider name from YAML | `default_provider` |
+| `--base-url` | API endpoint (overrides provider) | From YAML |
+| `--model` | Model identifier (overrides provider) | From YAML |
+| `--api-key` | API key (overrides `.env`) | - |
+| `--type` | `YouTube Video`, `Video URL`, `Local File`, `Google Drive Video Link`, `Dropbox Video Link`, `TXT` | `YouTube Video` |
+| `--prompt-type` | Summary style | From YAML defaults |
+| `--chunk-size` | Input text chunk size in characters (min 1000) | `10000` |
+| `--force-download` | Skip captions and download audio instead | `False` |
+| `--transcription` | `Cloud Whisper` (Groq Whisper API) or `Local Whisper` (local Whisper) | `Cloud Whisper` |
+| `--whisper-model` | `tiny`, `base`, `small`, `medium`, `large` | `tiny` |
+| `--audio-speed` | Pre-transcription playback speed. Reduces Groq cost (priced by duration) but may reduce accuracy. | `1.0` |
+| `--language` | `auto` or explicit code for captions/transcription | `auto` |
+| `--output-language` | Summary language; `auto`, `none`, or name | `auto` |
+| `--output-format` | `markdown`, `json`, or `html` | `markdown` |
+| `--parallel-calls` | Concurrent API requests | `30` |
+| `--max-tokens` | Max output tokens per chunk | `4096` |
+| `--cobalt-url` | Cobalt base URL for fallback downloads | `http://localhost:9000` |
+| `--output-dir` | Output directory | `summaries` |
+| `--no-save` | Print to stdout only, no file output | `False` |
+| `--verbose`, `-v` | Detailed output | `False` |
+| `--visual` | Send video directly to a video-capable model | `False` |
+| `--use-proxy` | Route supported requests through Webshare proxies | From YAML |
+| `--config` | Path to config file | auto-detect |
+| `--no-config` | Ignore config file, use CLI args only | - |
+| `--init-config` | Generate example `summarizer.yaml` and exit | - |
+
+> **Tip:** Use `--verbose` to see detailed status output during config loading, downloads, transcription with Whisper, and summarization.
+>
+> **Tip:** On Windows, do NOT use `--no-save` — Unicode output crashes stdout. Always let the tool save to file, then read it.
+>
+> **Tip:** `--chunk-size` has a hard minimum of 1000 characters. Values below 1000 are clamped automatically.
+
+## Output Formats
+
+### Markdown (default)
+
+Clean Markdown with optional bold titles. Saved as `.md`.
+
+### JSON
+
+```bash
+python -m summarizer --source "URL" --output-format json
+```
+
+Includes metadata:
+
+```json
+{
+  "source": "https://youtube.com/watch?v=VIDEO_ID",
+  "generated_at": "2026-06-01T20:00:00",
+  "prompt_type": "Distill Wisdom",
+  "model": "gemini-2.5-flash",
+  "summary": "..."
+}
+```
+
+### HTML
+
+```bash
+python -m summarizer --source "URL" --output-format html
+```

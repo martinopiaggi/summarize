@@ -2,7 +2,7 @@
 name: summarize
 description: Transcribe and summarize videos from YouTube, local files, Google Drive, Dropbox, and social media platforms (TikTok, Instagram, Twitter/X, Reddit) using any OpenAI-compatible LLM. Use when asked to summarize, analyze, extract insights, fact-check, or create study materials from video content.
 license: MIT
-compatibility: Requires Python 3.7+, ffmpeg, and at least one OpenAI-compatible LLM API key in .env. Social media platforms (TikTok, Instagram, Twitter/X, Reddit) require a running Cobalt service.
+compatibility: Requires Python 3.7+, ffmpeg, and at least one OpenAI-compatible LLM API key in .env. Social media platforms (TikTok, Instagram, Twitter/X, Reddit, Facebook) are handled by yt-dlp by default; Cobalt is used as a fallback for unsupported URLs.
 metadata:
   author: summarize
   version: "1.0"
@@ -11,7 +11,7 @@ allowed-tools: Bash Read
 
 ## Overview
 
-Runs `python -m summarizer` to transcribe videos and summarize them using a configurable LLM. Supports 11 summary styles and multiple providers.
+Runs `python -m summarizer` to transcribe videos and summarize them using a configurable LLM. Supports 12 summary styles and multiple providers. For full documentation see [martino.docs.buildwithfern.com](https://martino.docs.buildwithfern.com).
 
 **Never fetch, scrape, or download video URLs directly (e.g. with WebFetch or curl). The CLI handles all downloading, transcription, and summarization internally.**
 
@@ -94,6 +94,7 @@ python -m summarizer [OPTIONS]
 | `--output-dir` | Directory to save summaries | `summaries` |
 | `--output-format` | `markdown`, `json`, or `html` | `markdown` |
 | `--no-save` | Print to stdout only, don't save file | `False` |
+| `--visual` | Send video directly to a video-capable model (skips transcription) | `False` |
 | `--verbose`, `-v` | Detailed progress output | `False` |
 
 ### Config Options
@@ -121,6 +122,7 @@ Use with `--prompt-type`. Defined in `summarizer/prompts.json`.
 | `Mermaid Diagram` | Visual concept map in Mermaid.js syntax |
 | `Essay Writing in Paul Graham Style` | 250-word essay in Paul Graham's style |
 | `Only grammar correction with highlights` | Grammar cleanup with bold highlights |
+| `Distill Wisdom with diagrams` | Textual insights with optional Mermaid diagrams |
 
 ## Examples
 
@@ -143,6 +145,9 @@ python -m summarizer \
 
 # Mermaid diagram from a lecture
 python -m summarizer --source "URL" --provider gemini --prompt-type "Mermaid Diagram"
+
+# Visual mode (sends video to a vision-capable model, skips transcription)
+python -m summarizer --source "URL" --provider nvidia --visual
 
 # Local file
 python -m summarizer --type "Local File" --source "./lecture.mp4" --provider groq
@@ -172,7 +177,7 @@ For comprehensive analysis, chain multiple styles on the same video:
 ## Warnings
 
 - **Windows + `--no-save`**: Do NOT use `--no-save` on Windows — Unicode output crashes stdout. Always let the tool save to file, then read it.
-- **Social media**: TikTok, Instagram, Twitter/X, and Reddit require a running Cobalt service.
+- **Social media**: TikTok, Instagram, Twitter/X, Reddit, and Facebook are handled by **yt-dlp** by default. Cobalt is only used as a fallback if yt-dlp fails or does not support the URL.
 - **Transcription fallback**: If YouTube captions are unavailable, the tool automatically falls back to audio download + Whisper transcription.
 - **Cloud Whisper**: Requires a Groq API key (free tier available).
 - Use `--verbose` for detailed progress and debugging.

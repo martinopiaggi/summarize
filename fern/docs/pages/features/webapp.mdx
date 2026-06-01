@@ -1,0 +1,48 @@
+# Webapp
+
+The Streamlit GUI runs at `http://localhost:8501` and provides a point-and-click interface to all summarizer features.
+
+```bash
+python -m streamlit run app.py
+```
+
+## Supported Inputs
+
+| Type | Examples |
+|------|----------|
+| Video files | `.mp4`, `.mp3`, `.wav`, `.m4a`, `.webm` |
+| Text files | `.txt`, `.md`, `.vtt`, `.srt`, `.csv`, `.log`, `.rst`, `.html`, `.xml`, `.json` |
+| URLs | YouTube, Instagram, TikTok, Twitter/X, Reddit, Facebook, Google Drive, Dropbox |
+
+Text files bypass audio processing entirely and go straight to summarization.
+
+## Sidebar Controls
+
+- **Provider** — Choose from configured providers in `summarizer.yaml`
+- **Prompt type** — Select summary style from `prompts.json`
+- **Chunk size** — Characters per text chunk (minimum 1000)
+- **Audio speed** — Pre-transcription speed-up (reduces cost, may reduce accuracy)
+- **Language** — Auto, English, Spanish, French, German, Italian, Portuguese, Chinese, Japanese, Korean
+- **Transcription** — Cloud Whisper or Local Whisper (Whisper-based)
+- **Visual mode** — Toggle video-direct mode
+
+## History
+
+The sidebar keeps an in-memory history of recent summaries (last 10). Enable `keep-history: true` in `summarizer.yaml` to also persist summaries to disk so they survive page refreshes.
+
+## Mermaid Diagrams
+
+When a summary contains ` ```mermaid ` blocks, the webapp renders them as interactive diagrams with:
+
+- **Wheel zoom** — Scroll to zoom in/out
+- **Drag pan** — Click and drag to move around
+- **Fullscreen** — Expand to full screen
+- **Theme-aware** — Adapts to dark/light mode
+
+## Clipboard
+
+Copy the full summary to the system clipboard with a single button. Works in both secure and non-secure browser contexts.
+
+## Themes
+
+Switch between **Dark**, **Light**, and **System** modes. The theme applies to the entire UI including Mermaid diagrams.

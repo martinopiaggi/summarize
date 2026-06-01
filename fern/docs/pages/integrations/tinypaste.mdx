@@ -1,0 +1,37 @@
+# Publish a Summary
+
+After generating a summary, the fastest way to share it is directly from the webapp. One click turns your Markdown output into a public, rendered page with a short URL you can paste anywhere.
+
+## One-Click Share
+
+In the Streamlit GUI, click the **Share** button on any finished summary. The app instantly publishes the Markdown to [Tinypaste](https://tnypst.xyz) and copies the returned short URL to your clipboard.
+
+No account. No token. No friction.
+
+## What the Shared Link Looks Like
+
+The published page renders your summary as clean, readable Markdown with full support for:
+
+- **Formatted text** — bold, italics, headings, lists
+- **Mermaid diagrams** — interactive, zoomable SVGs if your summary contains ` ```mermaid ` blocks
+- **LaTeX math** — equations rendered inline and in display mode
+
+## Why This Exists
+
+Most paste tools are cluttered editing environments that require an account or API token and don't render Markdown, Mermaid, and LaTeX all in one. This integration skips the ceremony: your summary is public and readable in under a second.
+
+## For Automation and Scripts
+
+You can also publish directly from the terminal or from agent workflows:
+
+```bash
+curl -X POST https://tnypst.xyz/api/pastes \
+  -H "Content-Type: text/markdown" \
+  --data-binary @summaries/watch_20260101_120000.md
+```
+
+The response is the short public URL.
+
+## About Tinypaste
+
+Sharing is powered by [Tinypaste](https://tnypst.xyz), a tiny public Markdown pastebin. It is built to do one thing well: paste Markdown, get a short URL, move on. If you want to self-host your own instance, it deploys to Deno Deploy in under a minute. See the [Tinypaste repo](https://github.com/martinopiaggi/tinypaste) for details.

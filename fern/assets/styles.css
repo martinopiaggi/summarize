@@ -1,0 +1,42 @@
+/* Custom styles for summarize docs */
+
+/* Make the hero section on welcome page stand out */
+.fern-logo {
+  font-weight: 700;
+}
+
+/* Enhance code blocks */
+.fern-code-block {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+}
+
+/* Better callout styling */
+.fern-callout {
+  border-radius: 0.75rem;
+}
+
+/* Smooth transitions for interactive elements */
+a,
+button {
+  transition: all 0.2s ease;
+}
+
+/* Enhance tables */
+.fern-table {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.fern-table th {
+  background: var(--card-background);
+  font-weight: 600;
+}
+
+/* Better mermaid diagram containers */
+.fern-mermaid {
+  border-radius: 0.75rem;
+  background: var(--card-background);
+  padding: 1rem;
+}

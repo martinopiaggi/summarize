@@ -1,0 +1,123 @@
+# Configuration
+
+<Callout type="warning">
+  CLI flags override everything in `summarizer.yaml`. Use `--no-config` to ignore the config file entirely.
+</Callout>
+
+## Providers (`summarizer.yaml`)
+
+Define your LLM providers and defaults. See [`summarizer.example.yaml`](https://github.com/martinopiaggi/summarize/blob/main/summarizer.example.yaml) for a complete starter file.
+
+```yaml
+default_provider: gemini
+
+providers:
+  gemini:
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai
+    model: gemini-flash-lite-latest
+    chunk-size: 128000
+
+  groq:
+    base_url: https://api.groq.com/openai/v1
+    model: openai/gpt-oss-20b
+
+  ollama:
+    base_url: http://localhost:11434/v1
+    model: qwen3:8b
+
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-2.5-flash
+
+  openrouter-video:
+    base_url: https://openrouter.ai/api/v1
+    model: minimax/minimax-m3
+
+  openrouter-youtube:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-2.5-flash
+    visual-input-mode: url
+
+  openai:
+    base_url: https://api.openai.com/v1
+    model: gpt-5.5
+
+  nvidia:
+    base_url: https://integrate.api.nvidia.com/v1
+    model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+
+  perplexity:
+    base_url: https://openrouter.ai/api/v1
+    model: perplexity/sonar
+    chunk-size: 128000
+
+  litellm-anthropic:
+    base_url: litellm
+    model: anthropic/claude-sonnet-4-6
+
+defaults:
+  prompt-type: Questions and answers
+  chunk-size: 10000
+  parallel-calls: 30
+  max-tokens: 4096
+  output-language: auto
+  audio-speed: 1.0
+  use-proxy: false
+  output-dir: summaries
+  cache-transcript: true
+```
+
+<AccordionGroup>
+  <Accordion title="Key defaults explained">
+    - `output-language`: `auto`, `none`, or a human-readable name like `Italian`, `Spanish`, `German`, `Japanese`.
+    - `audio-speed`: Speed up audio before Whisper transcription. Faster and cheaper (Groq prices by audio duration), but may reduce accuracy.
+    - `cache-transcript: false` disables the in-memory transcript cache.
+    - `keep-history: true` persists summaries to disk for the Streamlit sidebar.
+  </Accordion>
+</AccordionGroup>
+
+## API Keys (`.env`)
+
+```ini
+# Required for Cloud Whisper transcription
+groq = gsk_YOUR_KEY
+
+# LLM providers (choose one or more)
+openai = sk-proj-YOUR_KEY
+generativelanguage = YOUR_GOOGLE_KEY
+deepseek = YOUR_DEEPSEEK_KEY
+openrouter = YOUR_OPENROUTER_KEY
+perplexity = YOUR_PERPLEXITY_KEY
+hyperbolic = YOUR_HYPERBOLIC_KEY
+NVIDIA_API_KEY = YOUR_NVIDIA_KEY
+
+# Optional: Webshare proxy credentials
+WEBSHARE_PROXY_USERNAME = YOUR_WEBSHARE_USERNAME
+WEBSHARE_PROXY_PASSWORD = YOUR_WEBSHARE_PASSWORD
+
+# Optional: yt-dlp per-platform cookie files
+INSTAGRAM_COOKIES_FILE = C:\path\to\instagram-cookies.txt
+TIKTOK_COOKIES_FILE = C:\path\to\tiktok-cookies.txt
+TWITTER_COOKIES_FILE = C:\path\to\twitter-cookies.txt
+REDDIT_COOKIES_FILE = C:\path\to\reddit-cookies.txt
+FACEBOOK_COOKIES_FILE = C:\path\to\facebook-cookies.txt
+
+# Generic fallback cookie file (used when no per-platform file is set)
+YTDLP_COOKIES_FILE = C:\path\to\cookies.txt
+
+# Optional: Instagram username/password login when cookies are not used
+INSTAGRAM_USER = YOUR_INSTAGRAM_USERNAME
+INSTAGRAM_PASS = YOUR_INSTAGRAM_PASSWORD
+```
+
+## API Key Lookup
+
+<Callout type="info">
+  The app resolves API keys in this order:
+  1. Explicit `--api-key` flag
+  2. Provider `api_key` field in `summarizer.yaml`
+  3. `.env` file matched by URL keyword (e.g., `generativelanguage` for Google)
+  4. `.env` file matched by conventional env var name (e.g., `NVIDIA_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`)
+
+  If a key is missing, the error message lists all acceptable `.env` keys for that provider.
+</Callout>
