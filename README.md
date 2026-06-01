@@ -365,6 +365,8 @@ There are two visual input modes:
 
 `base64` is the default. URL mode is enabled per provider with `visual-input-mode: url`. Local files still use base64. Non-YouTube remote URLs are rejected in URL mode; use base64 mode for those sources.
 
+Direct Google Gemini's OpenAI-compatible endpoint (`generativelanguage.googleapis.com/v1beta/openai`) does not accept `video_url` content parts. For Gemini YouTube URL passthrough, use an OpenAI-compatible provider that supports `video_url`, such as OpenRouter.
+
 **Example provider configs:**
 
 ```yaml

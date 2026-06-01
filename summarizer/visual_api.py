@@ -208,6 +208,12 @@ async def _process_video_openai_url(
         raise ConfigurationError("base_url and model are required for visual mode")
     if not api_key:
         raise ConfigurationError("API key is required for visual mode")
+    if "generativelanguage.googleapis.com" in base_url.lower():
+        raise ConfigurationError(
+            "Direct Google Gemini's OpenAI-compatible endpoint does not support "
+            "video_url content parts. Use an OpenAI-compatible video provider "
+            "such as OpenRouter for YouTube URL passthrough, or disable visual mode."
+        )
 
     payload = build_visual_payload(config, video_path, profile)
 

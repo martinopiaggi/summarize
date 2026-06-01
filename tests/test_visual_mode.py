@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from summarizer.exceptions import VisualModeError, VideoValidationError
+from summarizer.exceptions import ConfigurationError, VisualModeError, VideoValidationError
 from summarizer.visual import (
     get_visual_profile,
     resolve_visual_url,
@@ -22,6 +22,7 @@ from summarizer.visual import (
 from summarizer.visual_api import (
     build_visual_messages,
     build_visual_payload,
+    process_video,
     process_video_segments,
 )
 
@@ -521,6 +522,21 @@ class TestPayloadGuard:
 
 
 class TestProcessVideoSegments:
+    def test_direct_google_openai_endpoint_rejected_for_visual_mode(self):
+        import asyncio
+
+        with pytest.raises(ConfigurationError, match="does not support video_url"):
+            asyncio.run(process_video(
+                {
+                    "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+                    "model": "gemini-flash-lite-latest",
+                    "api_key": "test-key",
+                    "prompt_type": "Questions and answers",
+                },
+                "https://www.youtube.com/shorts/zPxQjuFoUBc",
+                {"name": "openai-video"},
+            ))
+
     def test_returns_timestamped_summaries(self):
         segments = [
             {
