@@ -164,6 +164,11 @@ providers:
     base_url: https://openrouter.ai/api/v1
     model: google/gemini-2.5-pro
 
+  # Generic OpenAI-compatible video endpoint (any video-capable model)
+  openrouter-video:
+    base_url: https://openrouter.ai/api/v1
+    model: minimax/minimax-m3
+
   # example of URL mode for YouTube videos (no download/split)
   openrouter-youtube:
     base_url: https://openrouter.ai/api/v1
@@ -347,24 +352,39 @@ Use `--verbose` to see detailed status output during config loading, downloads, 
 
 ## Visual Mode
 
-By default, the app transcribes audio and summarizes the transcript. Visual mode skips transcription entirely and sends the video itself, including visible content and audio, to a video-capable model. Long videos are split into timestamped temporal chunks when the selected visual provider has a per-request duration limit.
+By default, the app transcribes audio and summarizes the transcript. Visual mode skips transcription entirely and sends the video itself, including visible content and audio, to a video-capable model. Long videos are split into timestamped temporal chunks using the configured visual limits.
 
-**Supported providers:**
-- **NVIDIA**: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` via `https://integrate.api.nvidia.com/v1`
-- **OpenRouter**: Gemini video models, e.g. `google/gemini-2.5-flash` via `https://openrouter.ai/api/v1`
-
-OpenRouter visual auto-detection is intentionally conservative: it matches OpenRouter Gemini models. If you use an OpenRouter-compatible proxy or another known video-capable OpenRouter model, set `visual-provider: openrouter` in that provider block.
-
-Visual mode is opt-in and does **not** change the default audio-only behavior. It also does not use the transcript cache because it bypasses transcription completely.
+Visual mode sends video directly to a video-capable model through an **OpenAI-compatible `chat/completions` endpoint** using `video_url` message parts. It skips transcription entirely.
 
 There are two visual input modes:
 
 | Mode | Behavior | Use it for |
 | --- | --- | --- |
-| `base64` | Downloads or reads the video, normalizes it if needed, splits it into time chunks when required, and sends each chunk as a base64 `video_url` payload. | NVIDIA, local files, and OpenRouter sources that should be processed locally first. |
-| `url` | Sends the original supported source URL directly to the provider. It does not download, split, or validate the media locally. | OpenRouter Gemini with YouTube URLs. |
+| `base64` (default) | Downloads or reads the video, normalizes it if needed, splits long videos into time chunks, and sends each chunk as a base64 `video_url` payload. | Any OpenAI-compatible video endpoint: NVIDIA, OpenRouter, custom proxies, etc. |
+| `url` | Sends the original YouTube URL directly to the provider without downloading or splitting. | Gemini models that can fetch YouTube URLs remotely. |
 
-`base64` is the default. URL mode is enabled per provider with `visual-input-mode: url`; local files always fall back to base64. URL mode only works for profiles that declare supported URL hosts, currently `youtube.com` and `youtu.be` for OpenRouter.
+`base64` is the default. URL mode is enabled per provider with `visual-input-mode: url`. Local files still use base64. Non-YouTube remote URLs are rejected in URL mode; use base64 mode for those sources.
+
+**Example provider configs:**
+
+```yaml
+providers:
+  # Generic OpenAI-compatible video endpoint
+  openrouter-video:
+    base_url: https://openrouter.ai/api/v1
+    model: minimax/minimax-m3
+
+  # YouTube URL passthrough (no download/split)
+  openrouter-youtube:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-3.1-flash-lite
+    visual-input-mode: url
+
+  # NVIDIA works the same way — no special config needed
+  nvidia:
+    base_url: https://integrate.api.nvidia.com/v1
+    model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+```
 
 **CLI examples:**
 
@@ -375,14 +395,13 @@ python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" --provider 
 # Local file via NVIDIA visual mode
 python -m summarizer --type "Local File" --source "./clip.mp4" --provider nvidia --visual
 
-# OpenRouter base64 mode (default): video is downloaded, split, and sent as base64 chunks
+# Generic OpenRouter video model (base64 mode)
 python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" \
   --base-url "https://openrouter.ai/api/v1" \
-  --model "google/gemini-2.5-flash" \
+  --model "minimax/minimax-m3" \
   --visual
 
-# OpenRouter URL mode: sends the original YouTube URL directly (no download/split)
-# Requires a provider config with visual-input-mode: url
+# OpenRouter URL mode: sends the original YouTube URL directly
 python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" \
   --provider openrouter-youtube \
   --visual
@@ -394,16 +413,6 @@ python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID" \
 - Supported formats: MP4, MPEG, MOV, WEBM
 
 Long visual runs are split automatically when the provider supports chunking. For example, an 820 second NVIDIA video becomes seven visual requests: six 120 second chunks and one 100 second chunk. The final output is timestamped by segment.
-
-If you proxy a supported visual provider through your own endpoint, force the visual profile explicitly:
-
-```yaml
-providers:
-  my-openrouter-proxy:
-    base_url: https://my-proxy.example.com/v1
-    model: google/gemini-2.5-flash
-    visual-provider: openrouter
-```
 
 You can enable automatic compression in `summarizer.yaml`:
 

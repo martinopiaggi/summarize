@@ -30,75 +30,34 @@ from .handlers import (
 from .progress import ProgressSpinner, print_status
 from .proxy import get_webshare_proxies, should_proxy_url
 
-VIDEO_PROVIDER_PROFILES = [
-    {
-        "name": "nvidia",
-        "visual_provider": "nvidia",
-        "api_style": "openai_video_url",
-        "base_url_contains": "integrate.api.nvidia.com",
-        "model_contains": "nemotron-3-nano-omni",
-        "max_duration_seconds": 120,
-        "max_file_mb": 100,
-        "formats": {"mp4", "mov", "webm"},
-        "supported_mime_types": {"video/mp4", "video/quicktime", "video/webm"},
-        "supports_chunking": True,
-        "visual_input_mode": "base64",
-        "supported_url_hosts": [],
-        "extra_body": {
-            "chat_template_kwargs": {"enable_thinking": True},
-            "reasoning_budget": 16384,
-            "mm_processor_kwargs": {"use_audio_in_video": True},
-        },
-    },
-    {
-        "name": "openrouter",
-        "visual_provider": "openrouter",
-        "api_style": "openai_video_url",
-        "base_url_contains": "openrouter.ai",
-        "model_contains": "gemini",
-        "max_duration_seconds": 120,
-        "max_file_mb": 100,
+# Hardcoded YouTube hosts for URL passthrough mode.
+_YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
+
+
+def get_visual_profile(config: Dict) -> Dict:
+    """Return the generic visual profile with hardcoded defaults."""
+    max_duration = config.get("visual_max_duration_seconds")
+    max_size = config.get("visual_max_size_mb")
+
+    return {
+        "name": "openai-video",
+        "max_duration_seconds": 120 if max_duration is None else max_duration,
+        "max_file_mb": 100 if max_size is None else max_size,
         "formats": {"mp4", "mpeg", "mov", "webm"},
         "supported_mime_types": {"video/mp4", "video/mpeg", "video/quicktime", "video/webm"},
         "supports_chunking": True,
-        "visual_input_mode": "base64",
-        "supported_url_hosts": ["youtube.com", "youtu.be"],
-        "extra_body": {},
-    },
-]
+        "visual_input_mode": config.get("visual_input_mode") or "base64",
+    }
 
 
-def get_visual_provider_profile(config: Dict) -> Dict:
-    """Return the provider profile for visual mode or raise VisualModeError."""
-    explicit_provider = (config.get("visual_provider") or "").lower()
-    base_url = (config.get("base_url") or "").lower()
-    model = (config.get("model") or "").lower()
-
-    for profile in VIDEO_PROVIDER_PROFILES:
-        # Explicit visual_provider config takes precedence
-        if explicit_provider and profile.get("visual_provider", "").lower() == explicit_provider:
-            return profile
-
-        base_match = profile.get("base_url_contains", "").lower() in base_url
-        model_contains = profile.get("model_contains", "").lower()
-        model_match = model_contains in model if model_contains else False
-        if base_match and model_match:
-            return profile
-
-    raise VisualModeError(
-        f"Provider '{config.get('model', 'unknown')}' at '{config.get('base_url', 'unknown')}' "
-        "does not support visual mode. "
-        "Choose a video-capable provider such as nvidia, gemini, or an OpenRouter video model."
-    )
-
-
-def resolve_visual_url(config: Dict, profile: Dict) -> Optional[str]:
+def resolve_visual_url(config: Dict, profile: Optional[Dict] = None) -> Optional[str]:
     """
     Return a direct video URL for URL mode, or None to fall back to base64.
 
-    Local files always use base64 mode even if the profile prefers URL mode.
+    URL mode is only supported for YouTube URLs. Local files fall back to
+    base64 mode; non-YouTube remote URLs raise a clear configuration error.
     """
-    input_mode = config.get("visual_input_mode") or profile.get("visual_input_mode", "base64")
+    input_mode = config.get("visual_input_mode") or (profile or {}).get("visual_input_mode") or "base64"
     if input_mode != "url":
         return None
 
@@ -114,27 +73,18 @@ def resolve_visual_url(config: Dict, profile: Dict) -> Optional[str]:
     if source_type == "Local File":
         return None
 
-    # Validate that the profile actually supports URL mode
-    supported_hosts = profile.get("supported_url_hosts", [])
-    if not supported_hosts:
-        raise VisualModeError(
-            f"URL mode is not supported by {profile['name']}. "
-            "Use base64 mode, or choose a provider that supports direct URL passing."
-        )
-
-    # Validate host against supported_url_hosts
+    # Validate host against hardcoded YouTube hosts
     parsed = urlparse(source)
     host = (parsed.hostname or "").lower()
 
     matched = any(
-        host == supported.lower() or host.endswith("." + supported.lower())
-        for supported in supported_hosts
+        host == yt_host or host.endswith("." + yt_host)
+        for yt_host in _YOUTUBE_HOSTS
     )
     if not matched:
         raise VisualModeError(
-            f"URL mode for {profile['name']} does not support host '{host}'. "
-            f"Supported hosts: {', '.join(supported_hosts)}. "
-            "Use base64 mode, or provide a URL from a supported host."
+            "visual-input-mode: url only supports YouTube URLs. "
+            "Use base64 mode for other sources."
         )
 
     return source

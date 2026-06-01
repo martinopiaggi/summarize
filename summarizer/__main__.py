@@ -173,7 +173,6 @@ Examples:
             "audio. Providers with short video limits use temporal video chunks."
         ),
     )
-
     return parser.parse_args()
 
 
@@ -439,7 +438,6 @@ def cli():
         "verbose": verbose,
         "cache_transcript": bool(merged.get("cache_transcript", True)),
         "visual": bool(merged.get("visual", False)),
-        "visual_provider": merged.get("visual_provider"),
         "visual_input_mode": merged.get("visual_input_mode"),
         "visual_compression": merged.get("visual_compression", "off"),
         "visual_max_size_mb": merged.get("visual_max_size_mb"),

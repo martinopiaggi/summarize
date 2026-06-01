@@ -101,7 +101,7 @@ def main(config: dict) -> str:
             # Visual mode branch
             if config.get("visual"):
                 from .visual import (
-                    get_visual_provider_profile,
+                    get_visual_profile,
                     resolve_visual_url,
                     resolve_video_source,
                     normalize_video,
@@ -111,7 +111,7 @@ def main(config: dict) -> str:
                 )
                 from .visual_api import process_video, process_video_segments
 
-                profile = get_visual_provider_profile(config)
+                profile = get_visual_profile(config)
 
                 # URL mode: send original URL directly without downloading/splitting
                 visual_url = resolve_visual_url(config, profile)

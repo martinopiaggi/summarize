@@ -29,7 +29,6 @@ DEFAULT_CONFIG = {
     "visual_chunk_seconds": "auto",
     "visual_chunk_overlap_seconds": 0,
     "visual_synthesis": False,
-    "visual_provider": None,
     "visual_input_mode": None,
 }
 
@@ -55,6 +54,7 @@ API_PROVIDERS = {
     "huggingface": ("HUGGINGFACE_API_KEY", "huggingface"),
     "azure": ("AZURE_API_KEY", "azure"),
     "openrouter.ai": ("OPENROUTER_API_KEY", "openrouter"),
+    "atlascloud": ("ATLASCLOUD_API_KEY", "atlascloud"),
 }
 
 LITELLM_PROVIDER_ENV_ALIASES = {

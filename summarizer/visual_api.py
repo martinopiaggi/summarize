@@ -118,10 +118,6 @@ def build_visual_payload(
         "max_tokens": max_output_tokens,
     }
 
-    extra_body = profile.get("extra_body")
-    if extra_body:
-        payload.update(extra_body)
-
     return payload
 
 
@@ -143,13 +139,7 @@ async def process_video(
     Returns:
         Summary text from the model.
     """
-    verbose = config.get("verbose", False)
-    api_style = profile.get("api_style", "openai_video_url")
-
-    if api_style == "openai_video_url":
-        return await _process_video_openai_url(config, video_path, profile, max_retries)
-
-    raise ConfigurationError(f"Unsupported visual API style: {api_style}")
+    return await _process_video_openai_url(config, video_path, profile, max_retries)
 
 
 async def process_video_segments(

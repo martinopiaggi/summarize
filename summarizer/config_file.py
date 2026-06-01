@@ -186,6 +186,15 @@ providers:
     base_url: https://openrouter.ai/api/v1
     model: google/gemini-2.5-flash
 
+  # Same provider, different model for text vs video
+  openrouter-text:
+    base_url: https://openrouter.ai/api/v1
+    model: openai/gpt-4o-mini
+
+  openrouter-video:
+    base_url: https://openrouter.ai/api/v1
+    model: minimax/minimax-m3
+
   # URL mode example: sends YouTube URLs directly without downloading
   openrouter-youtube:
     base_url: https://openrouter.ai/api/v1
@@ -206,6 +215,18 @@ providers:
   litellm-groq:
     base_url: litellm
     model: groq/llama-3.3-70b-versatile
+
+  # -----------------------------------------------------------------
+  # URL Mode (Optional)
+  # -----------------------------------------------------------------
+  # If your model supports receiving YouTube URLs directly, you can add
+  # visual-input-mode: url to skip downloading/splitting/encoding:
+  #
+  #   openrouter-minimax-youtube:
+  #     base_url: https://openrouter.ai/api/v1
+  #     model: minimax/minimax-m3
+  #     visual-input-mode: url
+  # -----------------------------------------------------------------
 
 # Default settings (can be overridden by CLI)
 defaults:
