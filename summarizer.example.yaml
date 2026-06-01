@@ -28,7 +28,6 @@ providers:
     base_url: https://openrouter.ai/api/v1
     model: google/gemini-3.1-flash-lite
 
-  # OpenRouter base64 visual mode: downloads video, splits into temporal chunks,
   # Same provider, different model for text vs video
   openrouter-text:
     base_url: https://openrouter.ai/api/v1

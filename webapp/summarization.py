@@ -87,6 +87,10 @@ def run_summarization(
         "verbose": verbose,
         "cache_transcript": bool(defaults.get("cache_transcript", True)),
         "visual": visual,
+        "visual_input_mode": provider_config.get(
+            "visual_input_mode",
+            defaults.get("visual_input_mode"),
+        ),
         "visual_compression": provider_config.get(
             "visual_compression",
             defaults.get("visual_compression", "off"),

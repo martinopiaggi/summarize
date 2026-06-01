@@ -754,3 +754,32 @@ class TestCliConfigFlow:
             assert mock_process.called
             base_config = mock_process.call_args[0][1]
             assert base_config.get("visual_input_mode") == "url"
+
+
+class TestWebappConfigFlow:
+    def test_webapp_preserves_visual_input_mode_from_provider(self):
+        from webapp.summarization import run_summarization
+
+        with patch("webapp.summarization.load_config", return_value=({}, "", {})), \
+             patch("webapp.summarization.get_cobalt_url", return_value="http://localhost:9000"), \
+             patch("summarizer.core.main", return_value="summary") as mock_main:
+            result = run_summarization(
+                "https://youtube.com/shorts/zPxQjuFoUBc",
+                {
+                    "base_url": "https://openrouter.ai/api/v1",
+                    "model": "google/gemini-3.1-flash-lite",
+                    "visual_input_mode": "url",
+                },
+                "Questions and answers",
+                10000,
+                False,
+                "auto",
+                "auto",
+                1.0,
+                visual=True,
+            )
+
+        assert result == "summary"
+        config = mock_main.call_args[0][0]
+        assert config["visual"] is True
+        assert config["visual_input_mode"] == "url"
