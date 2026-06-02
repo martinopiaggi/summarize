@@ -3,14 +3,25 @@ name: Publish Docs
 on:
   push:
     branches: [main]
-    paths: ['fern/**']
+    paths:
+      - 'fern/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fern
     steps:
       - uses: actions/checkout@v4
-      - name: Publish Fern Docs
-        uses: fern-api/docs-action@v1
+
+      - uses: actions/setup-node@v4
         with:
-          fern-token: ${{ secrets.FERN_TOKEN }}
+          node-version: 20
+
+      - name: Publish Fern Docs
+        env:
+          FERN_TOKEN: ${{ secrets.FERN_TOKEN }}
+        run: npx --yes fern-api@5.44.0 generate --docs --instance martino.docs.buildwithfern.com --force --log-level info
