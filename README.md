@@ -21,6 +21,21 @@ Pick your poison:
 | **Agent Skill** | [`.agent/skills/summarize/SKILL.md`](./.agent/skills/summarize/SKILL.md) |
 
 
+## Quick Start
+
+```bash
+git clone https://github.com/martinopiaggi/summarize.git
+cd summarize
+pip install -e .
+python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
+```
+
+The summary is saved to `summaries/watch_YYYYMMDD_HHMMSS.md`.
+
+## Documentation
+
+Full docs live at [summarize.martino.im](https://summarize.martino.im).
+
 ## License
 
 [MIT](LICENSE)
