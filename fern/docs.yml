@@ -8,12 +8,6 @@ instances:
         repo: summarize
         branch: main
 
-logo:
-  href: /
-  light: ./assets/images/logo-light.svg
-  dark: ./assets/images/logo-dark.svg
-  height: 32
-
 colors:
   accent-primary:
     light: "#6366F1"
@@ -39,7 +33,7 @@ navbar-links:
     value: https://github.com/martinopiaggi/summarize
   - type: filled
     text: Get Started
-    href: /welcome
+    href: /
 
 layout:
   header-height: 4rem
@@ -100,7 +94,7 @@ navigation:
   - section: Integrations
     icon: fa-solid fa-plug
     contents:
-      - page: Publish a Summary
+      - page: Share a Summary
         path: ./docs/pages/integrations/tinypaste.mdx
       - page: Cobalt
         path: ./docs/pages/integrations/cobalt.mdx

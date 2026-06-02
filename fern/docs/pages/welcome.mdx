@@ -1,4 +1,4 @@
-# Video Transcript Summarizer
+# Summarize
 
 Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter/X, Reddit, Facebook, Google Drive, Dropbox, and local files. Works with any OpenAI-compatible LLM provider, including locally hosted endpoints.
 
@@ -12,7 +12,7 @@ Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter/X, Redd
   <Card title="Two Modes" icon="fa-solid fa-eye">
     Audio transcription + text summary, or visual mode sending video directly to vision-capable models
   </Card>
-  <Card title="12 Summary Styles" icon="fa-solid fa-palette">
+  <Card title="Summary Styles" icon="fa-solid fa-palette">
     Q&A, distillation, fact-checking, tutorials, Mermaid diagrams, essays, and more. Add your own instantly by editing `summarizer/prompts.json`.
   </Card>
   <Card title="Web UI" icon="fa-solid fa-window-maximize">
@@ -40,3 +40,12 @@ python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
 ```
 
 The summary is saved to `summaries/watch_YYYYMMDD_HHMMSS.md`.
+
+## Pick Your Interface
+
+| Interface | Command |
+|-----------|---------|
+| **CLI** | `python -m summarizer --source <source>` |
+| **Streamlit GUI** | `python -m streamlit run app.py` |
+| **Docker** | `docker compose up -d` → `http://localhost:8501` |
+| **Agent Skill** | [`.agent/skills/summarize/SKILL.md`](https://github.com/martinopiaggi/summarize/blob/main/.agent/skills/summarize/SKILL.md) |
