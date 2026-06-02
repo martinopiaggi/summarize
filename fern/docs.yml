@@ -2,6 +2,7 @@ title: summarize
 
 instances:
   - url: martino.docs.buildwithfern.com
+    custom-domain: summarize.martino.im
     edit-this-page:
       github:
         owner: martinopiaggi
