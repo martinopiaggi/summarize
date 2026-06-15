@@ -3,7 +3,6 @@
 import argparse
 import os
 import sys
-from datetime import datetime
 from typing import List, Optional
 from .core import main, CONFIG
 from .progress import print_status
@@ -13,6 +12,7 @@ from .config_file import (
     find_config_file,
     create_example_config,
 )
+from .api_utils import build_runtime_config, format_output, get_file_extension
 
 
 def parse_args():
@@ -29,9 +29,33 @@ Examples:
 
   # Traditional usage
   python -m summarizer --source "URL" --base-url "https://api.groq.com/openai/v1" --model "llama-3.3-70b-versatile"
+
+  # Start HTTP API server
+  python -m summarizer serve
 """,
     )
 
+    subparsers = parser.add_subparsers(dest="command")
+
+    # ── Server subcommand ──
+    serve_parser = subparsers.add_parser(
+        "serve",
+        help="Start the HTTP API server",
+        description="Start the FastAPI HTTP server for the summarizer API.",
+    )
+    serve_parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Server host (default: 127.0.0.1)",
+    )
+    serve_parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Server port (default: 8000)",
+    )
+
+    # ── Summarization arguments (main parser) ──
     # Config file options
     parser.add_argument(
         "--provider",
@@ -110,8 +134,8 @@ Examples:
 
     # Processing settings
     # Dynamically load prompt types from prompts.json
-    import json, os
-    _prompts_path = os.path.join(os.path.dirname(__file__), "prompts.json")
+    import json, os as _os
+    _prompts_path = _os.path.join(_os.path.dirname(__file__), "prompts.json")
     try:
         with open(_prompts_path, "r", encoding="utf-8") as _f:
             _prompt_choices = list(json.load(_f).keys())
@@ -173,91 +197,8 @@ Examples:
             "audio. Providers with short video limits use temporal video chunks."
         ),
     )
+
     return parser.parse_args()
-
-
-def format_output(summary: str, url: str, format_type: str, metadata: dict) -> str:
-    """
-    Format summary in the requested output format.
-
-    Args:
-        summary: The summary text
-        url: Source URL
-        format_type: 'markdown', 'json', or 'html'
-        metadata: Additional metadata dict
-
-    Returns:
-        Formatted output string
-    """
-    import json
-
-    if format_type == "json":
-        output = {
-            "source": url,
-            "generated_at": datetime.now().isoformat(),
-            "prompt_type": metadata.get("prompt_type", ""),
-            "model": metadata.get("model", ""),
-            "summary": summary,
-        }
-        return json.dumps(output, indent=2, ensure_ascii=False)
-
-    elif format_type == "html":
-        escaped_summary = (
-            summary.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        )
-        # Convert markdown-style headers and bold to HTML
-        lines = escaped_summary.split("\n")
-        html_lines = []
-        for line in lines:
-            if line.startswith("# "):
-                html_lines.append(f"<h1>{line[2:]}</h1>")
-            elif line.startswith("## "):
-                html_lines.append(f"<h2>{line[3:]}</h2>")
-            elif line.startswith("### "):
-                html_lines.append(f"<h3>{line[4:]}</h3>")
-            elif line.startswith("- "):
-                html_lines.append(f"<li>{line[2:]}</li>")
-            elif line.strip():
-                html_lines.append(f"<p>{line}</p>")
-            else:
-                html_lines.append("")
-
-        body = "\n".join(html_lines)
-        return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Summary: {url}</title>
-    <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-               max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.6; }}
-        h1, h2, h3 {{ color: #333; }}
-        li {{ margin: 0.5rem 0; }}
-        .meta {{ color: #666; font-size: 0.9rem; border-bottom: 1px solid #eee; padding-bottom: 1rem; margin-bottom: 2rem; }}
-    </style>
-</head>
-<body>
-    <div class="meta">
-        <strong>Source:</strong> <a href="{url}">{url}</a><br>
-        <strong>Generated:</strong> {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-    </div>
-    {body}
-</body>
-</html>"""
-
-    else:  # markdown (default)
-        return f"""# Summary for: {url}
-
-Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-
-{summary}"""
-
-
-def get_file_extension(format_type: str) -> str:
-    """Get file extension for output format."""
-    extensions = {"markdown": ".md", "json": ".json", "html": ".html"}
-    return extensions.get(format_type, ".md")
 
 
 def process_url(
@@ -294,6 +235,7 @@ def process_url(
         os.makedirs(output_dir, exist_ok=True)
 
         # Generate filename
+        from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         clean_url = url.split("?")[0].split("/")[-1]
         ext = get_file_extension(output_format)
@@ -320,6 +262,20 @@ def cli():
     """Entry point for the CLI."""
     args = parse_args()
     verbose = args.verbose
+
+    # Handle server subcommand
+    if args.command == "serve":
+        try:
+            import uvicorn
+        except ImportError:
+            print(
+                "Server dependencies not installed. Run: pip install 'summarizer[server]'"
+            )
+            sys.exit(1)
+        print(f"Starting Summarize API server at http://{args.host}:{args.port}")
+        print(f"API docs: http://{args.host}:{args.port}/docs")
+        uvicorn.run("summarizer.server:app", host=args.host, port=args.port, reload=False)
+        return
 
     # Handle --init-config
     if args.init_config:
@@ -418,36 +374,14 @@ def cli():
             verbose,
         )
 
-    # Build final config
-    base_config = {
-        "type_of_source": args.type,
-        "use_youtube_captions": not smart_force_download,
-        "transcription_method": merged.get("transcription_method"),
-        "whisper_model": merged.get("whisper_model", "tiny"),
-        "audio_speed": audio_speed,
-        "use_proxy": bool(merged.get("use_proxy", False)),
-        "language": merged.get("language"),
-        "output_language": merged.get("output_language"),
-        "prompt_type": merged.get("prompt_type"),
-        "chunk_size": merged.get("chunk_size"),
-        "parallel_api_calls": merged.get("parallel_api_calls"),
-        "max_output_tokens": merged.get("max_output_tokens"),
-        "cobalt_base_url": merged.get("cobalt_base_url"),
-        "base_url": merged.get("base_url"),
-        "model": merged.get("model"),
-        "verbose": verbose,
-        "cache_transcript": bool(merged.get("cache_transcript", True)),
-        "visual": bool(merged.get("visual", False)),
-        "visual_input_mode": merged.get("visual_input_mode"),
-        "visual_compression": merged.get("visual_compression", "off"),
-        "visual_max_size_mb": merged.get("visual_max_size_mb"),
-        "visual_max_duration_seconds": merged.get("visual_max_duration_seconds"),
-        "visual_chunk_seconds": merged.get("visual_chunk_seconds", "auto"),
-        "visual_chunk_overlap_seconds": merged.get("visual_chunk_overlap_seconds", 0),
-    }
-
-    if merged.get("api_key"):
-        base_config["api_key"] = merged["api_key"]
+    # Build shared runtime config (source will be set per-URL in process_url)
+    base_config = build_runtime_config(
+        merged=merged,
+        source="",  # placeholder; overridden per-URL in process_url
+        type_of_source=args.type,
+        verbose=verbose,
+        force_download=smart_force_download,
+    )
 
     # Process each URL
     success_count = 0

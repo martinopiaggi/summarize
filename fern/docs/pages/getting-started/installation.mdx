@@ -73,6 +73,17 @@
 
     See [Transcription](transcription) for GPU setup.
   </Accordion>
+  <Accordion title="HTTP API server">
+    Run the summarizer as a local REST API:
+
+    ```bash
+    pip install -e .[server]
+    python -m summarizer serve
+    ```
+
+    Open `http://localhost:8000/docs` for interactive documentation.
+    See the [HTTP API guide](api-reference/http-api) for details.
+  </Accordion>
   <Accordion title="All extras">
     ```bash
     pip install -e .[all]

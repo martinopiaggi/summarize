@@ -100,6 +100,22 @@
 | `--no-config` | Ignore config file, use CLI args only | - |
 | `--init-config` | Generate example `summarizer.yaml` and exit | - |
 
+## HTTP API Server
+
+Start a local FastAPI server that exposes the same functionality over HTTP:
+
+```bash
+python -m summarizer serve
+```
+
+Customize host and port:
+
+```bash
+python -m summarizer serve --host 0.0.0.0 --port 8080
+```
+
+Interactive docs are available at `http://localhost:8000/docs`. See the [HTTP API guide](api-reference/http-api) for endpoint reference and example requests.
+
 > **Tip:** Use `--verbose` to see detailed status output during config loading, downloads, transcription with Whisper, and summarization.
 >
 > **Tip:** On Windows, do NOT use `--no-save` — Unicode output crashes stdout. Always let the tool save to file, then read it.

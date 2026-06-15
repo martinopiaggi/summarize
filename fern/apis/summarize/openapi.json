@@ -1,0 +1,1294 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Summarize API",
+    "description": "Transcribe and summarize videos from any source using any OpenAI-compatible LLM.",
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Returns the service health status.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/providers": {
+      "get": {
+        "summary": "List providers",
+        "description": "List all configured providers from summarizer.yaml.",
+        "operationId": "providers_providers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProviderInfo"
+                  },
+                  "type": "array",
+                  "title": "Response Providers Providers Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prompts": {
+      "get": {
+        "summary": "List prompts",
+        "description": "List all available summary prompt types.",
+        "operationId": "prompts_prompts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response Prompts Prompts Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config": {
+      "get": {
+        "summary": "Get configuration",
+        "description": "Get the active merged configuration. Sensitive keys (api_key) are redacted.",
+        "operationId": "config_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/summarize": {
+      "post": {
+        "summary": "Summarize a source",
+        "description": "Summarize a video from a URL or file path. All fields from the CLI are supported. The response includes the generated summary in the requested format (markdown, json, or html).",
+        "operationId": "summarize_summarize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SummarizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummarizeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/summarize/upload": {
+      "post": {
+        "summary": "Summarize an uploaded file",
+        "description": "Accepts video files (.mp4, .mp3, .wav, .m4a, .webm) or text files (.txt, .md, .vtt, .srt, .csv, .log, .rst, .html, .xml, .json). Text files bypass audio processing entirely. Maximum upload size is 500 MB.",
+        "operationId": "summarize_upload_summarize_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_summarize_upload_summarize_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummarizeResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "File too large"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/summarize/batch": {
+      "post": {
+        "summary": "Batch summarize",
+        "description": "Summarize multiple sources in one request. Each source is processed sequentially. Results are returned in the same order as the input sources list.",
+        "operationId": "summarize_batch_summarize_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BatchRequest": {
+        "properties": {
+          "sources": {
+            "description": "List of URLs or file paths",
+            "items": {
+              "type": "string"
+            },
+            "minLength": 1,
+            "type": "array",
+            "title": "Sources"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "YouTube Video",
+                  "Video URL",
+                  "Google Drive Video Link",
+                  "Dropbox Video Link",
+                  "Local File",
+                  "TXT"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "YouTube Video",
+            "description": "Source type for all items",
+            "title": "Type"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Provider name from config",
+            "title": "Provider"
+          },
+          "prompt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Summary style",
+            "title": "Prompt Type"
+          },
+          "chunk_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Characters per chunk",
+            "maximum": 500000,
+            "minimum": 100,
+            "title": "Chunk Size"
+          },
+          "parallel_calls": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Concurrent API requests",
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Parallel Calls"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Max output tokens per chunk",
+            "maximum": 1000000,
+            "minimum": 1,
+            "title": "Max Tokens"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Caption/transcription language",
+            "title": "Language"
+          },
+          "output_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Summary output language",
+            "title": "Output Language"
+          },
+          "force_download": {
+            "default": false,
+            "description": "Skip captions, download audio",
+            "title": "Force Download",
+            "type": "boolean"
+          },
+          "transcription": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Cloud Whisper",
+                  "Local Whisper"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cloud Whisper or Local Whisper",
+            "title": "Transcription"
+          },
+          "whisper_model": {
+            "anyOf": [
+              {
+                "enum": [
+                  "tiny",
+                  "base",
+                  "small",
+                  "medium",
+                  "large"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whisper model size",
+            "title": "Whisper Model"
+          },
+          "audio_speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pre-transcription speed-up",
+            "exclusiveMinimum": 0,
+            "maximum": 10,
+            "title": "Audio Speed"
+          },
+          "output_format": {
+            "anyOf": [
+              {
+                "enum": [
+                  "markdown",
+                  "json",
+                  "html"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "markdown",
+            "description": "markdown, json, or html",
+            "title": "Output Format"
+          },
+          "visual": {
+            "default": false,
+            "description": "Send video directly to vision model",
+            "title": "Visual",
+            "type": "boolean"
+          },
+          "use_proxy": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Route through Webshare proxy",
+            "title": "Use Proxy"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Override API key",
+            "title": "Api Key"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Override API base URL",
+            "title": "Base Url"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Override model name",
+            "title": "Model"
+          },
+          "cobalt_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cobalt base URL",
+            "title": "Cobalt Url"
+          },
+          "verbose": {
+            "default": false,
+            "description": "Verbose progress output",
+            "title": "Verbose",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "sources"
+        ],
+        "title": "BatchRequest",
+        "type": "object"
+      },
+      "BatchResponse": {
+        "properties": {
+          "success_count": {
+            "title": "Success Count",
+            "type": "integer"
+          },
+          "total_count": {
+            "title": "Total Count",
+            "type": "integer"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/BatchResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "overall_processing_time_seconds": {
+            "title": "Overall Processing Time Seconds",
+            "type": "number"
+          }
+        },
+        "required": [
+          "success_count",
+          "total_count",
+          "results",
+          "overall_processing_time_seconds"
+        ],
+        "title": "BatchResponse",
+        "type": "object"
+      },
+      "BatchResult": {
+        "properties": {
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "error_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Type"
+          },
+          "processing_time_seconds": {
+            "title": "Processing Time Seconds",
+            "type": "number"
+          }
+        },
+        "required": [
+          "source",
+          "success",
+          "processing_time_seconds"
+        ],
+        "title": "BatchResult",
+        "type": "object"
+      },
+      "Body_summarize_upload_summarize_upload_post": {
+        "properties": {
+          "file": {
+            "description": "Video or text file to summarize",
+            "format": "binary",
+            "title": "File",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source type (auto-detected if omitted)",
+            "title": "Type"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "prompt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Type"
+          },
+          "chunk_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chunk Size"
+          },
+          "parallel_calls": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parallel Calls"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "output_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Language"
+          },
+          "force_download": {
+            "default": false,
+            "title": "Force Download",
+            "type": "boolean"
+          },
+          "transcription": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transcription"
+          },
+          "whisper_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Whisper Model"
+          },
+          "audio_speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Speed"
+          },
+          "output_format": {
+            "default": "markdown",
+            "title": "Output Format",
+            "type": "string"
+          },
+          "visual": {
+            "default": false,
+            "title": "Visual",
+            "type": "boolean"
+          },
+          "use_proxy": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Use Proxy"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "cobalt_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cobalt Url"
+          },
+          "verbose": {
+            "default": false,
+            "title": "Verbose",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_summarize_upload_summarize_upload_post",
+        "type": "object"
+      },
+      "ConfigResponse": {
+        "properties": {
+          "default_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Provider"
+          },
+          "providers": {
+            "additionalProperties": true,
+            "title": "Providers",
+            "type": "object"
+          },
+          "defaults": {
+            "additionalProperties": true,
+            "title": "Defaults",
+            "type": "object"
+          },
+          "config_file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config File Path"
+          }
+        },
+        "required": [
+          "providers",
+          "defaults"
+        ],
+        "title": "ConfigResponse",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "service": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "service"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ProviderInfo": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "chunk_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chunk Size"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ProviderInfo",
+        "type": "object"
+      },
+      "SummarizeRequest": {
+        "properties": {
+          "source": {
+            "description": "Video URL or file path",
+            "title": "Source",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "YouTube Video",
+                  "Video URL",
+                  "Google Drive Video Link",
+                  "Dropbox Video Link",
+                  "Local File",
+                  "TXT"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "YouTube Video",
+            "description": "Source type",
+            "title": "Type"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Provider name from config",
+            "title": "Provider"
+          },
+          "prompt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Summary style",
+            "title": "Prompt Type"
+          },
+          "chunk_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Characters per chunk",
+            "maximum": 500000,
+            "minimum": 100,
+            "title": "Chunk Size"
+          },
+          "parallel_calls": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Concurrent API requests",
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Parallel Calls"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Max output tokens per chunk",
+            "maximum": 1000000,
+            "minimum": 1,
+            "title": "Max Tokens"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Caption/transcription language",
+            "title": "Language"
+          },
+          "output_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Summary output language",
+            "title": "Output Language"
+          },
+          "force_download": {
+            "default": false,
+            "description": "Skip captions, download audio",
+            "title": "Force Download",
+            "type": "boolean"
+          },
+          "transcription": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Cloud Whisper",
+                  "Local Whisper"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cloud Whisper or Local Whisper",
+            "title": "Transcription"
+          },
+          "whisper_model": {
+            "anyOf": [
+              {
+                "enum": [
+                  "tiny",
+                  "base",
+                  "small",
+                  "medium",
+                  "large"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whisper model size",
+            "title": "Whisper Model"
+          },
+          "audio_speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pre-transcription speed-up",
+            "exclusiveMinimum": 0,
+            "maximum": 10,
+            "title": "Audio Speed"
+          },
+          "output_format": {
+            "anyOf": [
+              {
+                "enum": [
+                  "markdown",
+                  "json",
+                  "html"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "markdown",
+            "description": "markdown, json, or html",
+            "title": "Output Format"
+          },
+          "visual": {
+            "default": false,
+            "description": "Send video directly to vision model",
+            "title": "Visual",
+            "type": "boolean"
+          },
+          "use_proxy": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Route through Webshare proxy",
+            "title": "Use Proxy"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Override API key",
+            "title": "Api Key"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Override API base URL",
+            "title": "Base Url"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Override model name",
+            "title": "Model"
+          },
+          "cobalt_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cobalt base URL",
+            "title": "Cobalt Url"
+          },
+          "verbose": {
+            "default": false,
+            "description": "Verbose progress output",
+            "title": "Verbose",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "SummarizeRequest",
+        "type": "object"
+      },
+      "SummarizeResponse": {
+        "properties": {
+          "success": {
+            "title": "Success",
+            "type": "boolean"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "format": {
+            "title": "Format",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "prompt_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Type"
+          },
+          "processing_time_seconds": {
+            "title": "Processing Time Seconds",
+            "type": "number"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "error_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Type"
+          }
+        },
+        "required": [
+          "success",
+          "source",
+          "summary",
+          "format",
+          "processing_time_seconds"
+        ],
+        "title": "SummarizeResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  }
+}

@@ -1,0 +1,368 @@
+---
+title: HTTP API
+subtitle: Run the summarizer as a local REST API server
+---
+
+The Summarize HTTP API exposes all CLI functionality via REST endpoints. It is built with FastAPI and includes auto-generated interactive documentation at `/docs`.
+
+## Installation
+
+Server dependencies are not included in the base package. Install them with the `server` extra:
+
+```bash
+pip install -e ".[server]"
+```
+
+This installs `fastapi`, `uvicorn`, and `python-multipart`.
+
+## Starting the Server
+
+```bash
+python -m summarizer serve
+```
+
+By default the server binds to `127.0.0.1:8000`. You can customize the host and port:
+
+```bash
+python -m summarizer serve --host 0.0.0.0 --port 8080
+```
+
+## Interactive Documentation
+
+Once the server is running, open your browser to:
+
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+- **OpenAPI JSON**: `http://localhost:8000/openapi.json`
+
+## CORS
+
+Cross-origin requests are disabled by default. To enable CORS, set the `SUMMARIZER_CORS_ORIGINS` environment variable:
+
+```bash
+# Allow a specific origin
+SUMMARIZER_CORS_ORIGINS=http://localhost:3000 python -m summarizer serve
+
+# Allow all origins (not recommended for production)
+SUMMARIZER_CORS_ORIGINS=* python -m summarizer serve
+```
+
+When using `*`, credentials are automatically disabled for security compliance.
+
+## Endpoints Overview
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check |
+| `GET` | `/providers` | List configured LLM providers |
+| `GET` | `/prompts` | List available summary styles |
+| `GET` | `/config` | Get merged config (secrets redacted) |
+| `POST` | `/summarize` | Summarize a URL or file path |
+| `POST` | `/summarize/upload` | Summarize an uploaded file |
+| `POST` | `/summarize/batch` | Summarize multiple sources |
+
+## Endpoint Reference
+
+### `GET /health`
+
+Returns the service health status.
+
+```bash
+curl http://localhost:8000/health
+```
+
+```json
+{
+  "status": "ok",
+  "service": "summarize"
+}
+```
+
+### `GET /providers`
+
+Lists all providers configured in `summarizer.yaml`.
+
+```bash
+curl http://localhost:8000/providers
+```
+
+```json
+[
+  {
+    "name": "groq",
+    "base_url": "https://api.groq.com/openai/v1",
+    "model": "llama-3.3-70b-versatile",
+    "chunk_size": null
+  }
+]
+```
+
+### `GET /prompts`
+
+Lists all available summary prompt types.
+
+```bash
+curl http://localhost:8000/prompts
+```
+
+```json
+[
+  "Questions and answers",
+  "Summarization",
+  "Distill Wisdom"
+]
+```
+
+### `GET /config`
+
+Returns the loaded configuration with provider `api_key` values redacted.
+
+```bash
+curl http://localhost:8000/config
+```
+
+```json
+{
+  "default_provider": "groq",
+  "providers": {
+    "groq": {
+      "base_url": "https://api.groq.com/openai/v1",
+      "model": "llama-3.3-70b-versatile",
+      "api_key": "***REDACTED***"
+    }
+  },
+  "defaults": {
+    "chunk_size": 10000,
+    "prompt_type": "Questions and answers"
+  },
+  "config_file_path": "/path/to/summarizer.yaml"
+}
+```
+
+### `POST /summarize`
+
+Summarize a video from a URL or file path.
+
+```bash
+curl -X POST http://localhost:8000/summarize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "https://youtube.com/watch?v=VIDEO_ID",
+    "provider": "groq",
+    "output_format": "markdown"
+  }'
+```
+
+#### Request body
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source` | string | **Required.** Video URL or file path |
+| `type` | string | Source type: `YouTube Video`, `Video URL`, `Google Drive Video Link`, `Dropbox Video Link`, `Local File`, `TXT` |
+| `provider` | string | Provider name from `summarizer.yaml` |
+| `prompt_type` | string | Summary style |
+| `chunk_size` | integer | Characters per chunk (100 – 500,000) |
+| `parallel_calls` | integer | Concurrent API requests (1 – 200) |
+| `max_tokens` | integer | Max output tokens per chunk (1 – 1,000,000) |
+| `language` | string | Caption/transcription language |
+| `output_language` | string | Summary output language |
+| `force_download` | boolean | Skip captions and download audio |
+| `transcription` | string | `Cloud Whisper` or `Local Whisper` |
+| `whisper_model` | string | `tiny`, `base`, `small`, `medium`, `large` |
+| `audio_speed` | number | Pre-transcription speed-up (>0, ≤10) |
+| `output_format` | string | `markdown`, `json`, or `html` |
+| `visual` | boolean | Send video directly to a vision model |
+| `use_proxy` | boolean | Route through Webshare proxy |
+| `api_key` | string | Override API key |
+| `base_url` | string | Override API base URL |
+| `model` | string | Override model name |
+| `cobalt_url` | string | Cobalt base URL |
+| `verbose` | boolean | Verbose progress output |
+
+### `POST /summarize/upload`
+
+Summarize an uploaded video or text file.
+
+```bash
+curl -X POST http://localhost:8000/summarize/upload \
+  -F "file=@video.mp4" \
+  -F "provider=groq" \
+  -F "prompt_type=Summarization"
+```
+
+The source type is auto-detected from the file extension:
+
+- Text files (`.txt`, `.md`, `.vtt`, `.srt`, `.csv`, `.log`, `.rst`, `.html`, `.xml`, `.json`) are processed as `TXT`
+- Everything else is processed as `Local File`
+
+Override detection by sending a `type` form field.
+
+### `POST /summarize/batch`
+
+Summarize multiple sources in a single request. Sources are processed sequentially and results are returned in input order.
+
+```bash
+curl -X POST http://localhost:8000/summarize/batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sources": [
+      "https://youtube.com/watch?v=VIDEO1",
+      "https://youtube.com/watch?v=VIDEO2"
+    ],
+    "provider": "groq",
+    "output_format": "markdown"
+  }'
+```
+
+#### Request body
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sources` | array of strings | **Required.** List of URLs or file paths |
+| ... | ... | All other fields from `POST /summarize` |
+
+## Authentication
+
+The API does not implement its own authentication layer. It is designed to run locally or behind a reverse proxy that handles authentication. If you expose it beyond localhost, place it behind a gateway (e.g., Nginx, Traefik, or a cloud API gateway) with token-based or mTLS auth.
+
+Provider API keys are read from:
+
+1. The request body (`api_key` field)
+2. The provider config in `summarizer.yaml`
+3. Environment variables (e.g., `GROQ_API_KEY`)
+
+## Request Examples
+
+### Summarize a YouTube video
+
+```bash
+curl -X POST http://localhost:8000/summarize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "https://youtube.com/watch?v=VIDEO_ID",
+    "provider": "groq",
+    "output_format": "markdown"
+  }'
+```
+
+### Summarize with custom settings
+
+```bash
+curl -X POST http://localhost:8000/summarize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "https://youtube.com/watch?v=VIDEO_ID",
+    "provider": "groq",
+    "prompt_type": "Distill Wisdom",
+    "chunk_size": 5000,
+    "parallel_calls": 10,
+    "output_format": "json"
+  }'
+```
+
+### Upload and summarize a local video
+
+```bash
+curl -X POST http://localhost:8000/summarize/upload \
+  -F "file=@video.mp4" \
+  -F "provider=groq" \
+  -F "prompt_type=Summarization"
+```
+
+### Batch summarize multiple videos
+
+```bash
+curl -X POST http://localhost:8000/summarize/batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sources": [
+      "https://youtube.com/watch?v=VIDEO1",
+      "https://youtube.com/watch?v=VIDEO2"
+    ],
+    "provider": "groq",
+    "output_format": "markdown"
+  }'
+```
+
+### List configured providers
+
+```bash
+curl http://localhost:8000/providers
+```
+
+### Get redacted configuration
+
+```bash
+curl http://localhost:8000/config
+```
+
+## Response Format
+
+All summarize endpoints return a `SummarizeResponse`:
+
+```json
+{
+  "success": true,
+  "source": "https://youtube.com/watch?v=VIDEO_ID",
+  "summary": "# Summary for: ...",
+  "format": "markdown",
+  "model": "llama-3.3-70b-versatile",
+  "prompt_type": "Questions and answers",
+  "processing_time_seconds": 12.34,
+  "error": null,
+  "error_type": null
+}
+```
+
+On failure, `success` is `false` and `error` contains the message:
+
+```json
+{
+  "success": false,
+  "source": "https://youtube.com/watch?v=INVALID",
+  "summary": "",
+  "format": "markdown",
+  "processing_time_seconds": 0.52,
+  "error": "No captions available",
+  "error_type": "TranscriptError"
+}
+```
+
+## Validation
+
+Request fields are strictly validated:
+
+- `type` must be one of: `YouTube Video`, `Video URL`, `Google Drive Video Link`, `Dropbox Video Link`, `Local File`, `TXT`
+- `output_format` must be one of: `markdown`, `json`, `html`
+- `transcription` must be one of: `Cloud Whisper`, `Local Whisper`
+- `whisper_model` must be one of: `tiny`, `base`, `small`, `medium`, `large`
+- `chunk_size`: 100 – 500,000
+- `parallel_calls`: 1 – 200
+- `max_tokens`: 1 – 1,000,000
+- `audio_speed`: greater than 0, up to 10
+- `batch.sources`: must contain at least 1 item
+
+Invalid values return HTTP `422` with detailed validation error messages.
+
+## Upload Limits
+
+The `/summarize/upload` endpoint accepts files up to **500 MB**. Larger files are rejected with HTTP `413`. Files are streamed to a temporary location in 1 MB chunks to avoid loading large uploads into memory.
+
+## Security Notes
+
+- The `/config` endpoint redacts all `api_key` values from provider configurations.
+- The server binds to `127.0.0.1` by default to prevent accidental exposure.
+- CORS is disabled by default.
+- If you need to expose the API beyond localhost, use a reverse proxy with authentication.
+
+## Async Behavior
+
+Summarization is long-running and I/O-heavy. The API runs each job in a thread pool so that the event loop remains responsive to health checks, docs, and other concurrent requests. Batch requests process sources sequentially within the same request.
+
+## Error Handling
+
+| Status | Meaning |
+|--------|---------|
+| `200` | Request processed (check `success` field for business-level failures) |
+| `413` | Upload exceeds 500 MB |
+| `422` | Request validation failed (bad enum value, out-of-range number, etc.) |

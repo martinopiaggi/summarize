@@ -22,7 +22,8 @@ core_requirements = [
 extras_require = {
     'whisper': ['openai-whisper'],
     'litellm': ['litellm>=1.80.0,<1.87'],
-    'all': ['openai-whisper', 'litellm>=1.80.0,<1.87']
+    'server': ['fastapi>=0.100.0', 'uvicorn[standard]>=0.23.0', 'python-multipart>=0.0.6'],
+    'all': ['openai-whisper', 'litellm>=1.80.0,<1.87', 'fastapi>=0.100.0', 'uvicorn[standard]>=0.23.0', 'python-multipart>=0.0.6']
 }
 
 setup(

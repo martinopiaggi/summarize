@@ -46,6 +46,9 @@ The summary is saved to `summaries/watch_YYYYMMDD_HHMMSS.md`.
 | Interface | Command |
 |-----------|---------|
 | **CLI** | `python -m summarizer --source <source>` |
+| **HTTP API** | `python -m summarizer serve` → `http://localhost:8000/docs` |
 | **Streamlit GUI** | `python -m streamlit run app.py` |
 | **Docker** | `docker compose up -d` → `http://localhost:8501` |
 | **Agent Skill** | [`.agent/skills/summarize/SKILL.md`](https://github.com/martinopiaggi/summarize/blob/main/.agent/skills/summarize/SKILL.md) |
+
+See the [HTTP API guide](api-reference/http-api) for endpoint details, request examples, and CORS configuration.

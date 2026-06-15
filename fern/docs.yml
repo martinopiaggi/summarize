@@ -69,6 +69,8 @@ navigation:
     contents:
       - page: CLI Reference
         path: ./docs/pages/usage/cli-reference.mdx
+      - page: HTTP API
+        path: ./docs/pages/api-reference/http-api.mdx
       - page: Summary Styles
         path: ./docs/pages/usage/summary-styles.mdx
       - page: Batch Processing
