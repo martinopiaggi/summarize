@@ -1,34 +1,73 @@
 # Raycast Extension
 
-The Raycast extension lets you summarize a video URL straight from your clipboard without leaving the keyboard.
+Summarize a video URL straight from your clipboard using [Raycast](https://www.raycast.com/), a keyboard-first launcher for macOS.
+
+<Callout type="info">
+  Raycast is currently only available for macOS, so this integration works on Mac devices.
+</Callout>
+
+## What It Does
+
+The **Summarize Clipboard** command reads the URL in your clipboard, sends it to the Summarize HTTP API, and shows the summary in a Raycast detail view. You can copy or paste the result with one keystroke.
 
 ## Requirements
 
-- [Raycast](https://www.raycast.com/) installed on macOS
-- The Summarize HTTP API running locally (or wherever you configure it)
+- macOS with [Raycast](https://www.raycast.com/) installed
+- The Summarize HTTP API running and reachable from your Mac
 
-## Setup
+## Install the Extension
 
-1. Install the server extras and start the HTTP API:
+The extension source is inside this repository at `extensions/raycast-summarize`. Raycast can import local extensions directly.
 
-   ```bash
-   pip install -e ".[server]"
-   python -m summarizer serve
-   ```
+### Step 1: Start the Summarize API
 
-2. In Raycast, open **Preferences → Extensions → Summarize Clipboard**.
-3. Set the **Summarize API Endpoint** (default: `http://localhost:8000`).
-4. Optionally set a **Provider** and **Prompt Type**.
+Install the server dependencies and start the HTTP API:
+
+```bash
+pip install -e ".[server]"
+python -m summarizer serve
+```
+
+By default the API runs at `http://localhost:8000`.
+
+### Step 2: Build the Extension
+
+Open a terminal in the extension folder and install its dependencies:
+
+```bash
+cd extensions/raycast-summarize
+npm install
+npm run build
+```
+
+A successful build creates a `dist/` folder and confirms there are no TypeScript errors.
+
+### Step 3: Import Into Raycast
+
+1. Open Raycast and run the **Import Extension** command.
+2. Select the `extensions/raycast-summarize` folder.
+3. Raycast loads the extension and adds **Summarize Clipboard** to your commands.
+
+## Configure
+
+1. Open Raycast and run **Preferences → Extensions → Summarize Clipboard**.
+2. Set **Summarize API Endpoint** to your API base URL (default: `http://localhost:8000`).
+3. Optionally set:
+   - **Provider** — a provider name from your `summarizer.yaml`
+   - **Prompt Type** — a summary style such as `Summarization` or `Distill Wisdom`
 
 ## Usage
 
-1. Copy a video URL to your clipboard.
-2. Run the **Summarize Clipboard** command in Raycast.
-3. The summary opens in a detail view. Use the action buttons to copy or paste it.
+1. Copy a video URL to your clipboard (for example, a YouTube link).
+2. Open Raycast and run **Summarize Clipboard**.
+3. Wait a few seconds while the API processes the video.
+4. The summary appears in a detail view. Press:
+   - **↵ Return** to copy the summary
+   - **⌘ V** or the paste action to insert it into the frontmost app
 
 ## Development
 
-The extension source lives in `extensions/raycast-summarize`:
+To make changes to the extension:
 
 ```bash
 cd extensions/raycast-summarize
@@ -36,4 +75,6 @@ npm install
 npm run dev
 ```
 
-Use `npm run build` to validate the extension before importing it into Raycast.
+`npm run dev` watches your source files and rebuilds automatically. Re-import the extension in Raycast after any change, or keep it imported while developing.
+
+Use `npm run build` to verify the extension compiles before committing.
