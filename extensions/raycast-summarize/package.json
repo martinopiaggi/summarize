@@ -1,0 +1,61 @@
+{
+  "name": "summarize-clipboard",
+  "title": "Summarize Clipboard",
+  "description": "Summarize the clipboard content using the local Summarize HTTP API",
+  "icon": "icon.png",
+  "author": "martinopiaggi",
+  "categories": [
+    "Productivity"
+  ],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "summarize-clipboard",
+      "title": "Summarize Clipboard",
+      "description": "Send the clipboard content to the Summarize HTTP API",
+      "mode": "view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "apiEndpoint",
+      "type": "textfield",
+      "required": false,
+      "title": "Summarize API Endpoint",
+      "description": "Base URL of the Summarize HTTP API",
+      "default": "http://localhost:8000",
+      "placeholder": "http://localhost:8000"
+    },
+    {
+      "name": "provider",
+      "type": "textfield",
+      "required": false,
+      "title": "Provider",
+      "description": "Provider name from summarizer.yaml (optional)",
+      "placeholder": "groq"
+    },
+    {
+      "name": "promptType",
+      "type": "textfield",
+      "required": false,
+      "title": "Prompt Type",
+      "description": "Summary style (optional)",
+      "placeholder": "Summarization"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.83.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "typescript": "^5.6.0"
+  },
+  "scripts": {
+    "build": "ray build",
+    "dev": "ray develop",
+    "lint": "ray lint",
+    "fix-lint": "ray lint --fix"
+  }
+}
