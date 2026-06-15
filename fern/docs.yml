@@ -97,6 +97,8 @@ navigation:
   - section: Integrations
     icon: fa-solid fa-plug
     contents:
+      - page: Raycast
+        path: ./docs/pages/integrations/raycast.mdx
       - page: Share a Summary
         path: ./docs/pages/integrations/tinypaste.mdx
       - page: Cobalt

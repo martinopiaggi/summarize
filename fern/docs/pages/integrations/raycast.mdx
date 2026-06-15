@@ -1,0 +1,39 @@
+# Raycast Extension
+
+The Raycast extension lets you summarize a video URL straight from your clipboard without leaving the keyboard.
+
+## Requirements
+
+- [Raycast](https://www.raycast.com/) installed on macOS
+- The Summarize HTTP API running locally (or wherever you configure it)
+
+## Setup
+
+1. Install the server extras and start the HTTP API:
+
+   ```bash
+   pip install -e ".[server]"
+   python -m summarizer serve
+   ```
+
+2. In Raycast, open **Preferences → Extensions → Summarize Clipboard**.
+3. Set the **Summarize API Endpoint** (default: `http://localhost:8000`).
+4. Optionally set a **Provider** and **Prompt Type**.
+
+## Usage
+
+1. Copy a video URL to your clipboard.
+2. Run the **Summarize Clipboard** command in Raycast.
+3. The summary opens in a detail view. Use the action buttons to copy or paste it.
+
+## Development
+
+The extension source lives in `extensions/raycast-summarize`:
+
+```bash
+cd extensions/raycast-summarize
+npm install
+npm run dev
+```
+
+Use `npm run build` to validate the extension before importing it into Raycast.
