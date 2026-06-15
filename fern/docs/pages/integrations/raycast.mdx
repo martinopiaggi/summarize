@@ -1,9 +1,9 @@
 # Raycast Extension
 
-Summarize a video URL straight from your clipboard using [Raycast](https://www.raycast.com/), a keyboard-first launcher for macOS.
+Summarize a video URL straight from your clipboard using [Raycast](https://www.raycast.com/), a keyboard-first launcher.
 
 <Callout type="info">
-  Raycast is currently only available for macOS, so this integration works on Mac devices.
+  Raycast 2.0 runs on **macOS** and **Windows** (public beta). An **iOS** version is also in alpha. This guide focuses on the desktop app.
 </Callout>
 
 ## What It Does
@@ -12,12 +12,12 @@ The **Summarize Clipboard** command reads the URL in your clipboard, sends it to
 
 ## Requirements
 
-- macOS with [Raycast](https://www.raycast.com/) installed
-- The Summarize HTTP API running and reachable from your Mac
+- Raycast installed on macOS or Windows
+- The Summarize HTTP API running and reachable from your computer
 
 ## Install the Extension
 
-The extension source is inside this repository at `extensions/raycast-summarize`. Raycast can import local extensions directly.
+The extension source is inside this repository at `extensions/raycast-summarize`. Raycast can import local extensions directly on both macOS and Windows.
 
 ### Step 1: Start the Summarize API
 
@@ -34,11 +34,22 @@ By default the API runs at `http://localhost:8000`.
 
 Open a terminal in the extension folder and install its dependencies:
 
-```bash
-cd extensions/raycast-summarize
-npm install
-npm run build
-```
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    cd extensions/raycast-summarize
+    npm install
+    npm run build
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```powershell
+    cd extensions/raycast-summarize
+    npm install
+    npm run build
+    ```
+  </Tab>
+</Tabs>
 
 A successful build creates a `dist/` folder and confirms there are no TypeScript errors.
 
@@ -63,7 +74,7 @@ A successful build creates a `dist/` folder and confirms there are no TypeScript
 3. Wait a few seconds while the API processes the video.
 4. The summary appears in a detail view. Press:
    - **↵ Return** to copy the summary
-   - **⌘ V** or the paste action to insert it into the frontmost app
+   - **⌘ V** (macOS) or **Ctrl + V** (Windows), or the paste action, to insert it into the frontmost app
 
 ## Development
 
