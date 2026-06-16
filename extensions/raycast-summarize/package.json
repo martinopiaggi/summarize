@@ -1,7 +1,7 @@
 {
-  "name": "summarize-clipboard",
-  "title": "Summarize Clipboard",
-  "description": "Summarize the clipboard content using the local Summarize HTTP API",
+  "name": "summarize",
+  "title": "Summarize",
+  "description": "Summarize video URLs using the local Summarize HTTP API. Two options: paste a URL directly or use clipboard content.",
   "icon": "icon.png",
   "author": "martinopiaggi",
   "categories": [
@@ -10,9 +10,23 @@
   "license": "MIT",
   "commands": [
     {
+      "name": "summarize",
+      "title": "Summarize",
+      "description": "Summarize a video URL. Paste or type the URL directly next to the command.",
+      "mode": "view",
+      "arguments": [
+        {
+          "name": "url",
+          "placeholder": "Video URL",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
       "name": "summarize-clipboard",
       "title": "Summarize Clipboard",
-      "description": "Send the clipboard content to the Summarize HTTP API",
+      "description": "Send the clipboard content (video URL) to the Summarize HTTP API",
       "mode": "view"
     }
   ],

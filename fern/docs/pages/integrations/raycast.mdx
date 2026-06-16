@@ -1,6 +1,6 @@
 # Raycast Extension
 
-Summarize a video URL straight from your clipboard using [Raycast](https://www.raycast.com/), a keyboard-first launcher.
+Summarize video URLs with [Raycast](https://www.raycast.com/), a keyboard-first launcher. The extension is called **Summarize**.
 
 <Callout type="info">
   Raycast 2.0 runs on **macOS** and **Windows** (public beta). An **iOS** version is also in alpha. This guide focuses on the desktop app.
@@ -8,7 +8,12 @@ Summarize a video URL straight from your clipboard using [Raycast](https://www.r
 
 ## What It Does
 
-The **Summarize Clipboard** command reads the URL in your clipboard, sends it to the Summarize HTTP API, and shows the summary in a Raycast detail view. You can copy or paste the result with one keystroke.
+The extension provides **two commands**:
+
+- **Summarize** — type or paste the video URL directly next to the command (no need to copy to clipboard first).
+- **Summarize Clipboard** — read the video URL from your clipboard (classic behavior).
+
+Both send the URL to the Summarize HTTP API and show the result in a Raycast detail view. You can copy or paste the summary with one keystroke.
 
 ## Requirements
 
@@ -57,11 +62,11 @@ A successful build creates a `dist/` folder and confirms there are no TypeScript
 
 1. Open Raycast and run the **Import Extension** command.
 2. Select the `extensions/raycast-summarize` folder.
-3. Raycast loads the extension and adds **Summarize Clipboard** to your commands.
+3. Raycast loads the extension and adds **Summarize** (plus **Summarize Clipboard**) to your commands.
 
 ## Configure
 
-1. Open Raycast and run **Preferences → Extensions → Summarize Clipboard**.
+1. Open Raycast and run **Preferences → Extensions → Summarize**.
 2. Set **Summarize API Endpoint** to your API base URL (default: `http://localhost:8000`).
 3. Optionally set:
    - **Provider** — a provider name from your `summarizer.yaml`
@@ -69,12 +74,21 @@ A successful build creates a `dist/` folder and confirms there are no TypeScript
 
 ## Usage
 
-1. Copy a video URL to your clipboard (for example, a YouTube link).
-2. Open Raycast and run **Summarize Clipboard**.
+### Option A: Paste the URL directly (no clipboard needed)
+
+1. Open Raycast and run **Summarize**.
+2. Raycast shows an input field right next to the command — type or paste the video URL (e.g. a YouTube link) there and press Enter.
 3. Wait a few seconds while the API processes the video.
 4. The summary appears in a detail view. Press:
    - **↵ Return** to copy the summary
    - **⌘ V** (macOS) or **Ctrl + V** (Windows), or the paste action, to insert it into the frontmost app
+
+### Option B: Summarize from Clipboard
+
+1. Copy a video URL to your clipboard.
+2. Open Raycast and run **Summarize Clipboard**.
+3. Wait a few seconds while the API processes the video.
+4. The summary appears in a detail view. Use the same copy/paste shortcuts as above.
 
 ## Development
 

@@ -103,7 +103,8 @@ def get_api_key(cfg: Dict) -> str:
     # LiteLLM can read provider env vars automatically, but this app also
     # supports lower-case .env keys such as "groq" and "openrouter".
     if cfg.get("base_url") == "litellm":
-        provider = cfg.get("model", "").split("/", 1)[0].lower()
+        model_val = cfg.get("model") or ""
+        provider = model_val.split("/", 1)[0].lower()
         env_candidates = []
         if provider:
             env_candidates.extend([f"{provider.upper()}_API_KEY", provider])
@@ -119,7 +120,7 @@ def get_api_key(cfg: Dict) -> str:
                 return api_key
         return "litellm"
 
-    base_url = cfg.get("base_url", "").lower()
+    base_url = (cfg.get("base_url") or "").lower()
 
     if not base_url:
         raise ConfigurationError("base_url is required but not provided")

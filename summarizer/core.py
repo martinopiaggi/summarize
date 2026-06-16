@@ -63,6 +63,9 @@ def main(config: dict) -> str:
     verbose = config.get("verbose", False)
 
     try:
+        # Centralized validation for both CLI and API paths
+        validate_config(config)
+
         print_status("Starting summarization", "PROCESSING", verbose)
         if verbose:
             print_status(

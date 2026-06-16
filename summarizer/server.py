@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from summarizer.config_file import load_config_file, merge_configs, find_config_file
 from summarizer.core import main
-from summarizer.exceptions import SummarizerError
+from summarizer.exceptions import SummarizerError, ConfigurationError
 from summarizer.prompts import get_available_prompts
 from summarizer.api_utils import (
     build_runtime_config,
@@ -195,6 +195,21 @@ def _build_runtime_config_from_request(
     merged = merge_configs(file_config, overrides)
     # Ensure per-request overrides win even when merge_configs is mocked in tests.
     merged.update(overrides)
+
+    # Match the guard that exists in the CLI after merging (gives actionable errors
+    # for Raycast / API users when they specify a provider name).
+    if not merged.get("base_url") or not merged.get("model"):
+        prov = overrides.get("provider")
+        if prov:
+            raise ConfigurationError(
+                f"Provider '{prov}' not found in config file (or the provider section is missing base_url/model). "
+                f"Check your summarizer.yaml or set base_url + model directly."
+            )
+        raise ConfigurationError(
+            "base_url and model are required. Either use a named 'provider' that exists in summarizer.yaml, "
+            "or provide base_url and model explicitly."
+        )
+
     return build_runtime_config(
         merged=merged,
         source=source_override or req.source,

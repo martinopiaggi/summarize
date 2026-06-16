@@ -126,6 +126,7 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
 
     # Apply provider config if specified
     provider_name = cli_args.get("provider") or file_config.get("default_provider")
+    explicit_provider = bool(cli_args.get("provider"))
     if provider_name:
         try:
             provider_config = get_provider_config(file_config, provider_name)
@@ -136,7 +137,11 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
                 if key not in ("base_url", "model"):
                     merged[key.replace("-", "_")] = value
         except ConfigurationError:
-            pass  # Will be caught later if required
+            if explicit_provider:
+                # Explicit --provider or provider= in API must succeed
+                raise
+            # Implicit default_provider only: swallow so legacy flows don't hard-fail
+            pass
 
     # CLI args override everything (skip None values)
     for key, value in cli_args.items():

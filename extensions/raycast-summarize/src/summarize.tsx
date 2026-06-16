@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Clipboard,
   Detail,
   getPreferenceValues,
   showToast,
@@ -8,6 +7,7 @@ import {
   ActionPanel,
   Action,
   Icon,
+  LaunchProps,
 } from "@raycast/api";
 
 interface Preferences {
@@ -26,6 +26,10 @@ interface SummarizeResponse {
   processing_time_seconds: number;
   error?: string;
   error_type?: string;
+}
+
+interface Arguments {
+  url: string;
 }
 
 /**
@@ -51,8 +55,8 @@ function normalizeForRaycast(text: string): string {
   return s;
 }
 
-export default function SummarizeClipboardCommand() {
-  const [markdown, setMarkdown] = useState<string>("Reading clipboard...");
+export default function SummarizeCommand(props: LaunchProps<{ arguments: Arguments }>) {
+  const [markdown, setMarkdown] = useState<string>("");
   const [result, setResult] = useState<SummarizeResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -62,14 +66,14 @@ export default function SummarizeClipboardCommand() {
         const preferences = getPreferenceValues<Preferences>();
         const endpoint = (preferences.apiEndpoint || "http://localhost:8000").replace(/\/$/, "");
 
-        const clipboardText = await Clipboard.readText();
-        if (!clipboardText || clipboardText.trim().length === 0) {
-          setMarkdown("# No URL in clipboard\n\nCopy a video URL to summarize.");
+        const urlArg = props.arguments?.url?.trim();
+        if (!urlArg) {
+          setMarkdown("# No URL provided\n\nType or paste a video URL when running this command.");
           setIsLoading(false);
           return;
         }
 
-        const source = clipboardText.trim();
+        const source = urlArg;
         setMarkdown(`Sending to ${endpoint}/summarize...`);
 
         const body: Record<string, unknown> = {
@@ -127,11 +131,11 @@ export default function SummarizeClipboardCommand() {
     }
 
     run();
-  }, []);
+  }, [props.arguments?.url]);
 
   return (
     <Detail
-      markdown={markdown}
+      markdown={markdown || "Preparing..."}
       isLoading={isLoading}
       metadata={
         result ? (
