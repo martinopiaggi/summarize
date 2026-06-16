@@ -43,6 +43,7 @@ pytest-cache-files-*/
 *.m4a
 *.wav
 *.mp4
+!fern/videos/raycast-demo.mp4
 summaries/
 data/
 temp/
