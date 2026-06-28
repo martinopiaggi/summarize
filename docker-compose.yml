@@ -1,5 +1,6 @@
 services:
   summarizer:
+    image: ghcr.io/martinopiaggi/summarize:latest
     build: .
     container_name: summarizer
     ports:

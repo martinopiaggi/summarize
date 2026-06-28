@@ -53,6 +53,7 @@ temp/
 !README.md
 !CONTRIBUTING.md
 !SKILL.md
+!.github/PULL_REQUEST_TEMPLATE.md
 cobalt.env
 cobalt.proxy.env
 !cobalt.proxy.env.example

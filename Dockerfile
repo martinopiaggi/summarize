@@ -1,8 +1,10 @@
 FROM python:3.12-slim
 
-LABEL org.opencontainers.image.title="Summarizer"
-LABEL org.opencontainers.image.description="Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter, and more"
+LABEL org.opencontainers.image.title="martino-summarize"
+LABEL org.opencontainers.image.description="Local-first multi-source video summarization with any OpenAI-compatible LLM"
 LABEL org.opencontainers.image.source="https://github.com/martinopiaggi/summarize"
+LABEL org.opencontainers.image.url="https://summarize.martino.im"
+LABEL org.opencontainers.image.licenses="MIT"
 
 # Install system dependencies
 # ffmpeg: required for audio/video processing (handlers.py, transcription.py)
@@ -13,10 +15,9 @@ RUN apt-get update \
 WORKDIR /app
 
 # Copy dependency definition first for better layer caching
-COPY setup.py .
+COPY pyproject.toml setup.py README.md ./
 
 # Install Python dependencies (non-editable install)
-# We copy the package source before install since setup.py references it
 COPY summarizer/ summarizer/
 RUN pip install --no-cache-dir . "streamlit>=1.32.0"
 
@@ -25,8 +26,8 @@ COPY app.py .
 COPY webapp/ webapp/
 COPY .streamlit/ .streamlit/
 
-# Copy default config
-COPY summarizer.yaml .
+# Default config (summarizer.yaml is gitignored locally; ship example for first-run)
+COPY summarizer.example.yaml ./summarizer.yaml
 
 # Create output directory
 RUN mkdir -p /app/summaries

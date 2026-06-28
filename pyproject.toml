@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "martino-summarize"
+version = "0.2.0"
+description = "Local-first multi-source video summarization with any OpenAI-compatible LLM"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.7"
+authors = [{ name = "Martino Piaggi" }]
+keywords = ["video", "summarization", "youtube", "transcription", "llm", "notebooklm"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "python-dotenv>=1.0.0",
+    "youtube-transcript-api>=1.2.3",
+    "pytubefix>=1.6.3",
+    "groq>=0.4.2",
+    "openai>=1.3.7",
+    "yt-dlp>=2025.4.30",
+    "aiohttp>=3.9.0",
+    "requests>=2.31.0",
+    "wget>=3.2",
+    "google-api-python-client>=2.0.0",
+    "google-auth-httplib2>=0.1.0",
+    "google-auth-oauthlib>=0.4.1",
+    "dropbox>=11.36.2",
+    "ffmpeg-python>=0.2.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+whisper = ["openai-whisper"]
+litellm = ["litellm>=1.80.0,<1.87"]
+server = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "python-multipart>=0.0.6",
+]
+all = [
+    "openai-whisper",
+    "litellm>=1.80.0,<1.87",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.scripts]
+summarizer = "summarizer.__main__:cli"
+
+[project.urls]
+Homepage = "https://github.com/martinopiaggi/summarize"
+Documentation = "https://summarize.martino.im"
+Repository = "https://github.com/martinopiaggi/summarize"
+Issues = "https://github.com/martinopiaggi/summarize/issues"
+Changelog = "https://github.com/martinopiaggi/summarize/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["summarizer*"]
+
+[tool.setuptools.package-data]
+summarizer = ["prompts.json"]
