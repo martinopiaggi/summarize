@@ -1,0 +1,75 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Include steps to reproduce and redact API keys.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Clear description of the bug
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: CLI command, URL, interface (CLI / API / Streamlit / Docker), provider
+      placeholder: |
+        1. docker compose up -d
+        2. Paste URL https://...
+        3. See error ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: interface
+    attributes:
+      label: Interface
+      options:
+        - CLI
+        - HTTP API
+        - Streamlit
+        - Docker
+        - Raycast
+        - Agent skill
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: e.g. v0.2.0, pip, or git commit SHA
+      placeholder: v0.2.0
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / error output
+      description: Use --verbose for CLI; paste relevant traceback only
+      render: shell
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other
