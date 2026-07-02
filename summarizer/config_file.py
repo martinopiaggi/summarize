@@ -170,26 +170,27 @@ def create_example_config() -> str:
     Returns:
         YAML string with example configuration
     """
+    example_path = Path(__file__).resolve().parent.parent / "summarizer.example.yaml"
+    if example_path.exists():
+        return example_path.read_text(encoding="utf-8")
     return """# Summarizer Configuration
-# Save as ./summarizer.yaml
+# Copy to ./summarizer.yaml or run: python -m summarizer --init-config
 
-# Default provider to use when --provider is not specified
 default_provider: groq
 
-# Provider configurations
 providers:
   groq:
     base_url: https://api.groq.com/openai/v1
-    model: llama-3.3-70b-versatile
-  
+    model: openai/gpt-oss-120b
+
   gemini:
     base_url: https://generativelanguage.googleapis.com/v1beta/openai
-    model: gemini-2.5-flash-lite
-  
+    model: gemini-3.1-flash-lite
+
   deepseek:
     base_url: https://api.deepseek.com/v1
-    model: deepseek-chat
-  
+    model: deepseek-v4-flash
+
   openai:
     base_url: https://api.openai.com/v1
     model: gpt-5.5
@@ -198,69 +199,16 @@ providers:
     base_url: https://integrate.api.nvidia.com/v1
     model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
 
-  openrouter:
-    base_url: https://openrouter.ai/api/v1
-    model: google/gemini-2.5-flash
-
-  # Same provider, different model for text vs video
-  openrouter-text:
-    base_url: https://openrouter.ai/api/v1
-    model: openai/gpt-4o-mini
-
-  openrouter-video:
-    base_url: https://openrouter.ai/api/v1
-    model: minimax/minimax-m3
-
-  # URL mode example: sends YouTube URLs directly without downloading
-  openrouter-youtube:
-    base_url: https://openrouter.ai/api/v1
-    model: google/gemini-2.5-flash
-    visual-input-mode: url
-
-  perplexity:
-    base_url: https://openrouter.ai/api/v1
-    model: perplexity/sonar
-    chunk-size: 128000
-
-  # LiteLLM: access 100+ providers via a single interface
-  # pip install 'summarizer[litellm]'
-  # See https://docs.litellm.ai/docs/providers for the full list
-  litellm-anthropic:
-    base_url: litellm
-    model: anthropic/claude-sonnet-4-6
-  litellm-groq:
-    base_url: litellm
-    model: groq/llama-3.3-70b-versatile
-
-  # -----------------------------------------------------------------
-  # URL Mode (Optional)
-  # -----------------------------------------------------------------
-  # If your model supports receiving YouTube URLs directly, you can add
-  # visual-input-mode: url to skip downloading/splitting/encoding:
-  #
-  #   openrouter-minimax-youtube:
-  #     base_url: https://openrouter.ai/api/v1
-  #     model: minimax/minimax-m3
-  #     visual-input-mode: url
-  # -----------------------------------------------------------------
-
-# Default settings (can be overridden by CLI)
 defaults:
   prompt-type: Questions and answers
-  chunk-size: 10000
-  parallel-calls: 30
+  chunk-size: 120000
+  parallel-calls: 10
   max-tokens: 4096
   output-language: auto
-  speed: 1.0
+  speed: 2.0
   use-proxy: false
   output-dir: summaries
   keep-history: false
   cobalt-base-url: http://localhost:9000
   cache-transcript: true
-  visual: false
-  visual-compression: off
-  visual-chunk-seconds: auto
-  visual-chunk-overlap-seconds: 0
-  # visual-max-size-mb: 100
-  # visual-max-duration-seconds: 120
 """

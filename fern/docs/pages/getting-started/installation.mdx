@@ -1,7 +1,24 @@
 # Installation
 
 <Tabs>
-  <Tab title="CLI">
+  <Tab title="PyPI">
+    The fastest way to get started:
+
+    ```bash
+    pip install martino-summarize
+    summarizer --init-config
+    echo "GROQ_API_KEY=your_key_here" > .env
+    summarizer --source "https://www.youtube.com/watch?v=arj7oStGLkU"
+    ```
+
+    Install extras as needed:
+
+    ```bash
+    pipx install "martino-summarize[server]"   # HTTP API
+    pipx install "martino-summarize[all]"      # server + whisper + litellm
+    ```
+  </Tab>
+  <Tab title="From source">
     ```bash
     git clone https://github.com/martinopiaggi/summarize.git
     cd summarize
@@ -14,7 +31,8 @@
     summarizer --source "URL"
     ```
 
-    Run:
+    Or run as a module:
+
     ```bash
     python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
     ```
@@ -30,7 +48,8 @@
     ```bash
     git clone https://github.com/martinopiaggi/summarize.git
     cd summarize
-    # Create .env with your API keys and summarizer.yaml with your providers, then:
+    cp summarizer.example.yaml summarizer.yaml   # first time only
+    echo "GROQ_API_KEY=your_key_here" > .env
     docker compose up -d
     ```
 
@@ -38,12 +57,21 @@
 
     The CLI and GUI both read the same local `summarizer.yaml`.
 
+    Or pull the pre-built image:
+
+    ```bash
+    docker pull ghcr.io/martinopiaggi/summarize:latest
+    ```
+
     CLI via Docker:
+
     ```bash
     docker compose run --rm summarizer python -m summarizer --source "URL"
     ```
 
-    See the [Cobalt](cobalt) page for standalone and proxy setups.
+    `docker-compose.yml` mounts `.env`, `summarizer.yaml`, and `./summaries/` for persistence. Cobalt runs as a sidecar for TikTok, Instagram, and other yt-dlp fallbacks.
+
+    See the [Cobalt](integrations/cobalt) page for standalone and proxy setups.
   </Tab>
 </Tabs>
 
@@ -54,7 +82,7 @@
     Route requests through LiteLLM to access 100+ providers with unified calling:
 
     ```bash
-    pip install -e .[litellm]
+    pip install martino-summarize[litellm]
     ```
 
     Then set `base_url: litellm` in `summarizer.yaml` and use provider-prefixed models:
@@ -68,17 +96,17 @@
   </Accordion>
   <Accordion title="Local Whisper">
     ```bash
-    pip install -e .[whisper]
+    pip install martino-summarize[whisper]
     ```
 
-    See [Transcription](transcription) for GPU setup.
+    See [Transcription](features/transcription) for GPU setup.
   </Accordion>
   <Accordion title="HTTP API server">
     Run the summarizer as a local REST API:
 
     ```bash
-    pip install -e .[server]
-    python -m summarizer serve
+    pip install martino-summarize[server]
+    summarizer serve
     ```
 
     Open `http://localhost:8000/docs` for interactive documentation.
@@ -86,9 +114,9 @@
   </Accordion>
   <Accordion title="All extras">
     ```bash
-    pip install -e .[all]
+    pip install martino-summarize[all]
     ```
   </Accordion>
 </AccordionGroup>
 
-> **Tip:** Install with `pip install -e .[litellm]` to route through LiteLLM and access 100+ providers with unified calling.
+> **Tip:** Install with `pip install martino-summarize[litellm]` to route through LiteLLM and access 100+ providers with unified calling.

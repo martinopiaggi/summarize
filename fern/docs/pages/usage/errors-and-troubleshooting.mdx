@@ -1,5 +1,12 @@
 # Errors and Troubleshooting
 
+## Common Fixes
+
+- **yt-dlp / platform errors:** ensure Cobalt is running (`docker compose` includes it) or set `COBALT_BASE_URL` in `.env` or `summarizer.yaml`
+- **Missing API key:** add the provider key to `.env` (see `summarizer.example.yaml` for provider names)
+- **No config file:** run `summarizer --init-config` or pass `--base-url` and `--model` with `--no-config`
+- **Removed `audio-speed` key:** use `speed` in YAML, `--speed` on the CLI, or `speed` in API requests instead
+
 ## Error Types
 
 | Exception | When It Happens |
@@ -13,3 +20,17 @@
 | `VisualModeError` | Visual mode cannot be used for this source |
 | `VideoValidationError` | Video exceeds provider duration/size/format limits |
 | `AudioProcessingError` | ffmpeg or audio conversion failed |
+
+## Configuration Errors
+
+Requests that include the removed `audio_speed` field return HTTP `422` on the API. YAML configs with `audio-speed` or `audio_speed` raise a `ConfigurationError` at merge time. Use `speed` everywhere instead.
+
+## Platform-Specific Issues
+
+| Platform | Fix |
+|----------|-----|
+| Instagram / TikTok / Twitter | Set per-platform cookie files in `.env`, or run Cobalt as a fallback |
+| YouTube (no captions) | Tool falls back to audio download + Whisper automatically |
+| Rate limits | Reduce `parallel-calls` in `summarizer.yaml` or retry later |
+
+See [Cobalt](integrations/cobalt) for downloader fallback setup and [Proxy](integrations/proxy) for Webshare proxy configuration.

@@ -6,15 +6,15 @@ default_provider: groq
 providers:
   groq:
     base_url: https://api.groq.com/openai/v1
-    model: llama-3.3-70b-versatile
+    model: openai/gpt-oss-120b
 
   gemini:
     base_url: https://generativelanguage.googleapis.com/v1beta/openai
-    model: google/gemini-3.5-flash
+    model: gemini-3.1-flash-lite
 
   deepseek:
     base_url: https://api.deepseek.com/v1
-    model: deepseek-chat
+    model: deepseek-v4-flash
 
   openai:
     base_url: https://api.openai.com/v1
@@ -56,25 +56,25 @@ providers:
     base_url: litellm
     model: groq/llama-3.3-70b-versatile
 
-  # ─────────────────────────────────────────────────────────────────────
-  # URL Mode (Optional)
-  # ─────────────────────────────────────────────────────────────────────
-  # If your model supports receiving YouTube URLs directly, you can add
-  # visual-input-mode: url to skip downloading/splitting/encoding:
-  #
-  #   openrouter-minimax-youtube:
-  #     base_url: https://openrouter.ai/api/v1
-  #     model: minimax/minimax-m3
-  #     visual-input-mode: url
-  # ─────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────
+# URL Mode (Optional)
+# ─────────────────────────────────────────────────────────────────────
+# If your model supports receiving YouTube URLs directly, you can add
+# visual-input-mode: url to skip downloading/splitting/encoding:
+#
+#   openrouter-minimax-youtube:
+#     base_url: https://openrouter.ai/api/v1
+#     model: minimax/minimax-m3
+#     visual-input-mode: url
+# ─────────────────────────────────────────────────────────────────────
 
 defaults:
   prompt-type: Questions and answers
-  chunk-size: 10000
-  parallel-calls: 30
+  chunk-size: 120000
+  parallel-calls: 10
   max-tokens: 4096
   output-language: auto
-  speed: 1.0
+  speed: 2.0
   use-proxy: false
   output-dir: summaries
   keep-history: false

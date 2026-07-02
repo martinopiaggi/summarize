@@ -9,25 +9,24 @@
 Define your LLM providers and defaults. See [`summarizer.example.yaml`](https://github.com/martinopiaggi/summarize/blob/main/summarizer.example.yaml) for a complete starter file.
 
 ```yaml
-default_provider: gemini
+default_provider: groq
 
 providers:
-  gemini:
-    base_url: https://generativelanguage.googleapis.com/v1beta/openai
-    model: gemini-flash-lite-latest
-    chunk-size: 128000
-
   groq:
     base_url: https://api.groq.com/openai/v1
-    model: openai/gpt-oss-20b
+    model: openai/gpt-oss-120b
 
-  ollama:
-    base_url: http://localhost:11434/v1
-    model: qwen3:8b
+  gemini:
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai
+    model: gemini-3.1-flash-lite
+
+  deepseek:
+    base_url: https://api.deepseek.com/v1
+    model: deepseek-v4-flash
 
   openrouter:
     base_url: https://openrouter.ai/api/v1
-    model: google/gemini-2.5-flash
+    model: google/gemini-3.1-flash-lite
 
   openrouter-video:
     base_url: https://openrouter.ai/api/v1
@@ -35,7 +34,7 @@ providers:
 
   openrouter-youtube:
     base_url: https://openrouter.ai/api/v1
-    model: google/gemini-2.5-flash
+    model: google/gemini-3.1-flash-lite
     visual-input-mode: url
 
   openai:
@@ -57,14 +56,18 @@ providers:
 
 defaults:
   prompt-type: Questions and answers
-  chunk-size: 10000
-  parallel-calls: 30
+  chunk-size: 120000
+  parallel-calls: 10
   max-tokens: 4096
   output-language: auto
-  speed: 1.0
+  speed: 2.0
   use-proxy: false
   output-dir: summaries
   cache-transcript: true
+  visual: false
+  visual-compression: off
+  visual-chunk-seconds: auto
+  visual-chunk-overlap-seconds: 0
 ```
 
 <AccordionGroup>
@@ -73,8 +76,13 @@ defaults:
     - `speed`: Playback speed for audio preprocessing before Whisper and for visual-mode video in base64 mode. Faster transcription is cheaper on Groq (priced by audio duration) but may reduce accuracy. The API accepts values up to `10.0`; the CLI accepts any positive value.
     - `cache-transcript: false` disables the in-memory transcript cache.
     - `keep-history: true` persists summaries to disk for the Streamlit sidebar.
+    - `visual-input-mode: url` on a provider sends YouTube URLs directly to the model without downloading (see [Visual Mode](features/visual-mode)).
   </Accordion>
 </AccordionGroup>
+
+<Callout type="warning">
+  The legacy `audio-speed` / `audio_speed` keys are no longer supported. Use `speed` instead.
+</Callout>
 
 ## API Keys (`.env`)
 

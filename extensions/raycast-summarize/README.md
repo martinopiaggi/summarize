@@ -9,7 +9,7 @@ Two ways to provide the URL:
 ## Requirements
 
 - [Raycast](https://www.raycast.com/)
-- A running Summarize HTTP API server (see main project README)
+- A running Summarize HTTP API server (see [docs](https://summarize.martino.im/api-reference/http-api))
 
 ## Setup
 

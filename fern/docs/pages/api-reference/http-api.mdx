@@ -91,7 +91,7 @@ curl http://localhost:8000/providers
   {
     "name": "groq",
     "base_url": "https://api.groq.com/openai/v1",
-    "model": "llama-3.3-70b-versatile",
+    "model": "openai/gpt-oss-120b",
     "chunk_size": null
   }
 ]
@@ -127,12 +127,12 @@ curl http://localhost:8000/config
   "providers": {
     "groq": {
       "base_url": "https://api.groq.com/openai/v1",
-      "model": "llama-3.3-70b-versatile",
+      "model": "openai/gpt-oss-120b",
       "api_key": "***REDACTED***"
     }
   },
   "defaults": {
-    "chunk_size": 10000,
+    "chunk_size": 120000,
     "prompt_type": "Questions and answers"
   },
   "config_file_path": "/path/to/summarizer.yaml"
@@ -307,7 +307,7 @@ All summarize endpoints return a `SummarizeResponse`:
   "source": "https://youtube.com/watch?v=VIDEO_ID",
   "summary": "# Summary for: ...",
   "format": "markdown",
-  "model": "llama-3.3-70b-versatile",
+  "model": "openai/gpt-oss-120b",
   "prompt_type": "Questions and answers",
   "processing_time_seconds": 12.34,
   "error": null,

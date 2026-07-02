@@ -107,3 +107,9 @@ navigation:
         path: ./docs/pages/integrations/proxy.mdx
       - page: Agent Skill
         path: ./docs/pages/integrations/agent-skill.mdx
+
+  - section: Community
+    icon: fa-solid fa-code-branch
+    contents:
+      - page: Contributing
+        path: ./docs/pages/contributing.mdx

@@ -5,16 +5,15 @@
 </p>
 
 <p align="center">
-  <a href="https://summarize.martino.im"><strong>Try the docs</strong></a> ·
-  <a href="#quick-start">Run locally in 60s</a> ·
+  <a href="https://summarize.martino.im"><strong>Documentation</strong></a> ·
   <a href="https://github.com/martinopiaggi/summarize/stargazers"><img src="https://img.shields.io/github/stars/martinopiaggi/summarize?style=social" alt="GitHub stars"></a>
 </p>
 
 **Local-first multi-source video summarization** (YouTube, social, drives, files) with any OpenAI-compatible LLM, optional vision path, and NotebookLM-style workflows.
 
-> **Not [steipete/summarize](https://github.com/steipete/summarize)** — This is a **self-hosted video pipeline** with transcript cache, Cobalt fallback, Streamlit workspace, and an agent skill. Steipete's project is a generic URL clipper. 
+> **Not [steipete/summarize](https://github.com/steipete/summarize)** — This is a **self-hosted video pipeline** with transcript cache, Cobalt fallback, Streamlit workspace, and an agent skill. Steipete's project is a generic URL clipper.
 
-Bring your own API keys. Full docs live at [summarize.martino.im](https://summarize.martino.im).
+Bring your own API keys. Full docs live at **[summarize.martino.im](https://summarize.martino.im)**.
 
 ## Quick Start 
 

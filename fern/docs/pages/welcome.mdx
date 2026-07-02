@@ -1,10 +1,16 @@
 # Summarize
 
-Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter/X, Reddit, Facebook, Google Drive, Dropbox, and local files. Works with any OpenAI-compatible LLM provider, including locally hosted endpoints.
+**Local-first multi-source video summarization** (YouTube, social, drives, files) with any OpenAI-compatible LLM, optional vision path, and NotebookLM-style workflows.
 
 <p align="center">
   <img alt="sample" src="/assets/images/summarize_sample.gif" />
 </p>
+
+<Callout type="info">
+  **Not [steipete/summarize](https://github.com/steipete/summarize)** — This is a **self-hosted video pipeline** with transcript cache, Cobalt fallback, Streamlit workspace, and an agent skill. Steipete's project is a generic URL clipper.
+</Callout>
+
+Bring your own API keys. All configuration lives in `summarizer.yaml` and `.env`.
 
 <CardGroup cols={2}>
   <Card title="11+ Platforms" icon="fa-brands fa-youtube">
@@ -32,27 +38,75 @@ Transcribe and summarize videos from YouTube, Instagram, TikTok, Twitter/X, Redd
 - **Python** 3.7+
 - **ffmpeg** (must be on `PATH`)
 - At least one **LLM API key** in `.env`
-- **Cobalt** fallback downloader for URLs that yt-dlp cannot handle (included in Docker Compose). See [Cobalt](cobalt).
+- **Cobalt** fallback downloader for URLs that yt-dlp cannot handle (included in Docker Compose). See [Cobalt](integrations/cobalt).
 
 ## Quick Start
+
+You need any OpenAI-compatible API key in `.env` (for example [Groq](https://groq.com/) `GROQ_API_KEY` is free-tier friendly; `OPENAI_API_KEY` works with `--provider openai`).
+
+```bash
+pip install martino-summarize
+summarizer --init-config
+echo "GROQ_API_KEY=your_key_here" > .env
+summarizer --source "https://www.youtube.com/watch?v=arj7oStGLkU"
+```
+
+The summary is saved to `summaries/watch_YYYYMMDD_HHMMSS.md`.
+
+Install extras as needed:
+
+```bash
+pipx install "martino-summarize[server]"   # HTTP API
+pipx install "martino-summarize[all]"      # server + whisper + litellm
+```
+
+See [Installation](getting-started/installation) for development setup, Streamlit, and optional extras.
+
+### Quick Start (Docker)
 
 ```bash
 git clone https://github.com/martinopiaggi/summarize.git
 cd summarize
-pip install -e .
-python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
+cp summarizer.example.yaml summarizer.yaml   # first time only
+echo "GROQ_API_KEY=your_key_here" > .env     # or OPENAI_API_KEY, etc.
+docker compose up -d
 ```
 
-The summary is saved to `summaries/watch_YYYYMMDD_HHMMSS.md`.
+Open **http://localhost:8501**, paste a URL, and summarize.
+
+Or pull the pre-built image:
+
+```bash
+docker pull ghcr.io/martinopiaggi/summarize:latest
+```
+
+`docker-compose.yml` mounts `.env`, `summarizer.yaml`, and `./summaries/` for persistence. Cobalt runs as a sidecar for TikTok, Instagram, and other yt-dlp fallbacks.
 
 ## Pick Your Interface
 
 | Interface | Command |
 |-----------|---------|
-| **CLI** | `python -m summarizer --source <source>` |
-| **HTTP API** | `python -m summarizer serve` → `http://localhost:8000/docs` |
-| **Streamlit GUI** | `python -m streamlit run app.py` |
-| **Docker** | `docker compose up -d` → `http://localhost:8501` |
+| **Streamlit GUI** | `docker compose up -d` → `http://localhost:8501` |
+| **CLI** | `summarizer --source <source>` |
+| **HTTP API** | `summarizer serve` → `http://localhost:8000/docs` |
+| **Docker** | `docker compose up -d` |
 | **Agent Skill** | [`.agent/skills/summarize/SKILL.md`](https://github.com/martinopiaggi/summarize/blob/main/.agent/skills/summarize/SKILL.md) |
+| **Raycast** | [`extensions/raycast-summarize/`](https://github.com/martinopiaggi/summarize/tree/main/extensions/raycast-summarize) |
 
 See the [HTTP API guide](api-reference/http-api) for endpoint details, request examples, and CORS configuration.
+
+## Two Processing Paths
+
+- **Transcript path** (default): downloads audio/video, transcribes with Whisper or captions, caches the transcript, then summarizes with an LLM.
+- **Visual path** (`--visual`): sends the video directly to a vision-capable model, skipping transcription. Uses the same prompts, provider config, and `.env` keys as the transcript path. Supports `base64` chunks (default) and `url` passthrough for YouTube.
+
+See [How It Works](how-it-works) for the full pipeline diagram and [Visual Mode](features/visual-mode) for provider setup.
+
+## Common Issues
+
+- **yt-dlp / platform errors:** ensure Cobalt is running (`docker compose` includes it) or set `COBALT_BASE_URL`
+- **Missing API key:** add the provider key to `.env` (see `summarizer.example.yaml` for provider names)
+- **No config file:** run `summarizer --init-config` or pass `--base-url` and `--model` with `--no-config`
+- **Removed `audio-speed` key:** use `speed` in YAML instead (see [Configuration](getting-started/configuration))
+
+Full guide: [Errors and Troubleshooting](usage/errors-and-troubleshooting)

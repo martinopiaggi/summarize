@@ -89,6 +89,13 @@ If a downloader does not support a URL or fails, the next one is tried automatic
 | `.env` | API keys matched by URL keyword or conventional env var names |
 | `summarizer/prompts.json` | Summary style templates |
 
+## Processing Paths
+
+- **Transcript path** (default): downloads audio/video, transcribes with Whisper or captions, caches the transcript, then summarizes with an LLM.
+- **Visual path** (`--visual`): sends the video directly to a vision-capable model, skipping transcription. Uses the same prompts, provider config, and `.env` keys as the transcript path. Supports `base64` chunks (default) and `url` passthrough for YouTube.
+
+See [Visual Mode](features/visual-mode) for provider setup and [Transcription](features/transcription) for Whisper options.
+
 ## Notes
 
 > **Tip:** If YouTube captions are unavailable, the tool automatically falls back to audio download + Whisper transcription.
