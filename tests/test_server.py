@@ -135,7 +135,7 @@ class TestSummarizeEndpoint:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -177,7 +177,7 @@ class TestSummarizeEndpoint:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -215,7 +215,7 @@ class TestSummarizeEndpoint:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -252,7 +252,7 @@ class TestSummarizeEndpoint:
             "output_language": "Spanish",
             "transcription_method": "Local Whisper",
             "whisper_model": "small",
-            "audio_speed": 2.0,
+            "speed": 2.0,
             "cobalt_base_url": "http://localhost:9000",
             "use_proxy": True,
             "api_key": "sk-test-key",
@@ -277,7 +277,7 @@ class TestSummarizeEndpoint:
             "force_download": True,
             "transcription": "Local Whisper",
             "whisper_model": "small",
-            "audio_speed": 2.0,
+            "speed": 2.0,
             "output_format": "markdown",
             "visual": False,
             "use_proxy": True,
@@ -304,7 +304,7 @@ class TestSummarizeEndpoint:
         assert config["use_youtube_captions"] is False  # force_download=True
         assert config["transcription_method"] == "Local Whisper"
         assert config["whisper_model"] == "small"
-        assert config["audio_speed"] == 2.0
+        assert config["speed"] == 2.0
         assert config["use_proxy"] is True
         assert config["api_key"] == "sk-test-key"
         assert config["base_url"] == "https://custom.api.com/v1"
@@ -329,7 +329,7 @@ class TestSummarizeEndpoint:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -363,7 +363,7 @@ class TestSummarizeEndpoint:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -393,10 +393,18 @@ class TestValidation:
         response = client.post("/summarize", json=payload)
         assert response.status_code == 422
 
-    def test_invalid_audio_speed_rejected(self, client):
+    def test_invalid_speed_rejected(self, client):
         payload = {
             "source": "https://youtube.com/watch?v=dQw4w9WgXcQ",
-            "audio_speed": 0,
+            "speed": 0,
+        }
+        response = client.post("/summarize", json=payload)
+        assert response.status_code == 422
+
+    def test_legacy_audio_speed_field_rejected(self, client):
+        payload = {
+            "source": "https://youtube.com/watch?v=dQw4w9WgXcQ",
+            "audio_speed": 2.0,
         }
         response = client.post("/summarize", json=payload)
         assert response.status_code == 422
@@ -445,7 +453,7 @@ class TestSummarizeUploadEndpoint:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -485,7 +493,7 @@ class TestSummarizeUploadEndpoint:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -524,7 +532,7 @@ class TestSummarizeUploadEndpoint:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -561,7 +569,7 @@ class TestSummarizeUploadEndpoint:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -602,7 +610,7 @@ class TestBatchEndpoint:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -636,6 +644,42 @@ class TestBatchEndpoint:
     @patch("summarizer.server.main")
     @patch("summarizer.server.merge_configs")
     @patch("summarizer.server.load_config_file")
+    def test_batch_forwards_speed_field(self, mock_load, mock_merge, mock_main, client):
+        mock_load.return_value = {}
+        mock_merge.return_value = {
+            "base_url": "https://api.groq.com/openai/v1",
+            "model": "llama-3.3-70b-versatile",
+            "chunk_size": 10000,
+            "parallel_api_calls": 30,
+            "max_output_tokens": 4096,
+            "prompt_type": "Questions and answers",
+            "language": "auto",
+            "output_language": "auto",
+            "transcription_method": "Cloud Whisper",
+            "whisper_model": "tiny",
+            "speed": 1.0,
+            "cobalt_base_url": "http://localhost:9000",
+            "cache_transcript": True,
+            "visual": False,
+            "visual_compression": "off",
+            "visual_chunk_seconds": "auto",
+            "visual_chunk_overlap_seconds": 0,
+        }
+        mock_main.return_value = "Batch summary."
+
+        payload = {
+            "sources": ["https://youtube.com/watch?v=VIDEO1"],
+            "speed": 2.5,
+        }
+        response = client.post("/summarize/batch", json=payload)
+        assert response.status_code == 200
+        config = mock_main.call_args[0][0]
+        assert config["speed"] == 2.5
+        assert config["speed"] == 2.5
+
+    @patch("summarizer.server.main")
+    @patch("summarizer.server.merge_configs")
+    @patch("summarizer.server.load_config_file")
     def test_batch_partial_failure(self, mock_load, mock_merge, mock_main, client):
         from summarizer.exceptions import TranscriptError
         mock_load.return_value = {}
@@ -650,7 +694,7 @@ class TestBatchEndpoint:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -723,7 +767,7 @@ class TestBuildRuntimeConfig:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -752,7 +796,7 @@ class TestBuildRuntimeConfig:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -778,7 +822,7 @@ class TestBuildRuntimeConfig:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -801,7 +845,7 @@ class TestBuildRuntimeConfig:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,
@@ -824,7 +868,7 @@ class TestBuildRuntimeConfig:
             "output_language": "auto",
             "transcription_method": "Cloud Whisper",
             "whisper_model": "tiny",
-            "audio_speed": 1.0,
+            "speed": 1.0,
             "cobalt_base_url": "http://localhost:9000",
             "cache_transcript": True,
             "visual": False,

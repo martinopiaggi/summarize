@@ -271,19 +271,18 @@ def _fetch_transcript(config: dict) -> str:
             raise TranscriptError("Text file is empty")
         return text
 
-    raw_audio_speed = config.get("audio_speed", 1.0)
     try:
-        audio_speed = float(raw_audio_speed)
+        speed = float(config.get("speed", 1.0))
     except (TypeError, ValueError):
-        raise TranscriptError("audio_speed must be a positive number")
-    if audio_speed <= 0:
-        raise TranscriptError("audio_speed must be greater than 0")
+        raise TranscriptError("speed must be a positive number")
+    if speed <= 0:
+        raise TranscriptError("speed must be greater than 0")
 
     if is_dropbox_url(source_path):
         handler = get_handler(
             "Dropbox Video Link",
             source_path,
-            audio_speed=audio_speed,
+            audio_speed=speed,
             use_proxy=use_proxy,
         )
         audio_path, should_delete = handler.get_processed_audio()
@@ -303,7 +302,7 @@ def _fetch_transcript(config: dict) -> str:
         handler = get_handler(
             "Google Drive Video Link",
             source_path,
-            audio_speed=audio_speed,
+            audio_speed=speed,
             use_proxy=use_proxy,
         )
         audio_path, should_delete = handler.get_processed_audio()
@@ -321,29 +320,40 @@ def _fetch_transcript(config: dict) -> str:
 
     if source_type == "YouTube Video":
         if is_youtube_url(source_path) and config.get("use_youtube_captions", True):
-            video_id = extract_youtube_id(source_path)
-            print_status("Attempting YouTube captions", "INFO", verbose)
-            if use_proxy:
-                print_status("Proxy enabled for caption fetch", "INFO", verbose)
-            try:
-                return get_youtube_transcript(
-                    video_id,
-                    language,
-                    verbose,
-                    use_proxy=use_proxy,
-                )
-            except TranscriptError as e:
-                print_status(f"Captions failed: {e}", "WARNING", verbose)
+            # Captions are text and cannot be sped up. When a non-default speed is
+            # requested, skip the caption path and download audio so the speed
+            # setting is actually honored.
+            if abs(speed - 1.0) >= 1e-9:
                 print_status(
-                    "Falling back to audio download + transcription", "PROCESSING", verbose
+                    "Skipping captions because playback speed is set; "
+                    "downloading audio instead",
+                    "INFO",
+                    verbose,
                 )
+            else:
+                video_id = extract_youtube_id(source_path)
+                print_status("Attempting YouTube captions", "INFO", verbose)
+                if use_proxy:
+                    print_status("Proxy enabled for caption fetch", "INFO", verbose)
+                try:
+                    return get_youtube_transcript(
+                        video_id,
+                        language,
+                        verbose,
+                        use_proxy=use_proxy,
+                    )
+                except TranscriptError as e:
+                    print_status(f"Captions failed: {e}", "WARNING", verbose)
+                    print_status(
+                        "Falling back to audio download + transcription", "PROCESSING", verbose
+                    )
 
         if use_proxy:
             print_status("Proxy enabled for audio download", "INFO", verbose)
         audio_path = DownloadManager(config.get("cobalt_base_url")).download_audio(
             source_path,
             verbose=verbose,
-            audio_speed=audio_speed,
+            audio_speed=speed,
             use_proxy=use_proxy,
         )
         try:
@@ -362,7 +372,7 @@ def _fetch_transcript(config: dict) -> str:
         handler = get_handler(
             source_type,
             source_path,
-            audio_speed=audio_speed,
+            audio_speed=speed,
             use_proxy=use_proxy,
         )
         audio_path, should_delete = handler.get_processed_audio()
@@ -384,7 +394,7 @@ def _fetch_transcript(config: dict) -> str:
         audio_path = DownloadManager(config.get("cobalt_base_url")).download_audio(
             source_path,
             verbose=verbose,
-            audio_speed=audio_speed,
+            audio_speed=speed,
             use_proxy=use_proxy,
         )
         try:

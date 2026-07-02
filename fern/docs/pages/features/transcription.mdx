@@ -39,24 +39,32 @@ If you only need CPU transcription with Whisper, `pip install -e .[whisper]` is 
 | `medium` | Slow | High |
 | `large` | Slowest | Highest |
 
-## Audio Speed
+## Playback Speed
 
-Speed up audio before Whisper to reduce transcription time and cost. Groq Whisper is priced by audio duration, so a 2× speed-up roughly halves the API cost. This may reduce accuracy.
+Use the `speed` setting to change playback rate before Whisper transcription. Groq Whisper is priced by audio duration, so a 2× speed-up roughly halves the API cost. Higher speeds may reduce accuracy.
 
 ```bash
 # Moderate speed-up
-python -m summarizer --source "URL" --force-download --audio-speed 2.0
+python -m summarizer --source "URL" --speed 2.0
 
-# Aggressive speed-up
-python -m summarizer --source "URL" --force-download --audio-speed 5.0
+# Aggressive speed-up (CLI accepts any positive value)
+python -m summarizer --source "URL" --speed 5.0
 ```
 
 Set the default in `summarizer.yaml`:
 
 ```yaml
 defaults:
-  audio-speed: 2.0
+  speed: 2.0
 ```
+
+### YouTube captions and speed
+
+YouTube captions are plain text and cannot be sped up. When `speed` is not `1.0`, the app **skips the caption path** and downloads audio instead so the speed setting is honored. You do not need `--force-download` for this — a non-default `speed` alone triggers the audio download path.
+
+<Callout type="warning">
+  The legacy `audio-speed` / `audio_speed` / `--audio-speed` names are no longer supported. Use `speed` in YAML, `--speed` on the CLI, or `speed` in API requests.
+</Callout>
 
 ## Docker Note
 

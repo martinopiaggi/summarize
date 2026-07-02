@@ -30,6 +30,32 @@ For long-form content like lectures and podcasts, audio-only summaries are usual
 
 Direct Google Gemini's OpenAI-compatible endpoint (`generativelanguage.googleapis.com/v1beta/openai`) does not accept `video_url` content parts. For Gemini YouTube URL passthrough, use an OpenAI-compatible provider that supports `video_url`, such as OpenRouter.
 
+## Playback Speed
+
+The `speed` setting (CLI `--speed`, YAML `speed`, API `speed`) can speed up or slow down video before it is sent to the model.
+
+| Input mode | Behavior when `speed` ≠ `1.0` |
+| --- | --- |
+| `base64` (default) | Downloads or reads the video, applies speed via ffmpeg in `normalize_video`, then splits and encodes chunks. Video-only files (no audio track) are handled correctly. |
+| `url` | Cannot preprocess a remote YouTube URL. The app **falls back to base64 mode** automatically: it downloads the video, applies `speed`, then continues the normal base64 pipeline. |
+
+At the default speed (`1.0`), URL mode still sends the original YouTube URL directly without downloading.
+
+```bash
+# 2× visual playback in base64 mode
+python -m summarizer --source "URL" --provider nvidia --visual --speed 2.0
+
+# URL-mode provider with non-default speed (auto-fallback to download + preprocess)
+python -m summarizer --source "URL" --provider openrouter-youtube --visual --speed 1.5
+```
+
+Set the default in `summarizer.yaml`:
+
+```yaml
+defaults:
+  speed: 1.5
+```
+
 ## Example Provider Configs
 
 ```yaml

@@ -177,9 +177,10 @@ Examples:
         help="Whisper model size for local transcription (default: tiny for speed)",
     )
     parser.add_argument(
-        "--audio-speed",
+        "--speed",
+        dest="speed",
         type=float,
-        help="Playback speed for preprocessing before transcription (any positive value)",
+        help="Playback speed for preprocessing before transcription or visual-mode video (any positive value)",
     )
     parser.add_argument(
         "--use-proxy",
@@ -309,7 +310,7 @@ def cli():
         "output_language": args.output_language,
         "transcription_method": args.transcription,
         "whisper_model": args.whisper_model,
-        "audio_speed": args.audio_speed,
+        "speed": args.speed,
         "output_dir": args.output_dir,
         "cobalt_base_url": args.cobalt_url,
         "use_proxy": args.use_proxy,
@@ -338,12 +339,12 @@ def cli():
         sys.exit(1)
 
     try:
-        audio_speed = float(merged.get("audio_speed", 1.0))
+        speed = float(merged.get("speed", 1.0))
     except (TypeError, ValueError):
-        print_status("--audio-speed must be a positive number", "ERROR", True)
+        print_status("--speed must be a positive number", "ERROR", True)
         sys.exit(1)
-    if audio_speed <= 0:
-        print_status("--audio-speed must be greater than 0", "ERROR", True)
+    if speed <= 0:
+        print_status("--speed must be greater than 0", "ERROR", True)
         sys.exit(1)
 
     if verbose:
@@ -357,7 +358,7 @@ def cli():
             verbose,
         )
         print_status(f"Output format: {args.output_format}", "INFO", verbose)
-        print_status(f"Audio speed: {audio_speed}x", "INFO", verbose)
+        print_status(f"Speed: {speed}x", "INFO", verbose)
 
     # Smart caption logic
     transcription_was_provided = any("--transcription" in arg for arg in sys.argv)

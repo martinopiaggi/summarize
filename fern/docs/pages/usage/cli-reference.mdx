@@ -55,10 +55,13 @@
   <Tab title="Audio and Language">
     ```bash
     # Speed up audio before Whisper (faster, may reduce accuracy)
-    python -m summarizer --source "URL" --force-download --audio-speed 2.0
+    python -m summarizer --source "URL" --speed 2.0
 
-    # Aggressive speed-up (supported)
-    python -m summarizer --source "URL" --force-download --audio-speed 5.0
+    # Aggressive speed-up (any positive value)
+    python -m summarizer --source "URL" --speed 5.0
+
+    # Speed up video in visual mode (base64 path)
+    python -m summarizer --source "URL" --provider nvidia --visual --speed 1.5
 
     # Lock captions/transcription to Italian
     python -m summarizer --source "URL" --language "it"
@@ -84,7 +87,7 @@
 | `--force-download` | Skip captions and download audio instead | `False` |
 | `--transcription` | `Cloud Whisper` (Groq Whisper API) or `Local Whisper` (local Whisper) | `Cloud Whisper` |
 | `--whisper-model` | `tiny`, `base`, `small`, `medium`, `large` | `tiny` |
-| `--audio-speed` | Pre-transcription playback speed. Reduces Groq cost (priced by duration) but may reduce accuracy. | `1.0` |
+| `--speed` | Playback speed for audio preprocessing or visual-mode video. Reduces Groq cost (priced by duration) but may reduce accuracy. Any positive value. | `1.0` |
 | `--language` | `auto` or explicit code for captions/transcription | `auto` |
 | `--output-language` | Summary language; `auto`, `none`, or name | `auto` |
 | `--output-format` | `markdown`, `json`, or `html` | `markdown` |

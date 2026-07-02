@@ -61,7 +61,7 @@ defaults:
   parallel-calls: 30
   max-tokens: 4096
   output-language: auto
-  audio-speed: 1.0
+  speed: 1.0
   use-proxy: false
   output-dir: summaries
   cache-transcript: true
@@ -70,7 +70,7 @@ defaults:
 <AccordionGroup>
   <Accordion title="Key defaults explained">
     - `output-language`: `auto`, `none`, or a human-readable name like `Italian`, `Spanish`, `German`, `Japanese`.
-    - `audio-speed`: Speed up audio before Whisper transcription. Faster and cheaper (Groq prices by audio duration), but may reduce accuracy.
+    - `speed`: Playback speed for audio preprocessing before Whisper and for visual-mode video in base64 mode. Faster transcription is cheaper on Groq (priced by audio duration) but may reduce accuracy. The API accepts values up to `10.0`; the CLI accepts any positive value.
     - `cache-transcript: false` disables the in-memory transcript cache.
     - `keep-history: true` persists summaries to disk for the Streamlit sidebar.
   </Accordion>

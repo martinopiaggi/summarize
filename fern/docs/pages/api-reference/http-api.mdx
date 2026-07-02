@@ -149,6 +149,7 @@ curl -X POST http://localhost:8000/summarize \
   -d '{
     "source": "https://youtube.com/watch?v=VIDEO_ID",
     "provider": "groq",
+    "speed": 2.0,
     "output_format": "markdown"
   }'
 ```
@@ -169,7 +170,7 @@ curl -X POST http://localhost:8000/summarize \
 | `force_download` | boolean | Skip captions and download audio |
 | `transcription` | string | `Cloud Whisper` or `Local Whisper` |
 | `whisper_model` | string | `tiny`, `base`, `small`, `medium`, `large` |
-| `audio_speed` | number | Pre-transcription speed-up (>0, ≤10) |
+| `speed` | number | Playback speed for audio preprocessing or visual-mode video (>0, ≤10) |
 | `output_format` | string | `markdown`, `json`, or `html` |
 | `visual` | boolean | Send video directly to a vision model |
 | `use_proxy` | boolean | Route through Webshare proxy |
@@ -339,8 +340,10 @@ Request fields are strictly validated:
 - `chunk_size`: 100 – 500,000
 - `parallel_calls`: 1 – 200
 - `max_tokens`: 1 – 1,000,000
-- `audio_speed`: greater than 0, up to 10
+- `speed`: greater than 0, up to 10
 - `batch.sources`: must contain at least 1 item
+
+Requests that include the removed `audio_speed` field return HTTP `422`. Use `speed` instead. YAML configs with `audio-speed` or `audio_speed` also raise a configuration error at merge time.
 
 Invalid values return HTTP `422` with detailed validation error messages.
 

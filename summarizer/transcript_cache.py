@@ -18,7 +18,7 @@ def _build_cache_key(config: dict) -> str:
         config.get("language", "auto"),
         config.get("transcription_method", "Cloud Whisper"),
         config.get("whisper_model", "tiny"),
-        str(config.get("audio_speed", 1.0)),
+        str(config.get("speed", 1.0)),
         str(config.get("use_youtube_captions", True)),
     ]
     raw = "|".join(parts)

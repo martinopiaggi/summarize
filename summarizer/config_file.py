@@ -82,6 +82,13 @@ def get_provider_config(config: Dict, provider_name: str) -> Dict[str, Any]:
     return providers[provider_name]
 
 
+def _reject_legacy_audio_speed_key(snake_key: str) -> None:
+    if snake_key == "audio_speed":
+        raise ConfigurationError(
+            "audio-speed / audio_speed is no longer supported; use speed instead."
+        )
+
+
 def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
     """
     Merge file config with CLI arguments.
@@ -103,7 +110,7 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "language": "auto",
         "output_language": "auto",
         "transcription_method": "Cloud Whisper",
-        "audio_speed": 1.0,
+        "speed": 1.0,
         "output_dir": "summaries",
         "cobalt_base_url": os.getenv("COBALT_BASE_URL", "http://localhost:9000"),
         "cache_transcript": True,
@@ -122,6 +129,7 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         snake_key = key.replace("-", "_")
         if snake_key == "cobalt_url":
             snake_key = "cobalt_base_url"
+        _reject_legacy_audio_speed_key(snake_key)
         merged[snake_key] = value
 
     # Apply provider config if specified
@@ -130,22 +138,26 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
     if provider_name:
         try:
             provider_config = get_provider_config(file_config, provider_name)
-            merged["base_url"] = provider_config.get("base_url")
-            merged["model"] = provider_config.get("model")
-            # Provider-specific defaults
-            for key, value in provider_config.items():
-                if key not in ("base_url", "model"):
-                    merged[key.replace("-", "_")] = value
         except ConfigurationError:
             if explicit_provider:
                 # Explicit --provider or provider= in API must succeed
                 raise
             # Implicit default_provider only: swallow so legacy flows don't hard-fail
             pass
+        else:
+            merged["base_url"] = provider_config.get("base_url")
+            merged["model"] = provider_config.get("model")
+            # Provider-specific defaults
+            for key, value in provider_config.items():
+                if key not in ("base_url", "model"):
+                    snake_key = key.replace("-", "_")
+                    _reject_legacy_audio_speed_key(snake_key)
+                    merged[snake_key] = value
 
     # CLI args override everything (skip None values)
     for key, value in cli_args.items():
         if value is not None:
+            _reject_legacy_audio_speed_key(key)
             merged[key] = value
 
     return merged
@@ -239,7 +251,7 @@ defaults:
   parallel-calls: 30
   max-tokens: 4096
   output-language: auto
-  audio-speed: 1.0
+  speed: 1.0
   use-proxy: false
   output-dir: summaries
   keep-history: false

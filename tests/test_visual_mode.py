@@ -110,6 +110,23 @@ class TestProbeVideo:
         finally:
             os.remove(path)
 
+    def test_probe_reads_audio_stream_from_ffprobe_json(self):
+        ffprobe_output = (
+            '{"format":{"duration":"1.0"},"streams":['
+            '{"codec_name":"h264","codec_type":"video"},'
+            '{"codec_name":"aac","codec_type":"audio"}'
+            "]}"
+        )
+        with patch("summarizer.visual.os.path.exists", return_value=True), \
+             patch("summarizer.visual.os.path.getsize", return_value=1024), \
+             patch("summarizer.visual.subprocess.run") as mock_run:
+            mock_run.return_value.stdout = ffprobe_output
+            result = probe_video("/fake/video.mp4")
+
+        assert result["duration"] == 1.0
+        assert result["video_codec"] == "h264"
+        assert result["audio_codec"] == "aac"
+
 
 class TestValidateVideoLimits:
     def test_duration_over_limit_raises(self):
@@ -255,6 +272,26 @@ class TestSplitVideoSegments:
             assert "-t" in first_cmd
             assert "120.000" in first_cmd
 
+    def test_multiple_segments_do_not_reapply_speed(self):
+        segments = [
+            {
+                "index": 1, "total": 2, "start": 0.0, "end": 60.0,
+                "duration": 60.0, "timestamp": "00:00:00",
+                "end_timestamp": "00:01:00",
+            },
+            {
+                "index": 2, "total": 2, "start": 60.0, "end": 120.0,
+                "duration": 60.0, "timestamp": "00:01:00",
+                "end_timestamp": "00:02:00",
+            },
+        ]
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            split_video_segments("/fake/video.mp4", segments, {"speed": 2.0})
+            first_cmd = mock_run.call_args_list[0][0][0]
+            assert "setpts" not in " ".join(first_cmd)
+            assert "atempo" not in " ".join(first_cmd)
+
 
 class TestNormalizeVideo:
     def test_mp4_returns_same_path(self):
@@ -315,6 +352,38 @@ class TestNormalizeVideo:
             mock_run.assert_called_once()
             args = mock_run.call_args[0][0]
             assert "-c" in args and "copy" in args
+
+    def test_speed_only_does_not_compress(self):
+        with patch("summarizer.visual.probe_video", return_value={
+            "duration": 60.0, "size_mb": 50.0, "container": "mp4",
+            "audio_codec": "aac",
+        }), patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            result = normalize_video("/fake/video.mp4", {
+                "name": "openrouter",
+                "supported_mime_types": {"video/mp4"},
+            }, {"speed": 2.0})
+            assert "normalized" in result
+            mock_run.assert_called_once()
+            args = " ".join(mock_run.call_args[0][0])
+            assert "setpts" in args
+            assert "scale" not in args
+            assert "-crf 30" not in args
+
+    def test_speed_only_video_without_audio_uses_an(self):
+        with patch("summarizer.visual.probe_video", return_value={
+            "duration": 60.0, "size_mb": 50.0, "container": "mp4",
+        }), patch("subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            result = normalize_video("/fake/video.mp4", {
+                "name": "openrouter",
+                "supported_mime_types": {"video/mp4"},
+            }, {"speed": 2.0})
+            assert "normalized" in result
+            mock_run.assert_called_once()
+            args = mock_run.call_args[0][0]
+            assert "-an" in args
+            assert "-c:a" not in args
 
 
 class TestEncodeVideoBase64:
@@ -418,6 +487,15 @@ class TestResolveVisualUrl:
             "visual_input_mode": "url",
         })
         assert url == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+    def test_url_mode_falls_back_when_speed_set(self):
+        url = resolve_visual_url({
+            "type_of_source": "YouTube Video",
+            "source_url_or_path": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "visual_input_mode": "url",
+            "speed": 2.0,
+        })
+        assert url is None
 
     def test_url_mode_returns_youtu_be_url(self):
         url = resolve_visual_url({
@@ -791,7 +869,7 @@ class TestWebappConfigFlow:
                 False,
                 "auto",
                 "auto",
-                1.0,
+                speed=1.0,
                 visual=True,
             )
 

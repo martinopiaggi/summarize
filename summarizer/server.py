@@ -12,7 +12,17 @@ from typing import Any, Dict, List, Literal, Optional
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
-from pydantic import BaseModel, Field
+try:
+    from pydantic import BaseModel, Field, model_validator
+
+    def _before_model_validator(func):
+        return model_validator(mode="before")(classmethod(func))
+
+except ImportError:
+    from pydantic import BaseModel, Field, root_validator
+
+    def _before_model_validator(func):
+        return root_validator(pre=True)(func)
 
 from summarizer.config_file import load_config_file, merge_configs, find_config_file
 from summarizer.core import main
@@ -40,6 +50,12 @@ TranscriptionMethod = Literal[tuple(TRANSCRIPTION_METHODS)]  # type: ignore[misc
 WhisperModel = Literal[tuple(WHISPER_MODELS)]  # type: ignore[misc]
 
 
+def _reject_legacy_audio_speed_field(data: Any) -> Any:
+    if isinstance(data, dict) and "audio_speed" in data:
+        raise ValueError("audio_speed is no longer supported; use speed instead")
+    return data
+
+
 class SummarizeRequest(BaseModel):
     source: str = Field(..., description="Video URL or file path")
     type: SourceType = Field("YouTube Video", description="Source type")
@@ -61,8 +77,8 @@ class SummarizeRequest(BaseModel):
         None, description="Cloud Whisper or Local Whisper"
     )
     whisper_model: Optional[WhisperModel] = Field(None, description="Whisper model size")
-    audio_speed: Optional[float] = Field(
-        None, gt=0.0, le=10.0, description="Pre-transcription speed-up"
+    speed: Optional[float] = Field(
+        None, gt=0.0, le=10.0, description="Playback speed for audio preprocessing or visual-mode video"
     )
     output_format: OutputFormat = Field("markdown", description="markdown, json, or html")
     visual: bool = Field(False, description="Send video directly to vision model")
@@ -72,6 +88,10 @@ class SummarizeRequest(BaseModel):
     model: Optional[str] = Field(None, description="Override model name")
     cobalt_url: Optional[str] = Field(None, description="Cobalt base URL")
     verbose: bool = Field(False, description="Verbose progress output")
+
+    @_before_model_validator
+    def _reject_legacy_audio_speed(cls, data: Any) -> Any:
+        return _reject_legacy_audio_speed_field(data)
 
 
 class SummarizeResponse(BaseModel):
@@ -107,8 +127,8 @@ class BatchRequest(BaseModel):
         None, description="Cloud Whisper or Local Whisper"
     )
     whisper_model: Optional[WhisperModel] = Field(None, description="Whisper model size")
-    audio_speed: Optional[float] = Field(
-        None, gt=0.0, le=10.0, description="Pre-transcription speed-up"
+    speed: Optional[float] = Field(
+        None, gt=0.0, le=10.0, description="Playback speed for audio preprocessing or visual-mode video"
     )
     output_format: OutputFormat = Field("markdown", description="markdown, json, or html")
     visual: bool = Field(False, description="Send video directly to vision model")
@@ -118,6 +138,10 @@ class BatchRequest(BaseModel):
     model: Optional[str] = Field(None, description="Override model name")
     cobalt_url: Optional[str] = Field(None, description="Cobalt base URL")
     verbose: bool = Field(False, description="Verbose progress output")
+
+    @_before_model_validator
+    def _reject_legacy_audio_speed(cls, data: Any) -> Any:
+        return _reject_legacy_audio_speed_field(data)
 
 
 class BatchResult(BaseModel):
@@ -167,7 +191,7 @@ SNAKE_OVERRIDES = {
     "output_language": "output_language",
     "transcription": "transcription_method",
     "whisper_model": "whisper_model",
-    "audio_speed": "audio_speed",
+    "speed": "speed",
     "cobalt_url": "cobalt_base_url",
     "use_proxy": "use_proxy",
     "visual": "visual",
@@ -359,7 +383,7 @@ def create_app(allow_origins: Optional[List[str]] = None) -> FastAPI:
         force_download: bool = Form(False),
         transcription: Optional[str] = Form(None),
         whisper_model: Optional[str] = Form(None),
-        audio_speed: Optional[float] = Form(None),
+        speed: Optional[float] = Form(None),
         output_format: str = Form("markdown"),
         visual: bool = Form(False),
         use_proxy: Optional[bool] = Form(None),
@@ -422,7 +446,7 @@ def create_app(allow_origins: Optional[List[str]] = None) -> FastAPI:
                 force_download=force_download,
                 transcription=transcription,  # type: ignore[arg-type]
                 whisper_model=whisper_model,  # type: ignore[arg-type]
-                audio_speed=audio_speed,
+                speed=speed,
                 output_format=output_format,  # type: ignore[arg-type]
                 visual=visual,
                 use_proxy=use_proxy,
@@ -493,7 +517,7 @@ def create_app(allow_origins: Optional[List[str]] = None) -> FastAPI:
                     force_download=req.force_download,
                     transcription=req.transcription,
                     whisper_model=req.whisper_model,
-                    audio_speed=req.audio_speed,
+                    speed=req.speed,
                     output_format=req.output_format,
                     visual=req.visual,
                     use_proxy=req.use_proxy,

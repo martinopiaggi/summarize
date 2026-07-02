@@ -2,6 +2,7 @@
 
 import base64
 import html
+import json
 import os
 import re
 import subprocess
@@ -86,6 +87,15 @@ def resolve_visual_url(config: Dict, profile: Optional[Dict] = None) -> Optional
             "visual-input-mode: url only supports YouTube URLs. "
             "Use base64 mode for other sources."
         )
+
+    # URL passthrough cannot apply speed preprocessing; fall back to download path.
+    if _build_speed_filters(_get_speed(config)):
+        print_status(
+            "Non-default speed requires base64 mode; downloading video for preprocessing",
+            "INFO",
+            config.get("verbose", False),
+        )
+        return None
 
     return source
 
@@ -241,33 +251,33 @@ def probe_video(video_path: str) -> Dict:
             "-v", "error",
             "-show_entries", "format=duration",
             "-show_entries", "stream=codec_name,codec_type",
-            "-of", "default=noprint_wrappers=1",
+            "-of", "json",
             video_path,
         ]
         output = subprocess.run(
             cmd, check=True, capture_output=True, text=True, timeout=30
         ).stdout
-    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+        data = json.loads(output or "{}")
+    except (
+        json.JSONDecodeError,
+        subprocess.CalledProcessError,
+        FileNotFoundError,
+        subprocess.TimeoutExpired,
+    ):
         return result
 
-    for line in output.splitlines():
-        line = line.strip()
-        if line.startswith("duration="):
-            try:
-                result["duration"] = float(line.split("=", 1)[1])
-            except (ValueError, IndexError):
-                pass
-        elif line.startswith("codec_name=") and "codec_type=" in line:
-            parts = dict(p.split("=", 1) for p in line.split() if "=" in p)
-            codec_type = parts.get("codec_type", "").lower()
-            codec_name = parts.get("codec_name", "").lower()
-            if codec_type == "video":
-                result["video_codec"] = codec_name
-            elif codec_type == "audio":
-                result["audio_codec"] = codec_name
-        elif line.startswith("codec_name="):
-            # Fallback if codec_type is on a separate line (ffprobe output varies)
-            pass
+    try:
+        result["duration"] = float(data.get("format", {}).get("duration"))
+    except (TypeError, ValueError):
+        pass
+
+    for stream in data.get("streams", []):
+        codec_type = (stream.get("codec_type") or "").lower()
+        codec_name = (stream.get("codec_name") or "").lower()
+        if codec_type == "video" and codec_name:
+            result["video_codec"] = codec_name
+        elif codec_type == "audio" and codec_name:
+            result["audio_codec"] = codec_name
 
     return result
 
@@ -387,6 +397,54 @@ def _get_visual_overlap_seconds(config: Dict, chunk_seconds: float) -> float:
             "visual_chunk_overlap_seconds must be smaller than visual_chunk_seconds"
         )
     return overlap_seconds
+
+
+def _get_speed(config: Dict) -> float:
+    """Return the configured playback speed."""
+    raw = config.get("speed", 1.0)
+    try:
+        speed = float(raw)
+    except (TypeError, ValueError):
+        raise AudioProcessingError("speed must be a positive number")
+    if speed <= 0:
+        raise AudioProcessingError("speed must be greater than 0")
+    return speed
+
+
+def _build_speed_filters(speed: float) -> List[str]:
+    """Build ffmpeg filter strings for speeding up video and audio."""
+    if abs(speed - 1.0) < 1e-9:
+        return []
+
+    # setpts changes video frame timestamps; atempo changes audio tempo.
+    # atempo accepts 0.5..2.0 per stage, so chain stages for larger ranges.
+    tempo_stages = []
+    remaining = speed
+    while remaining > 2.0:
+        tempo_stages.append(2.0)
+        remaining /= 2.0
+    while remaining < 0.5:
+        tempo_stages.append(0.5)
+        remaining /= 0.5
+    if abs(remaining - 1.0) > 1e-9:
+        tempo_stages.append(remaining)
+
+    filters = [f"setpts=PTS/{speed:g}"]
+    if tempo_stages:
+        filters.append(",".join(f"atempo={stage:g}" for stage in tempo_stages))
+    return filters
+
+
+def _append_audio_encode_options(
+    cmd: List[str], has_audio: bool, *, bitrate: Optional[str] = None
+) -> None:
+    """Append ffmpeg audio output options, using -an when the input has no audio."""
+    if has_audio:
+        cmd.extend(["-c:a", "aac"])
+        if bitrate:
+            cmd.extend(["-b:a", bitrate])
+    else:
+        cmd.append("-an")
 
 
 def build_visual_segments(video_path: str, profile: Dict, config: Dict) -> List[Dict]:
@@ -526,25 +584,30 @@ def normalize_video(video_path: str, profile: Dict, config: Dict) -> str:
         Path to the normalized video (may be the same as input).
     """
     verbose = config.get("verbose", False)
+    speed = _get_speed(config)
+    speed_filters = _build_speed_filters(speed)
     probe = probe_video(video_path)
     container = probe.get("container", "")
     supported_formats = profile.get("supported_mime_types") or profile.get("formats", set())
+    has_audio = bool(probe.get("audio_codec"))
 
     needs_remux = (
         supported_formats
         and _format_set_contains_mp4(supported_formats)
         and not _format_set_contains(container, supported_formats)
     )
+    needs_compress = _should_compress(video_path, profile, config, probe)
+    needs_speed = bool(speed_filters)
 
-    if needs_remux or _should_compress(video_path, profile, config, probe):
-        temp_dir = tempfile.gettempdir()
-        normalized_path = os.path.join(
-            temp_dir, f"visual_normalized_{uuid.uuid4().hex}.mp4"
-        )
-    else:
+    if not needs_remux and not needs_compress and not needs_speed:
         return video_path
 
-    if needs_remux and not _should_compress(video_path, profile, config, probe):
+    temp_dir = tempfile.gettempdir()
+    normalized_path = os.path.join(
+        temp_dir, f"visual_normalized_{uuid.uuid4().hex}.mp4"
+    )
+
+    if needs_remux and not needs_compress and not needs_speed:
         spinner = ProgressSpinner("Remuxing video to MP4", verbose)
         try:
             spinner.start()
@@ -563,21 +626,73 @@ def normalize_video(video_path: str, profile: Dict, config: Dict) -> str:
                 os.remove(normalized_path)
             raise AudioProcessingError(f"Failed to remux video: {exc}")
 
+    if needs_remux and not needs_compress and needs_speed:
+        spinner = ProgressSpinner("Remuxing and speeding up video", verbose)
+        try:
+            spinner.start()
+            cmd = ["ffmpeg", "-y", "-i", video_path]
+            cmd.extend(["-filter:v", speed_filters[0]])
+            if len(speed_filters) > 1 and has_audio:
+                cmd.extend(["-filter:a", speed_filters[1]])
+            cmd.extend(["-c:v", "libx264"])
+            _append_audio_encode_options(cmd, has_audio)
+            cmd.append(normalized_path)
+            subprocess.run(cmd, check=True, capture_output=True, timeout=120)
+            spinner.stop()
+            print_status("Video remuxed to MP4", "SUCCESS", verbose)
+            return normalized_path
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+            spinner.stop()
+            if os.path.exists(normalized_path):
+                os.remove(normalized_path)
+            raise AudioProcessingError(f"Failed to remux video: {exc}")
+
+    if not needs_remux and not needs_compress and needs_speed:
+        # Speed-only change: re-encode as little as possible (no scaling/CRF/fps).
+        spinner = ProgressSpinner("Applying playback speed", verbose)
+        try:
+            spinner.start()
+            cmd = ["ffmpeg", "-y", "-i", video_path]
+            cmd.extend(["-filter:v", speed_filters[0]])
+            if len(speed_filters) > 1 and has_audio:
+                cmd.extend(["-filter:a", speed_filters[1]])
+            cmd.extend([
+                "-c:v", "libx264",
+                "-preset", "veryfast",
+                "-crf", "23",
+                "-movflags", "+faststart",
+            ])
+            _append_audio_encode_options(cmd, has_audio, bitrate="96k")
+            cmd.append(normalized_path)
+            subprocess.run(cmd, check=True, capture_output=True, timeout=300)
+            spinner.stop()
+            print_status("Playback speed applied", "SUCCESS", verbose)
+            return normalized_path
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+            spinner.stop()
+            if os.path.exists(normalized_path):
+                os.remove(normalized_path)
+            raise AudioProcessingError(f"Failed to apply playback speed: {exc}")
+
     # Compression path
     spinner = ProgressSpinner("Compressing video to fit limits", verbose)
     try:
         spinner.start()
+        video_filter = "scale='min(854,iw)':-2"
+        if speed_filters:
+            video_filter = f"{speed_filters[0]},{video_filter}"
         cmd = [
             "ffmpeg", "-y", "-i", video_path,
-            "-vf", "scale='min(854,iw)':-2",
+            "-vf", video_filter,
             "-r", "24",
             "-c:v", "libx264",
             "-preset", "veryfast",
             "-crf", "30",
-            "-c:a", "aac",
-            "-b:a", "64k",
-            normalized_path,
         ]
+        if speed_filters and len(speed_filters) > 1 and has_audio:
+            cmd.extend(["-filter:a", speed_filters[1]])
+        _append_audio_encode_options(cmd, has_audio, bitrate="64k")
+        cmd.append(normalized_path)
         subprocess.run(cmd, check=True, capture_output=True, timeout=300)
         spinner.stop()
         print_status("Video compressed", "SUCCESS", verbose)

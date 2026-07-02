@@ -146,7 +146,7 @@ def build_runtime_config(
         "use_youtube_captions": not force_download and type_of_source == "YouTube Video",
         "transcription_method": merged.get("transcription_method", "Cloud Whisper"),
         "whisper_model": merged.get("whisper_model", "tiny"),
-        "audio_speed": merged.get("audio_speed", 1.0),
+        "speed": merged.get("speed", 1.0),
         "use_proxy": bool(merged.get("use_proxy", False)),
         "language": merged.get("language", "auto"),
         "output_language": merged.get("output_language", "auto"),

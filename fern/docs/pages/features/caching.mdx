@@ -26,7 +26,7 @@ The key is a **SHA-256 hash** of these parameters joined together:
 | `language` | `auto` |
 | `transcription_method` | `Cloud Whisper` |
 | `whisper_model` | `tiny` |
-| `audio_speed` | `1.0` |
+| `speed` | `1.0` |
 | `use_youtube_captions` | `true` |
 
 Changing **any** of these values produces a different key and triggers a fresh transcription. Changing the summary style, provider, or output language does **not** affect the key, so those re-runs are instant.

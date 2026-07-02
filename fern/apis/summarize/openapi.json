@@ -382,7 +382,7 @@
             "description": "Whisper model size",
             "title": "Whisper Model"
           },
-          "audio_speed": {
+          "speed": {
             "anyOf": [
               {
                 "type": "number"
@@ -391,10 +391,10 @@
                 "type": "null"
               }
             ],
-            "description": "Pre-transcription speed-up",
+            "description": "Playback speed for audio preprocessing or visual-mode video",
             "exclusiveMinimum": 0,
             "maximum": 10,
-            "title": "Audio Speed"
+            "title": "Speed"
           },
           "output_format": {
             "anyOf": [
@@ -704,7 +704,7 @@
             ],
             "title": "Whisper Model"
           },
-          "audio_speed": {
+          "speed": {
             "anyOf": [
               {
                 "type": "number"
@@ -713,7 +713,10 @@
                 "type": "null"
               }
             ],
-            "title": "Audio Speed"
+            "description": "Playback speed for audio preprocessing or visual-mode video",
+            "exclusiveMinimum": 0,
+            "maximum": 10,
+            "title": "Speed"
           },
           "output_format": {
             "default": "markdown",
@@ -1068,7 +1071,7 @@
             "description": "Whisper model size",
             "title": "Whisper Model"
           },
-          "audio_speed": {
+          "speed": {
             "anyOf": [
               {
                 "type": "number"
@@ -1077,10 +1080,10 @@
                 "type": "null"
               }
             ],
-            "description": "Pre-transcription speed-up",
+            "description": "Playback speed for audio preprocessing or visual-mode video",
             "exclusiveMinimum": 0,
             "maximum": 10,
-            "title": "Audio Speed"
+            "title": "Speed"
           },
           "output_format": {
             "anyOf": [

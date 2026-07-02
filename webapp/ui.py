@@ -68,11 +68,11 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
     default_prompt = defaults.get("prompt_type", "Questions and answers")
     default_chunk_size = defaults.get("chunk_size", 10000)
     try:
-        default_audio_speed = float(defaults.get("audio_speed", 1.0))
+        default_speed = float(defaults.get("speed", 1.0))
     except (TypeError, ValueError):
-        default_audio_speed = 1.0
-    if default_audio_speed <= 0:
-        default_audio_speed = 1.0
+        default_speed = 1.0
+    if default_speed <= 0:
+        default_speed = 1.0
 
     provider_names = list(providers.keys())
 
@@ -196,15 +196,16 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
                 index=0,
                 help="Only used with Local Whisper. tiny=fastest, large=most accurate.",
             )
-            audio_speed = st.number_input(
-                "AUDIO SPEED",
+            speed = st.number_input(
+                "SPEED",
                 min_value=0.01,
-                value=default_audio_speed,
+                value=default_speed,
                 step=0.01,
                 format="%.2f",
                 help=(
-                    "Speeds up audio before transcription. Use any positive value "
-                    "(e.g. 1.0, 2.0, 5.0). Higher values are faster but can reduce accuracy."
+                    "Playback speed for audio preprocessing or visual-mode video. "
+                    "Use any positive value (e.g. 1.0, 2.0, 5.0). Higher values are "
+                    "faster but can reduce accuracy."
                 ),
             )
             visual = st.checkbox(
@@ -261,7 +262,7 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
         "force_download": force_download,
         "transcription_method": transcription_method,
         "whisper_model": whisper_model,
-        "audio_speed": audio_speed,
+        "speed": speed,
         "visual": visual,
     }
 
@@ -276,7 +277,7 @@ def _run_and_store(source, display_name, source_type, force_download, sidebar, d
         force_download,
         sidebar["language"],
         sidebar["output_language"],
-        sidebar["audio_speed"],
+        sidebar["speed"],
         source_type,
         sidebar["transcription_method"],
         sidebar["whisper_model"],
