@@ -31,14 +31,14 @@ The extension source is inside this repository at `extensions/raycast-summarize`
 
 ### Step 1: Start the Summarize API
 
-Install the server dependencies and start the HTTP API:
+Install the server extra in an isolated environment and start the HTTP API:
 
 ```bash
-pip install -e ".[server]"
-python -m summarizer serve
+pipx install "martino-summarize[server]"
+summarizer serve
 ```
 
-By default the API runs at `http://localhost:8000`.
+By default the API runs at `http://localhost:8000`. If you are developing from a cloned repo, use `pip install -e ".[server]"` inside a venv instead. See [Installation](../getting-started/installation) if startup fails with dependency errors.
 
 ### Step 2: Build the Extension
 

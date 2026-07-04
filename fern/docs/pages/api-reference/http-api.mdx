@@ -7,13 +7,29 @@ The Summarize HTTP API exposes all CLI functionality via REST endpoints. It is b
 
 ## Installation
 
-Server dependencies are not included in the base package. Install them with the `server` extra:
+Server dependencies are not included in the base package. Install the `server` extra in an **isolated environment** — the server pulls in pydantic via FastAPI, and version skew in shared `~/.local` site-packages is the most common cause of startup failures.
+
+**Recommended (pipx):**
+
+```bash
+pipx install "martino-summarize[server]"
+```
+
+**From a cloned repo (development):**
 
 ```bash
 pip install -e ".[server]"
 ```
 
-This installs `fastapi`, `uvicorn`, and `python-multipart`.
+**venv alternative:**
+
+```bash
+python3 -m venv ~/summarizer-venv
+source ~/summarizer-venv/bin/activate
+pip install "martino-summarize[server]"
+```
+
+This installs `fastapi`, `uvicorn`, and `python-multipart`. If startup fails with a pydantic version error, see [Errors and Troubleshooting](../usage/errors-and-troubleshooting).
 
 ## Starting the Server
 

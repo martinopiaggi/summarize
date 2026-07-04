@@ -6,6 +6,54 @@
 - **Missing API key:** add the provider key to `.env` (see `summarizer.example.yaml` for provider names)
 - **No config file:** run `summarizer --init-config` or pass `--base-url` and `--model` with `--no-config`
 - **Removed `audio-speed` key:** use `speed` in YAML, `--speed` on the CLI, or `speed` in API requests instead
+- **ffmpeg not found:** install ffmpeg and ensure it is on your `PATH`
+
+## Dependency and Install Issues
+
+These problems come from the **Python environment**, not from summarizer logic. They are most common when many CLI tools share one `~/.local` site-packages directory and get upgraded at different times.
+
+### pydantic / pydantic-core version mismatch
+
+**Symptoms:** `summarizer serve` crashes at startup with an error about `pydantic-core` version mismatch, or a `SystemError` when importing pydantic. The CLI may work fine; the crash happens when uvicorn imports FastAPI → pydantic.
+
+**Cause:** `pydantic` and `pydantic-core` must be installed as a matched pair. A partial upgrade — often triggered by installing or upgrading another tool that also depends on pydantic — leaves them out of sync.
+
+**Fix (pick one):**
+
+| Approach | Command |
+|----------|---------|
+| **Recommended — isolated reinstall** | `pipx install "martino-summarize[server]"` |
+| **Dedicated venv** | `python3 -m venv ~/summarizer-venv && source ~/summarizer-venv/bin/activate && pip install "martino-summarize[server]"` |
+| **Quick patch in current environment** | `pip install --upgrade pydantic pydantic-core` |
+| **No local Python deps** | Use Docker (`docker compose up -d`) for the Streamlit GUI |
+
+The quick patch fixes the immediate mismatch but does not prevent the next unrelated upgrade from breaking things again. Isolated installs are the durable fix.
+
+### Server dependencies not installed
+
+**Symptoms:** `Server dependencies not installed. Run: pip install 'summarizer[server]'`
+
+**Fix:** Install the server extra in an isolated environment:
+
+```bash
+pipx install "martino-summarize[server]"
+```
+
+Or inside an activated venv: `pip install "martino-summarize[server]"`
+
+### Import errors after upgrading other tools
+
+**Symptoms:** Summarizer worked yesterday; today it fails with import or version errors after you upgraded groq, litellm, openai, or another Python CLI tool.
+
+**Fix:** Reinstall summarizer in its own environment instead of debugging shared site-packages:
+
+```bash
+pipx reinstall martino-summarize
+# or, for the API:
+pipx install "martino-summarize[server]" --force
+```
+
+See [Installation](getting-started/installation) for the full install method comparison.
 
 ## Error Types
 
