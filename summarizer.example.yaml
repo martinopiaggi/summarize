@@ -80,6 +80,9 @@ defaults:
   keep-history: false
   cobalt-base-url: http://localhost:9000
   cache-transcript: true
+  cache-transcript-persist: false
+  # cache-transcript-dir: summaries/.cache/transcripts
+  # Docker: copy summarizer.docker.yaml or set SUMMARIZER_KEEP_HISTORY / SUMMARIZER_CACHE_PERSIST
   visual: false
   visual-compression: off
   visual-chunk-seconds: auto

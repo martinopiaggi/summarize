@@ -28,7 +28,19 @@ Text files bypass audio processing entirely and go straight to summarization.
 
 ## History
 
-The sidebar keeps an in-memory history of recent summaries (last 10). Enable `keep-history: true` in `summarizer.yaml` to also persist summaries to disk so they survive page refreshes.
+The sidebar keeps the last 10 summaries. By default, history is **in-memory only** and is lost on page refresh.
+
+Persist summaries to disk so they survive refreshes and container restarts:
+
+```yaml
+defaults:
+  keep-history: true
+  output-dir: summaries
+```
+
+Or set `SUMMARIZER_KEEP_HISTORY=true` when the YAML key is omitted (Docker Compose does this by default).
+
+Docker deployments copy `summarizer.docker.yaml`, which enables `keep-history` out of the box. Summaries are written to `./summaries/` when using the default bind mount.
 
 ## Mermaid Diagrams
 

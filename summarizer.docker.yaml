@@ -1,0 +1,48 @@
+# Docker-optimized configuration
+# Copy to ./summarizer.yaml for docker compose, or rely on the image default.
+# See summarizer.example.yaml for the full option reference.
+
+default_provider: groq
+
+providers:
+  groq:
+    base_url: https://api.groq.com/openai/v1
+    model: openai/gpt-oss-120b
+
+  gemini:
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai
+    model: gemini-3.1-flash-lite
+
+  deepseek:
+    base_url: https://api.deepseek.com/v1
+    model: deepseek-v4-flash
+
+  openai:
+    base_url: https://api.openai.com/v1
+    model: gpt-5.5
+
+  nvidia:
+    base_url: https://integrate.api.nvidia.com/v1
+    model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    model: google/gemini-3.1-flash-lite
+
+defaults:
+  prompt-type: Questions and answers
+  chunk-size: 120000
+  parallel-calls: 10
+  max-tokens: 4096
+  output-language: auto
+  speed: 2.0
+  use-proxy: false
+  output-dir: summaries
+  keep-history: true
+  cobalt-base-url: http://cobalt:9000
+  cache-transcript: true
+  cache-transcript-persist: true
+  visual: false
+  visual-compression: off
+  visual-chunk-seconds: auto
+  visual-chunk-overlap-seconds: 0

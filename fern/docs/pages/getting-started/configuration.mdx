@@ -63,7 +63,9 @@ defaults:
   speed: 2.0
   use-proxy: false
   output-dir: summaries
+  keep-history: false
   cache-transcript: true
+  cache-transcript-persist: false
   visual: false
   visual-compression: off
   visual-chunk-seconds: auto
@@ -74,9 +76,11 @@ defaults:
   <Accordion title="Key defaults explained">
     - `output-language`: `auto`, `none`, or a human-readable name like `Italian`, `Spanish`, `German`, `Japanese`.
     - `speed`: Playback speed for audio preprocessing before Whisper and for visual-mode video in base64 mode. Faster transcription is cheaper on Groq (priced by audio duration) but may reduce accuracy. The API accepts values up to `10.0`; the CLI accepts any positive value.
-    - `cache-transcript: false` disables the in-memory transcript cache.
-    - `keep-history: true` persists summaries to disk for the Streamlit sidebar.
+    - `cache-transcript: false` disables the transcript cache entirely.
+    - `cache-transcript-persist: true` stores transcripts on disk under `{output-dir}/.cache/transcripts/` (survives restarts).
+    - `keep-history: true` persists GUI summaries to disk for the Streamlit sidebar.
     - `visual-input-mode: url` on a provider sends YouTube URLs directly to the model without downloading (see [Visual Mode](features/visual-mode)).
+    - Docker: use `summarizer.docker.yaml` or set `SUMMARIZER_KEEP_HISTORY` / `SUMMARIZER_CACHE_PERSIST` when a YAML key is omitted.
   </Accordion>
 </AccordionGroup>
 

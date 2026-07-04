@@ -12,6 +12,8 @@ from pathlib import Path
 
 import yaml
 
+from summarizer.runtime_env import fill_env_defaults, normalize_explicit_keys
+
 CONFIG_PATH = Path.cwd() / "summarizer.yaml"
 MIN_CHUNK_SIZE = 20
 MAX_CHUNK_SIZE = 1000000
@@ -63,7 +65,11 @@ def load_config():
     if CONFIG_PATH.exists():
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-            defaults = normalize_config_section(config.get("defaults", {}))
+            raw_defaults = config.get("defaults", {}) or {}
+            defaults = fill_env_defaults(
+                normalize_config_section(raw_defaults),
+                normalize_explicit_keys(raw_defaults.keys()),
+            )
             providers = {
                 name: normalize_config_section(provider_cfg)
                 for name, provider_cfg in (config.get("providers", {}) or {}).items()
@@ -81,7 +87,7 @@ def load_config():
             }
         },
         "gemini",
-        {},
+        fill_env_defaults({}, set()),
     )
 
 

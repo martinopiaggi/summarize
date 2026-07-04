@@ -1,3 +1,5 @@
+# YouTube-only GUI — no Cobalt sidecar (lighter setup).
+# Usage: docker compose -f docker-compose.gui-only.yml up -d
 services:
   summarizer:
     image: ghcr.io/martinopiaggi/summarize:latest
@@ -10,12 +12,8 @@ services:
       - ./.env:/app/.env:ro
       - ./summarizer.yaml:/app/summarizer.yaml
     environment:
-      - COBALT_BASE_URL=http://cobalt:9000
       - SUMMARIZER_KEEP_HISTORY=true
       - SUMMARIZER_CACHE_PERSIST=true
-    depends_on:
-      cobalt:
-        condition: service_started
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
@@ -23,12 +21,3 @@ services:
       timeout: 10s
       start_period: 15s
       retries: 3
-
-  cobalt:
-    image: ghcr.io/wukko/cobalt:latest
-    container_name: cobalt
-    ports:
-      - "9000:9000"
-    environment:
-      - API_URL=http://cobalt:9000/
-    restart: unless-stopped

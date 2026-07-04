@@ -221,11 +221,12 @@ def get_transcript(config: dict) -> str:
     cache_enabled = config.get("cache_transcript", True)
 
     if cache_enabled:
-        cached, key = get_cached_transcript(config)
+        cached, key, source = get_cached_transcript(config)
         if cached is not None:
             short_key = key[:12]
+            location = "disk" if source == "disk" else "memory"
             print_status(
-                f"Transcript cache hit ({short_key}) — skipping transcription",
+                f"Transcript cache hit ({location}, {short_key}) — skipping transcription",
                 "SUCCESS",
                 verbose,
             )
@@ -234,10 +235,11 @@ def get_transcript(config: dict) -> str:
     transcript = _fetch_transcript(config)
 
     if cache_enabled and transcript and transcript.strip():
-        key = put_cached_transcript(config, transcript)
+        key, wrote_to_disk = put_cached_transcript(config, transcript)
         short_key = key[:12]
+        location = "disk + memory" if wrote_to_disk else "memory"
         print_status(
-            f"Transcript cached in memory ({short_key})",
+            f"Transcript cached ({location}, {short_key})",
             "INFO",
             verbose,
         )

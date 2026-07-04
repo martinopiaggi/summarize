@@ -42,10 +42,12 @@ Bring your own API keys. All configuration lives in `summarizer.yaml` and `.env`
 
 ## Quick Start
 
+Install in an **isolated environment** (pipx recommended) so other Python tools cannot break summarizer. See [Installation](getting-started/installation) for venv, Docker, and development setup.
+
 You need any OpenAI-compatible API key in `.env` (for example [Groq](https://groq.com/) `GROQ_API_KEY` is free-tier friendly; `OPENAI_API_KEY` works with `--provider openai`).
 
 ```bash
-pip install martino-summarize
+pipx install martino-summarize
 summarizer --init-config
 echo "GROQ_API_KEY=your_key_here" > .env
 summarizer --source "https://www.youtube.com/watch?v=arj7oStGLkU"
@@ -53,26 +55,24 @@ summarizer --source "https://www.youtube.com/watch?v=arj7oStGLkU"
 
 The summary is saved to `summaries/watch_YYYYMMDD_HHMMSS.md`.
 
-Install extras as needed:
+For the HTTP API or all extras:
 
 ```bash
 pipx install "martino-summarize[server]"   # HTTP API
 pipx install "martino-summarize[all]"      # server + whisper + litellm
 ```
 
-See [Installation](getting-started/installation) for development setup, Streamlit, and optional extras.
-
 ### Quick Start (Docker)
 
 ```bash
 git clone https://github.com/martinopiaggi/summarize.git
 cd summarize
-cp summarizer.example.yaml summarizer.yaml   # first time only
+cp summarizer.docker.yaml summarizer.yaml   # Docker-optimized defaults
 echo "GROQ_API_KEY=your_key_here" > .env     # or OPENAI_API_KEY, etc.
 docker compose up -d
 ```
 
-Open **http://localhost:8501**, paste a URL, and summarize.
+Open **http://localhost:8501**, paste a URL, and summarize. Summaries and transcript cache persist under `./summaries/`.
 
 Or pull the pre-built image:
 
@@ -80,7 +80,7 @@ Or pull the pre-built image:
 docker pull ghcr.io/martinopiaggi/summarize:latest
 ```
 
-`docker-compose.yml` mounts `.env`, `summarizer.yaml`, and `./summaries/` for persistence. Cobalt runs as a sidecar for TikTok, Instagram, and other yt-dlp fallbacks.
+`docker-compose.yml` mounts `.env`, `summarizer.yaml`, and `./summaries/`. Use `docker-compose.gui-only.yml` for a lighter YouTube-only setup, or `docker-compose.named-volume.yml` for a Docker-managed volume. Cobalt runs as a sidecar for TikTok, Instagram, and other yt-dlp fallbacks.
 
 ## Pick Your Interface
 
@@ -88,7 +88,7 @@ docker pull ghcr.io/martinopiaggi/summarize:latest
 |-----------|---------|
 | **Streamlit GUI** | `docker compose up -d` → `http://localhost:8501` |
 | **CLI** | `summarizer --source <source>` |
-| **HTTP API** | `summarizer serve` → `http://localhost:8000/docs` |
+| **HTTP API** | `pipx install "martino-summarize[server]"` then `summarizer serve` → `http://localhost:8000/docs` |
 | **Docker** | `docker compose up -d` |
 | **Agent Skill** | [`.agent/skills/summarize/SKILL.md`](https://github.com/martinopiaggi/summarize/blob/main/.agent/skills/summarize/SKILL.md) |
 | **Raycast** | [`extensions/raycast-summarize/`](https://github.com/martinopiaggi/summarize/tree/main/extensions/raycast-summarize) |
@@ -104,6 +104,7 @@ See [How It Works](how-it-works) for the full pipeline diagram and [Visual Mode]
 
 ## Common Issues
 
+- **pydantic / pydantic-core mismatch on `serve`:** environment problem, not a summarizer bug — reinstall with `pipx install "martino-summarize[server]"` or see [Errors and Troubleshooting](usage/errors-and-troubleshooting)
 - **yt-dlp / platform errors:** ensure Cobalt is running (`docker compose` includes it) or set `COBALT_BASE_URL`
 - **Missing API key:** add the provider key to `.env` (see `summarizer.example.yaml` for provider names)
 - **No config file:** run `summarizer --init-config` or pass `--base-url` and `--model` with `--no-config`

@@ -26,11 +26,11 @@ COPY app.py .
 COPY webapp/ webapp/
 COPY .streamlit/ .streamlit/
 
-# Default config (summarizer.yaml is gitignored locally; ship example for first-run)
-COPY summarizer.example.yaml ./summarizer.yaml
+# Docker-optimized config (persist history + transcript cache by default)
+COPY summarizer.docker.yaml ./summarizer.yaml
 
-# Create output directory
-RUN mkdir -p /app/summaries
+# Create output and cache directories
+RUN mkdir -p /app/summaries/.cache/transcripts
 
 # Volume for persisting output
 VOLUME ["/app/summaries"]

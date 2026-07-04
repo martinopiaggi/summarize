@@ -1,0 +1,11 @@
+# Override: store summaries in a Docker named volume instead of ./summaries/
+# Usage: docker compose -f docker-compose.yml -f docker-compose.named-volume.yml up -d
+services:
+  summarizer:
+    volumes:
+      - summarizer_summaries:/app/summaries
+      - ./.env:/app/.env:ro
+      - ./summarizer.yaml:/app/summarizer.yaml
+
+volumes:
+  summarizer_summaries:

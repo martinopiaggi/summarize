@@ -1,8 +1,64 @@
 # Installation
 
+Summarizer is a CLI application. The recommended install path is an **isolated environment** so upgrades to other Python tools cannot break it.
+
+## Why isolation matters
+
+If you install with plain `pip install --user`, packages land in shared user site-packages (for example `~/.local/lib/python3.12/site-packages`). That directory is shared with groq, litellm, openai, MCP servers, and anything else you have installed the same way.
+
+Each of those tools may depend on **pydantic**. When one package upgrades `pydantic` but not `pydantic-core` (or vice versa), unrelated commands can start failing — including `summarizer serve`, which imports FastAPI and pydantic at startup. That is an environment problem, not a summarizer bug.
+
+**Use pipx or a dedicated venv** to avoid this.
+
+## Choose an install method
+
+| Method | Best for | Isolated? |
+|--------|----------|-----------|
+| **pipx** | CLI, HTTP API, everyday use | Yes — each app gets its own venv |
+| **venv** | Development or custom setups | Yes — you manage the venv |
+| **pip install --user** | Quick try only | No — shares `~/.local` with other tools |
+| **Docker** | Streamlit GUI, no local Python deps | Yes — container environment |
+
 <Tabs>
-  <Tab title="PyPI">
-    The fastest way to get started:
+  <Tab title="pipx (recommended)">
+    Install [pipx](https://pipx.pypa.io/) if you do not have it yet (`pip install pipx && pipx ensurepath`).
+
+    **CLI only:**
+
+    ```bash
+    pipx install martino-summarize
+    summarizer --init-config
+    echo "GROQ_API_KEY=your_key_here" > .env
+    summarizer --source "https://www.youtube.com/watch?v=arj7oStGLkU"
+    ```
+
+    **HTTP API** (adds FastAPI, uvicorn, python-multipart):
+
+    ```bash
+    pipx install "martino-summarize[server]"
+    summarizer serve
+    ```
+
+    **All extras** (server + local Whisper + LiteLLM):
+
+    ```bash
+    pipx install "martino-summarize[all]"
+    ```
+
+    To upgrade later: `pipx upgrade martino-summarize`
+  </Tab>
+  <Tab title="venv">
+    ```bash
+    python3 -m venv ~/summarizer-venv
+    source ~/summarizer-venv/bin/activate   # Windows: ~/summarizer-venv\Scripts\activate
+    pip install "martino-summarize[server]"
+    summarizer --init-config
+    ```
+
+    Activate the venv whenever you use summarizer in that shell.
+  </Tab>
+  <Tab title="pip (shared environment)">
+    Works for a quick test, but not recommended for long-term use if you install other Python CLI tools into the same user site-packages.
 
     ```bash
     pip install martino-summarize
@@ -11,21 +67,20 @@
     summarizer --source "https://www.youtube.com/watch?v=arj7oStGLkU"
     ```
 
-    Install extras as needed:
-
-    ```bash
-    pipx install "martino-summarize[server]"   # HTTP API
-    pipx install "martino-summarize[all]"      # server + whisper + litellm
-    ```
+    If you hit dependency conflicts later, switch to pipx or a venv instead of chasing individual package versions.
   </Tab>
   <Tab title="From source">
+    Use a venv when developing locally:
+
     ```bash
     git clone https://github.com/martinopiaggi/summarize.git
     cd summarize
-    pip install -e .
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install -e ".[all]"
     ```
 
-    After install, you can also use the console entry point:
+    After install, you can use the console entry point:
 
     ```bash
     summarizer --source "URL"
@@ -48,14 +103,35 @@
     ```bash
     git clone https://github.com/martinopiaggi/summarize.git
     cd summarize
-    cp summarizer.example.yaml summarizer.yaml   # first time only
+    cp summarizer.docker.yaml summarizer.yaml   # Docker-optimized defaults
     echo "GROQ_API_KEY=your_key_here" > .env
     docker compose up -d
     ```
 
-    Open `http://localhost:8501` for the GUI. Summaries are saved to `./summaries/`.
+    Open `http://localhost:8501` for the GUI.
 
-    The CLI and GUI both read the same local `summarizer.yaml`.
+    **What gets persisted**
+
+    | Data | Default in Docker Compose |
+    |------|---------------------------|
+    | GUI summaries | Yes — `keep-history: true` (or `SUMMARIZER_KEEP_HISTORY`) |
+    | CLI summaries | Yes — always saved to `output-dir` |
+    | Transcript cache | Yes — `cache-transcript-persist: true` under `summaries/.cache/` |
+
+    Files land in `./summaries/` via the bind mount. The CLI and GUI both read the same local `summarizer.yaml`.
+
+    **Compose variants**
+
+    ```bash
+    # Full stack with Cobalt (TikTok, Instagram, …)
+    docker compose up -d
+
+    # YouTube-only GUI — no Cobalt sidecar
+    docker compose -f docker-compose.gui-only.yml up -d
+
+    # Named Docker volume instead of ./summaries/
+    docker compose -f docker-compose.yml -f docker-compose.named-volume.yml up -d
+    ```
 
     Or pull the pre-built image:
 
@@ -69,7 +145,7 @@
     docker compose run --rm summarizer python -m summarizer --source "URL"
     ```
 
-    `docker-compose.yml` mounts `.env`, `summarizer.yaml`, and `./summaries/` for persistence. Cobalt runs as a sidecar for TikTok, Instagram, and other yt-dlp fallbacks.
+    `docker-compose.yml` mounts `.env`, `summarizer.yaml`, and `./summaries/`. Cobalt runs as a sidecar for TikTok, Instagram, and other yt-dlp fallbacks.
 
     See the [Cobalt](integrations/cobalt) page for standalone and proxy setups.
   </Tab>
@@ -78,11 +154,22 @@
 ## Optional Extras
 
 <AccordionGroup>
+  <Accordion title="HTTP API server">
+    The `[server]` extra adds FastAPI, uvicorn, and python-multipart. **Install in isolation** — the server pulls in pydantic transitively via FastAPI, which is where version skew usually shows up.
+
+    ```bash
+    pipx install "martino-summarize[server]"
+    summarizer serve
+    ```
+
+    Open `http://localhost:8000/docs` for interactive documentation.
+    See the [HTTP API guide](api-reference/http-api) for details.
+  </Accordion>
   <Accordion title="LiteLLM">
     Route requests through LiteLLM to access 100+ providers with unified calling:
 
     ```bash
-    pip install martino-summarize[litellm]
+    pipx install "martino-summarize[litellm]"
     ```
 
     Then set `base_url: litellm` in `summarizer.yaml` and use provider-prefixed models:
@@ -96,27 +183,18 @@
   </Accordion>
   <Accordion title="Local Whisper">
     ```bash
-    pip install martino-summarize[whisper]
+    pipx install "martino-summarize[whisper]"
     ```
 
     See [Transcription](features/transcription) for GPU setup.
   </Accordion>
-  <Accordion title="HTTP API server">
-    Run the summarizer as a local REST API:
-
-    ```bash
-    pip install martino-summarize[server]
-    summarizer serve
-    ```
-
-    Open `http://localhost:8000/docs` for interactive documentation.
-    See the [HTTP API guide](api-reference/http-api) for details.
-  </Accordion>
   <Accordion title="All extras">
     ```bash
-    pip install martino-summarize[all]
+    pipx install "martino-summarize[all]"
     ```
   </Accordion>
 </AccordionGroup>
 
-> **Tip:** Install with `pip install martino-summarize[litellm]` to route through LiteLLM and access 100+ providers with unified calling.
+<Callout type="warning">
+  If `summarizer serve` crashes with a pydantic or `pydantic-core` version error, your Python environment has mismatched dependencies — not a summarizer application bug. See [Errors and Troubleshooting](usage/errors-and-troubleshooting) for fixes.
+</Callout>

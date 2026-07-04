@@ -86,6 +86,11 @@ def run_summarization(
         "model": provider_config.get("model"),
         "verbose": verbose,
         "cache_transcript": bool(defaults.get("cache_transcript", True)),
+        "cache_transcript_persist": bool(
+            defaults.get("cache_transcript_persist", False)
+        ),
+        "cache_transcript_dir": defaults.get("cache_transcript_dir"),
+        "output_dir": defaults.get("output_dir", "summaries"),
         "visual": visual,
         "visual_input_mode": provider_config.get(
             "visual_input_mode",

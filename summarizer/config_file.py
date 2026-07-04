@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from typing import Dict, Optional, Any
 from .exceptions import ConfigurationError
+from .runtime_env import fill_env_defaults, normalize_explicit_keys
 
 
 def find_config_file() -> Optional[Path]:
@@ -114,6 +115,7 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         "output_dir": "summaries",
         "cobalt_base_url": os.getenv("COBALT_BASE_URL", "http://localhost:9000"),
         "cache_transcript": True,
+        "cache_transcript_persist": False,
         "visual": False,
         "visual_compression": "off",
         "visual_max_size_mb": None,
@@ -123,7 +125,9 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
     }
 
     # Apply file config defaults
-    defaults = file_config.get("defaults", {})
+    raw_defaults = file_config.get("defaults", {}) or {}
+    explicit_keys = normalize_explicit_keys(raw_defaults.keys())
+    defaults = raw_defaults
     for key, value in defaults.items():
         # Convert kebab-case to snake_case
         snake_key = key.replace("-", "_")
@@ -158,6 +162,10 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
     for key, value in cli_args.items():
         if value is not None:
             _reject_legacy_audio_speed_key(key)
+            merged[key] = value
+
+    for key, value in fill_env_defaults({}, explicit_keys).items():
+        if key not in explicit_keys:
             merged[key] = value
 
     return merged
