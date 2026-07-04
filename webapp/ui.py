@@ -62,6 +62,9 @@ _UPLOAD_TYPES = [
     "txt", "md", "vtt", "srt", "csv", "log", "rst", "html", "xml", "json",
 ]
 
+GITHUB_URL = "https://github.com/martinopiaggi/summarize"
+DOCS_URL = "https://summarize.martino.im"
+
 
 def _render_sidebar(providers, default_provider, defaults, prompt_types):
     """Draw the sidebar and return the selections the main panel needs."""
@@ -467,4 +470,11 @@ def main():
     _render_summary_panel()
 
     st.divider()
-    st.caption("github.com/martinopiaggi/summarize")
+    st.markdown(
+        f'<p class="app-footer">'
+        f'<a href="{GITHUB_URL}" target="_blank" rel="noopener noreferrer">GitHub</a>'
+        f' · '
+        f'<a href="{DOCS_URL}" target="_blank" rel="noopener noreferrer">Docs</a>'
+        f"</p>",
+        unsafe_allow_html=True,
+    )

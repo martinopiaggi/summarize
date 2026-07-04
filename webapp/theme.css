@@ -372,3 +372,19 @@ label, .stRadio label, .stCheckbox label, .stSelectbox label {
     font-family: 'JetBrains Mono', monospace !important;
     color: var(--text) !important;
 }
+
+.app-footer {
+    text-align: center;
+    margin: 0;
+    font-size: 0.8rem;
+    opacity: 0.65;
+}
+
+.app-footer a {
+    color: var(--text);
+    text-decoration: none;
+}
+
+.app-footer a:hover {
+    text-decoration: underline;
+}
