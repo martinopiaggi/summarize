@@ -1,7 +1,7 @@
 # Video Summarizer
 
 <p align="center">
-    <img alt="sample" src="./summarize_sample.gif">
+    <img alt="Video summarizer demo" src="./summarize_sample.gif">
 </p>
 
 <p align="center">
@@ -9,15 +9,31 @@
   <a href="https://github.com/martinopiaggi/summarize/stargazers"><img src="https://img.shields.io/github/stars/martinopiaggi/summarize?style=social" alt="GitHub stars"></a>
 </p>
 
-**Local-first multi-source video summarization** (YouTube, social, drives, files) with any OpenAI-compatible LLM, optional vision path, and NotebookLM-style workflows.
+**Local-first, multi-source video summarization** for YouTube, social platforms, cloud drives, and local files. Works with any OpenAI-compatible LLM, supports an optional vision path, and includes NotebookLM-style workflows.
 
-> **Not [steipete/summarize](https://github.com/steipete/summarize)** — This is a **self-hosted video pipeline** with transcript cache, Cobalt fallback, Streamlit workspace, and an agent skill. Steipete's project is a generic URL clipper.
+> **Not [steipete/summarize](https://github.com/steipete/summarize).** This project is a self-hosted video pipeline with transcript caching, Cobalt fallback, a Streamlit workspace, and an agent skill. [steipete/summarize](https://github.com/steipete/summarize) is a generic URL clipper.
 
-Bring your own API keys. Full docs live at **[summarize.martino.im](https://summarize.martino.im)**.
+Bring your own API keys. Configuration lives in `summarizer.yaml` and `.env`. Full documentation: **[summarize.martino.im](https://summarize.martino.im)**.
 
-## Quick Start 
+## Features
 
-You need any openai compatible API key in `.env` (for example [Groq](https://groq.com/) `GROQ_API_KEY` is free-tier friendly; `OPENAI_API_KEY` works with `--provider openai`).
+- **11+ sources** — YouTube, Instagram, TikTok, X/Twitter, Reddit, Facebook, Google Drive, Dropbox, and local files
+- **Any LLM** — OpenAI, Groq, Gemini, Ollama, OpenRouter, NVIDIA, Perplexity, LiteLLM, and other OpenAI-compatible endpoints
+- **Two modes** — Transcript-based summarization (default) or visual mode with vision-capable models
+- **Summary styles** — Q&A, distillation, fact-checking, tutorials, Mermaid diagrams, essays, and custom prompts via `summarizer/prompts.json`
+- **Multiple interfaces** — CLI, Streamlit UI, HTTP API, Docker, Raycast extension, and agent skill
+- **Transcript cache** — Reuse cached transcripts across runs; optional Cobalt sidecar for yt-dlp fallbacks
+
+## Requirements
+
+- **Python** 3.7+
+- **ffmpeg** on `PATH`
+- At least one **LLM API key** in `.env`
+- **Cobalt** (optional, included in Docker Compose) for URLs that yt-dlp cannot handle
+
+## Quick Start
+
+Set an OpenAI-compatible API key in `.env`. [Groq](https://groq.com/) (`GROQ_API_KEY`) offers a free tier; `OPENAI_API_KEY` works with `--provider openai`.
 
 ```bash
 pip install martino-summarize
@@ -26,16 +42,16 @@ echo "GROQ_API_KEY=your_key_here" > .env
 summarizer --source "https://www.youtube.com/watch?v=arj7oStGLkU"
 ```
 
-The summary is saved to `summaries/watch_YYYYMMDD_HHMMSS.md`.
+Summaries are saved to `summaries/watch_YYYYMMDD_HHMMSS.md`.
 
-Install extras as needed:
+Optional extras:
 
 ```bash
 pipx install "martino-summarize[server]"   # HTTP API
-pipx install "martino-summarize[all]"     # server + whisper + litellm
+pipx install "martino-summarize[all]"      # server + whisper + litellm
 ```
 
-### Quick Start (Docker)
+### Docker
 
 ```bash
 git clone https://github.com/martinopiaggi/summarize.git
@@ -47,7 +63,7 @@ docker compose up -d
 
 Open **http://localhost:8501**, paste a URL, and summarize.
 
-Or pull the pre-built image:
+Pre-built image:
 
 ```bash
 docker pull ghcr.io/martinopiaggi/summarize:latest
@@ -66,93 +82,22 @@ docker pull ghcr.io/martinopiaggi/summarize:latest
 | **Agent Skill** | [`.agent/skills/summarize/SKILL.md`](./.agent/skills/summarize/SKILL.md) |
 | **Raycast** | [`extensions/raycast-summarize/`](./extensions/raycast-summarize/) |
 
-## Documentation
-
-Full docs live at [summarize.martino.im](https://summarize.martino.im).
-
 ## How It Works
 
-```text
-               +--------------------+
-               |  Video URL/Path    |
-               +---------+----------+
-                         |
-                         v
-               +---------+----------+
-               |    Source Type?    |
-               +---------+----------+
-                         |
-        +----------------+--------------------+
-        | visual flag                         |
-        v                                     v
-+-------+--------+                  +---------+----------+
-|  Visual Mode   |                  | Transcript Cache   |-------------> HIT ---+
-|  base64 / url  |                  +---------+----------+                      |  
-+-------+--------+                            | MISS                            |  
-        |                                     |                                 |  
-        |                                     v                                 |  
-        |         +-------+ +-------+ +-------+ +-------+                       |  
-        |         |YouTube| |yt-dlp | | Local | |Dropbox|                       |  
-        |         |       | |X.com  | | File  | |G.Drive|                       |  
-        |         |       | |TikTok | |       | |       |                       |  
-        |         |       | |etc.   | |       | |       |                       |  
-        |         +---+---+ +---+---+ +---+---+ +---+---+                       |  
-        |             |         |         |         |                           |  
-        |             v         v         |         |                           |  
-        |         +----+---+  +--+---+    |         |                           |  
-        |         |Captions|  |Cobalt|    |         |                           |  
-        |         | Exist? |  +--+---+    |         |                           |  
-        |         +---+----+         |    |         |                           |  
-        |          Yes  No           |    |         |                           |  
-        |          +----+            |    +--------+--------------+             |  
-        |            |               |                            |             |  
-        |            +-------------->|                            v             |  
-        |                            |                   +--------+--------+    |  
-        |                            |                   |     Whisper     |    |  
-        |                            |                   |    endpoint?    |    |  
-        |                            |                   +--------+--------+    |  
-        |                            |                            |             |  
-        |                            |                +-----------+-----------+ |  
-        |                            |                |                       | |  
-        |                            |                |  Cloud Whisper Local  | |  
-        |                            |                |                       | |  
-        |                            |                +----------+------------+ |  
-        |                            |                           |              |  
-        |                            +------------------------|--+              |  
-        |                                                     v                 |  
-        |                                               store in cache          |  
-        |                                                     |                 |  
-        |                                                     +-----------------+  
-        |                                                     |                    
-        |                                                     |         Transcript 
-        |                                                     |                    
-        |                                                     v                        
-        |                                summarizer.yaml -> +------------+----------+
-        |                                 prompts.json  ->  |    Prompt + LLM       |
-        |                                                   |    Merge              |
-        |                                                   +------------+----------+
-        |                                                            |
-        |                                                            v
-        v                                                   +------------+----------+
-+-------+--------+                                          |                       |
-| Vision-capable |                                          |          Output       |
-|     model      |----------------------------------------->+                       |
-+-------+--------+                                          +-----------------------+
-        ^ 
-        | 
-        +----- prompts.json
-```
-
-- **Transcript path** (default): downloads audio/video, transcribes with Whisper or captions, caches the transcript, then summarizes with an LLM.
+- **Transcript path** (default): downloads audio or video, transcribes with Whisper or captions, caches the transcript, then summarizes with an LLM.
 - **Visual path** (`--visual`): sends the video directly to a vision-capable model, skipping transcription. Uses the same prompts, provider config, and `.env` keys as the transcript path. Supports `base64` chunks (default) and `url` passthrough for YouTube.
+
+Full pipeline diagram: [summarize.martino.im/how-it-works](https://summarize.martino.im/how-it-works)
 
 ## Troubleshooting
 
-- **yt-dlp / platform errors:** ensure Cobalt is running (`docker compose` includes it) or set `COBALT_BASE_URL`
-- **Missing API key:** add the provider key to `.env` (see `summarizer.example.yaml` for provider names)
-- **No config file:** run `summarizer --init-config` or pass `--base-url` and `--model` with `--no-config`
+| Issue | Resolution |
+|-------|------------|
+| yt-dlp or platform errors | Ensure Cobalt is running (`docker compose` includes it) or set `COBALT_BASE_URL` |
+| Missing API key | Add the provider key to `.env` (see `summarizer.example.yaml` for provider names) |
+| No config file | Run `summarizer --init-config` or pass `--base-url` and `--model` with `--no-config` |
 
-Full guide: [summarize.martino.im](https://summarize.martino.im) 
+Full guide: [summarize.martino.im](https://summarize.martino.im)
 
 ## Contributing
 
@@ -164,7 +109,7 @@ pip install pytest
 pytest tests/
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). 
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
