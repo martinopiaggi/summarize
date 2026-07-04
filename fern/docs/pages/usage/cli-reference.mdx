@@ -12,7 +12,7 @@
     # Uses default provider from YAML
     python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"
 
-    # Console entry point (after pip install)
+    # Console entry point (after pipx or pip install)
     summarizer --source "URL"
 
     # Specific provider
@@ -87,7 +87,7 @@
 | `--force-download` | Skip captions and download audio instead | `False` |
 | `--transcription` | `Cloud Whisper` (Groq Whisper API) or `Local Whisper` (local Whisper) | `Cloud Whisper` |
 | `--whisper-model` | `tiny`, `base`, `small`, `medium`, `large` | `tiny` |
-| `--speed` | Playback speed for audio preprocessing or visual-mode video. Reduces Groq cost (priced by duration) but may reduce accuracy. Any positive value. | `2.0` (from `summarizer.yaml`; code fallback `1.0`) |
+| `--speed` | Playback speed for audio preprocessing or visual-mode video. Reduces Groq cost (priced by duration) but may reduce accuracy. Values other than `1.0` skip YouTube captions. Any positive value. | `1.0` |
 | `--language` | `auto` or explicit code for captions/transcription | `auto` |
 | `--output-language` | Summary language; `auto`, `none`, or name | `auto` |
 | `--output-format` | `markdown`, `json`, or `html` | `markdown` |

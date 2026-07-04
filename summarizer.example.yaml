@@ -74,7 +74,7 @@ defaults:
   parallel-calls: 10
   max-tokens: 4096
   output-language: auto
-  speed: 2.0
+  speed: 1.0
   use-proxy: false
   output-dir: summaries
   keep-history: false
