@@ -11,6 +11,7 @@
 - **CLI · Streamlit · HTTP API · Docker · Raycast · Agent skill**
 - **Transcript cache** + optional Cobalt sidecar for yt-dlp fallbacks + optional vision mode
 - **Documentation**: https://summarize.martino.im
+- **Background**: [more on this project](https://martino.im/Summarize.html)
 
 ## Quick Start
 
