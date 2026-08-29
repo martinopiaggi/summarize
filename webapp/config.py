@@ -83,7 +83,7 @@ def load_config():
         {
             "gemini": {
                 "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
-                "model": "gemini-2.5-flash-lite",
+                "model": "gemini-3.5-flash-lite",
             }
         },
         "gemini",
