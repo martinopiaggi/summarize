@@ -104,7 +104,10 @@ class CobaltDownloader(BaseDownloader):
         audio_speed: float = 1.0,
         use_proxy: bool = False,
     ) -> str:
-        download_url = self._resolve_download_url(url, verbose, mode="audio")
+        try:
+            download_url = self._resolve_download_url(url, verbose, mode="audio")
+        except Exception as e:
+            raise AudioProcessingError(f"Cobalt audio download failed: {str(e)}") from e
         temp_root = temp_dir or tempfile.gettempdir()
         temp_name = f"cobalt_audio_{uuid.uuid4().hex}"
         temp_path = os.path.join(temp_root, f"{temp_name}.bin")
@@ -144,7 +147,10 @@ class CobaltDownloader(BaseDownloader):
         verbose: bool = False,
         use_proxy: bool = False,
     ) -> str:
-        download_url = self._resolve_download_url(url, verbose, mode="video")
+        try:
+            download_url = self._resolve_download_url(url, verbose, mode="video")
+        except Exception as e:
+            raise AudioProcessingError(f"Cobalt video download failed: {str(e)}") from e
         temp_root = temp_dir or tempfile.gettempdir()
         temp_name = f"cobalt_video_{uuid.uuid4().hex}"
         temp_path = os.path.join(temp_root, f"{temp_name}.bin")

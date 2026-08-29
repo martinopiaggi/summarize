@@ -75,8 +75,8 @@
 
 The app uses a **fallback downloader chain**:
 
-1. **YouTube** (`pytubefix`) — captions first, then audio download
-2. **yt-dlp** — Instagram, TikTok, Twitter/X, Reddit, Facebook
+1. **yt-dlp** — YouTube, Instagram, TikTok, Twitter/X, Reddit, Facebook
+2. **YouTube** (`pytubefix`) — fallback if yt-dlp fails
 3. **Cobalt** — fallback for other HTTP video URLs
 
 If a downloader does not support a URL or fails, the next one is tried automatically.

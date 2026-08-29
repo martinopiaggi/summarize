@@ -17,8 +17,8 @@ class DownloadManager:
             os.getenv("COBALT_BASE_URL") or cobalt_base_url or "http://localhost:9000"
         )
         self.downloaders = [
-            YouTubeDownloader(),
             YtdlpDownloader(),
+            YouTubeDownloader(),
             CobaltDownloader(self.cobalt_base_url),
         ]
 
@@ -40,6 +40,7 @@ class DownloadManager:
             print_status(f"Proxy {proxy_state} for download", "INFO", verbose)
 
         tried_downloader = False
+        errors = []
         for i, downloader in enumerate(self.downloaders):
             if downloader.supports(url):
                 downloader_name = downloader.__class__.__name__.replace("Downloader", "")
@@ -64,14 +65,12 @@ class DownloadManager:
                     return result_path
                 except AudioProcessingError as exc:
                     last_error = exc
-                    print_status(
-                        f"{downloader_name} failed: {str(exc)[:120]}", "WARNING", verbose
-                    )
-                    # pytubefix is fragile on YouTube bot checks; try the next backend.
+                    errors.append(f"{downloader_name} failed: {str(exc)[:160]}")
+                    print_status(errors[-1], "WARNING", verbose)
                     continue
 
-        if last_error is not None:
-            raise last_error
+        if errors:
+            raise AudioProcessingError(" | ".join(errors)) from last_error
         raise UnsupportedSourceError("No downloader available for the provided URL")
 
     def download_video(
@@ -88,6 +87,7 @@ class DownloadManager:
         last_error = None
 
         tried_downloader = False
+        errors = []
         for i, downloader in enumerate(self.downloaders):
             if downloader.supports(url):
                 downloader_name = downloader.__class__.__name__.replace("Downloader", "")
@@ -111,11 +111,10 @@ class DownloadManager:
                     return result_path
                 except AudioProcessingError as exc:
                     last_error = exc
-                    print_status(
-                        f"{downloader_name} failed: {str(exc)[:120]}", "WARNING", verbose
-                    )
+                    errors.append(f"{downloader_name} failed: {str(exc)[:160]}")
+                    print_status(errors[-1], "WARNING", verbose)
                     continue
 
-        if last_error is not None:
-            raise last_error
+        if errors:
+            raise AudioProcessingError(" | ".join(errors)) from last_error
         raise UnsupportedSourceError("No downloader available for the provided URL")

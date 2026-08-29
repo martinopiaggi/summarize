@@ -1,7 +1,8 @@
-"""yt-dlp downloader for non-YouTube platforms."""
+"""yt-dlp downloader for YouTube and supported social platforms."""
 
 import os
 import tempfile
+import time
 import uuid
 from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urlparse
@@ -34,6 +35,8 @@ _HOST_COOKIE_ENV = {
     "reddit.com": "REDDIT_COOKIES_FILE",
     "facebook.com": "FACEBOOK_COOKIES_FILE",
     "fb.watch": "FACEBOOK_COOKIES_FILE",
+    "youtube.com": "YOUTUBE_COOKIES_FILE",
+    "youtu.be": "YOUTUBE_COOKIES_FILE",
 }
 
 
@@ -112,12 +115,85 @@ def _cleanup(paths):
                 pass
 
 
+class _YtdlpLogger:
+    """Route yt-dlp errors into print_status so Streamlit sees them."""
+
+    def __init__(self, verbose: bool):
+        self.verbose = verbose
+
+    def debug(self, msg):
+        return None
+
+    def info(self, msg):
+        return None
+
+    def warning(self, msg):
+        text = str(msg)
+        if "ERROR:" in text or "403" in text or "Forbidden" in text:
+            print_status(f"yt-dlp: {text[-160:]}", "WARNING", self.verbose)
+
+    def error(self, msg):
+        text = str(msg)
+        if text.startswith("ERROR: "):
+            text = text[7:]
+        print_status(f"yt-dlp: {text[:160]}", "WARNING", self.verbose)
+
+
+def _progress_hook(verbose: bool):
+    last_emit = [0.0]
+
+    def hook(d: Dict[str, Any]) -> None:
+        status = d.get("status")
+        now = time.time()
+        if status == "downloading":
+            if now - last_emit[0] < 2:
+                return
+            last_emit[0] = now
+            parts = ["yt-dlp downloading"]
+            percent = (d.get("_percent_str") or "").strip()
+            speed = (d.get("_speed_str") or "").strip()
+            eta = (d.get("_eta_str") or "").strip()
+            if percent:
+                parts.append(percent)
+            if speed:
+                parts.append(speed)
+            if eta and eta.lower() != "unknown":
+                parts.append(f"ETA {eta}")
+            print_status(" ".join(parts), "PROCESSING", verbose)
+        elif status == "finished":
+            print_status("yt-dlp download finished", "INFO", verbose)
+
+    return hook
+
+
+def _base_ydl_opts(verbose: bool) -> Dict[str, Any]:
+    opts: Dict[str, Any] = {
+        "quiet": not verbose,
+        "no_warnings": not verbose,
+        "noplaylist": True,
+        "socket_timeout": 20,
+        "retries": 3,
+        "fragment_retries": 3,
+        "extractor_retries": 1,
+        "check_formats": "selected",
+        "js_runtimes": {"deno": {}, "node": {}},
+        "remote_components": {"ejs:github"},
+        "progress_hooks": [_progress_hook(verbose)],
+    }
+    if not verbose:
+        opts["logger"] = _YtdlpLogger(verbose)
+    return opts
+
+
 def _apply_common_options(ydl_opts: Dict, url: str, use_proxy: bool, verbose: bool):
     auth_options = _auth_options_for_url(url)
     if auth_options:
         ydl_opts.update(auth_options)
         auth_type = "cookie file" if "cookiefile" in auth_options else "username/password"
         print_status(f"Using yt-dlp {auth_type} authentication", "INFO", verbose)
+
+    if is_youtube_url(url):
+        print_status("Using yt-dlp for YouTube", "INFO", verbose)
 
     proxy_url = get_webshare_proxy_url(use_proxy)
     if proxy_url:
@@ -129,8 +205,10 @@ class YtdlpDownloader(BaseDownloader):
     """Downloader that uses yt-dlp locally before Cobalt fallback."""
 
     def supports(self, url: str) -> bool:
-        if not url or is_youtube_url(url):
+        if not url:
             return False
+        if is_youtube_url(url):
+            return True
         host = (urlparse(url).hostname or "").lower()
         return any(_host_matches(host, h) for h in YTDLP_PRIMARY_HOSTS)
 
@@ -148,18 +226,15 @@ class YtdlpDownloader(BaseDownloader):
         temp_template = os.path.join(temp_root, f"{temp_name}.%(ext)s")
         processed_path = os.path.join(temp_root, f"{temp_name}_processed.mp3")
 
-        ydl_opts = {
-            "format": "bestaudio/best",
-            "outtmpl": temp_template,
-            "quiet": not verbose,
-            "no_warnings": not verbose,
-            "noplaylist": True,
-        }
+        ydl_opts = _base_ydl_opts(verbose)
+        ydl_opts["format"] = "bestaudio/best"
+        ydl_opts["outtmpl"] = temp_template
         _apply_common_options(ydl_opts, url, use_proxy, verbose)
 
         spinner = ProgressSpinner("Downloading audio with yt-dlp", verbose)
         produced_files = []
         try:
+            print_status("Downloading audio with yt-dlp", "PROCESSING", verbose)
             spinner.start()
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.extract_info(url, download=True)
@@ -204,18 +279,15 @@ class YtdlpDownloader(BaseDownloader):
         temp_name = f"ytdlp_video_{uuid.uuid4().hex}"
         temp_template = os.path.join(temp_root, f"{temp_name}.%(ext)s")
 
-        ydl_opts = {
-            "format": "bestvideo*+bestaudio/best",
-            "outtmpl": temp_template,
-            "quiet": not verbose,
-            "no_warnings": not verbose,
-            "noplaylist": True,
-        }
+        ydl_opts = _base_ydl_opts(verbose)
+        ydl_opts["format"] = "bestvideo*+bestaudio/best"
+        ydl_opts["outtmpl"] = temp_template
         _apply_common_options(ydl_opts, url, use_proxy, verbose)
 
         spinner = ProgressSpinner("Downloading video with yt-dlp", verbose)
         produced_files = []
         try:
+            print_status("Downloading video with yt-dlp", "PROCESSING", verbose)
             spinner.start()
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True) or {}

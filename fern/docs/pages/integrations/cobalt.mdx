@@ -19,7 +19,7 @@
   </Card>
 </CardGroup>
 
-> **Tip:** For **Instagram, TikTok, Twitter/X, Reddit, and Facebook**, yt-dlp is the **primary** downloader. It is faster, requires no extra container, and supports per-platform cookie authentication. Cobalt is only used as a fallback when yt-dlp fails or does not recognize the URL.
+> **Tip:** For **YouTube, Instagram, TikTok, Twitter/X, Reddit, and Facebook**, yt-dlp is the **primary** downloader. It is faster, requires no extra container, and supports per-platform cookie authentication. Cobalt is only used as a fallback when yt-dlp fails or does not recognize the URL.
 
 ## When yt-dlp Is Better
 
@@ -28,7 +28,7 @@
 | Instagram, TikTok, X, Reddit, Facebook | yt-dlp | Native extractors, cookie auth, no container overhead |
 | Generic HTTP video links | Cobalt | Broader URL support |
 | yt-dlp rate-limited / blocked | Cobalt | Alternative extraction pipeline |
-| YouTube | pytubefix | Fastest, captions support |
+| YouTube | yt-dlp | Default clients and JS challenge solving; pytubefix is the fallback |
 
 ## Running Cobalt
 

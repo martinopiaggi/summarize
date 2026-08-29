@@ -11,9 +11,15 @@ import pytest
 from summarizer.downloaders import DownloadManager
 from summarizer.downloaders.ytdlp import YtdlpDownloader
 from summarizer.downloaders.cobalt import CobaltDownloader
+from summarizer.exceptions import AudioProcessingError
 
 
 class TestDownloadManagerVideo:
+    def test_ytdlp_runs_before_pytubefix(self):
+        dm = DownloadManager()
+        names = [d.__class__.__name__ for d in dm.downloaders]
+        assert names.index("YtdlpDownloader") < names.index("YouTubeDownloader")
+
     def test_fallback_order(self):
         dm = DownloadManager()
         with patch.object(dm.downloaders[0], "supports", return_value=False), \
@@ -21,6 +27,30 @@ class TestDownloadManagerVideo:
              patch.object(dm.downloaders[1], "download_video", return_value="/fake/video.mp4"):
             result = dm.download_video("http://example.com/video")
             assert result == "/fake/video.mp4"
+
+    def test_combines_fallback_errors(self):
+        dm = DownloadManager()
+        with patch.object(dm.downloaders[0], "supports", return_value=True), \
+             patch.object(
+                 dm.downloaders[0],
+                 "download_audio",
+                 side_effect=AudioProcessingError("HTTP Error 403: Forbidden"),
+             ), \
+             patch.object(dm.downloaders[1], "supports", return_value=True), \
+             patch.object(
+                 dm.downloaders[1],
+                 "download_audio",
+                 side_effect=AudioProcessingError("bot check"),
+             ), \
+             patch.object(dm.downloaders[2], "supports", return_value=True), \
+             patch.object(
+                 dm.downloaders[2],
+                 "download_audio",
+                 side_effect=AudioProcessingError("Cobalt connection refused"),
+             ):
+            with pytest.raises(AudioProcessingError, match="403") as exc:
+                dm.download_audio("https://youtube.com/watch?v=abc")
+            assert "Cobalt connection refused" in str(exc.value)
 
     def test_raises_when_no_downloader_matches(self):
         dm = DownloadManager()
@@ -33,6 +63,56 @@ class TestDownloadManagerVideo:
 
 
 class TestYtdlpDownloaderVideo:
+    def test_supports_youtube_and_social(self):
+        dl = YtdlpDownloader()
+        assert dl.supports("https://www.youtube.com/watch?v=abc")
+        assert dl.supports("https://youtu.be/abc")
+        assert dl.supports("https://instagram.com/reel/123")
+        assert not dl.supports("")
+
+    def test_youtube_uses_default_clients_and_js_challenge(self):
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
+            f.write(b"fake video")
+            fake_path = f.name
+        try:
+            dl = YtdlpDownloader()
+            with patch("summarizer.downloaders.ytdlp._load_ytdlp") as mock_load, \
+                 patch("summarizer.downloaders.ytdlp._find_produced_files", return_value=[fake_path]):
+                mock_ydl_class = MagicMock()
+                mock_ydl_instance = mock_ydl_class.return_value
+                mock_ydl_instance.__enter__ = MagicMock(return_value=mock_ydl_instance)
+                mock_ydl_instance.__exit__ = MagicMock(return_value=False)
+                mock_load.return_value.YoutubeDL = mock_ydl_class
+                result = dl.download_video("https://www.youtube.com/watch?v=abc")
+                assert result == fake_path
+                opts = mock_ydl_class.call_args[0][0]
+                assert "extractor_args" not in opts
+                assert opts["check_formats"] == "selected"
+                assert opts["socket_timeout"] == 20
+                assert "ejs:github" in opts["remote_components"]
+                assert "js_runtimes" in opts
+        finally:
+            os.remove(fake_path)
+
+    def test_instagram_does_not_force_youtube_clients(self):
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
+            f.write(b"fake video")
+            fake_path = f.name
+        try:
+            dl = YtdlpDownloader()
+            with patch("summarizer.downloaders.ytdlp._load_ytdlp") as mock_load, \
+                 patch("summarizer.downloaders.ytdlp._find_produced_files", return_value=[fake_path]):
+                mock_ydl_class = MagicMock()
+                mock_ydl_instance = mock_ydl_class.return_value
+                mock_ydl_instance.__enter__ = MagicMock(return_value=mock_ydl_instance)
+                mock_ydl_instance.__exit__ = MagicMock(return_value=False)
+                mock_load.return_value.YoutubeDL = mock_ydl_class
+                dl.download_video("https://instagram.com/reel/123")
+                opts = mock_ydl_class.call_args[0][0]
+                assert "extractor_args" not in opts
+        finally:
+            os.remove(fake_path)
+
     def test_downloads_video_without_audio_extraction(self):
         with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
             f.write(b"fake video")

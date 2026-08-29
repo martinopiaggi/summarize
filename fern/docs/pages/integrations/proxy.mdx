@@ -2,7 +2,7 @@
 
 Proxy support matters in two separate places:
 
-1. The Python app, when fetching YouTube transcripts or downloading YouTube audio with `pytubefix`
+1. The Python app, when fetching YouTube transcripts or downloading YouTube and social audio with `yt-dlp` / `pytubefix`
 2. The Python app, when downloading supported social URLs with `yt-dlp`
 
 For Cobalt container proxy configuration, see the [Cobalt](cobalt) page.
@@ -27,7 +27,8 @@ defaults:
 
 Notes:
 - YouTube transcript fetching uses Webshare **automatically** when credentials are present.
-- `defaults.use-proxy: true` affects `pytubefix` and `yt-dlp` audio downloads.
+- `defaults.use-proxy: true` affects `yt-dlp` and `pytubefix` downloads.
 - yt-dlp authentication is independent from Webshare proxy settings.
+- Optional `YOUTUBE_COOKIES_FILE` (Netscape cookies.txt) if YouTube still asks to sign in.
 - Host-specific cookie files such as `INSTAGRAM_COOKIES_FILE` win over `YTDLP_COOKIES_FILE`.
 - Cookie-file authentication wins over username/password authentication.
