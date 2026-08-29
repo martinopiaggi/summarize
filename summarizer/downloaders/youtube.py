@@ -8,7 +8,7 @@ from typing import Optional
 from ..exceptions import AudioProcessingError
 from ..handlers import process_audio_file
 from ..progress import ProgressSpinner, print_status
-from ..proxy import get_webshare_proxies
+from ..proxy import get_proxies
 from .base import BaseDownloader
 
 
@@ -54,9 +54,9 @@ def download_youtube_audio(
     try:
         spinner.start()
 
-        proxies = get_webshare_proxies(use_proxy)
+        proxies = get_proxies(use_proxy)
         if proxies:
-            print_status("Using Webshare proxy for YouTube audio", "INFO", verbose)
+            print_status("Using HTTP proxy for YouTube audio", "INFO", verbose)
 
         yt = pytube.YouTube(url, proxies=proxies)
         stream = yt.streams.get_audio_only()
@@ -127,9 +127,9 @@ class YouTubeDownloader(BaseDownloader):
         try:
             spinner.start()
 
-            proxies = get_webshare_proxies(use_proxy)
+            proxies = get_proxies(use_proxy)
             if proxies:
-                print_status("Using Webshare proxy for YouTube video", "INFO", verbose)
+                print_status("Using HTTP proxy for YouTube video", "INFO", verbose)
 
             yt = pytube.YouTube(url, proxies=proxies)
             # Prefer progressive MP4 streams (muxed audio+video)

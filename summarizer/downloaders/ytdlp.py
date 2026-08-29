@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from ..exceptions import AudioProcessingError, TranscriptError
 from ..handlers import process_audio_file
 from ..progress import ProgressSpinner, print_status
-from ..proxy import get_webshare_proxy_url
+from ..proxy import get_proxy_url, should_proxy_url
 from .base import BaseDownloader
 from .youtube import is_youtube_url
 
@@ -195,10 +195,10 @@ def _apply_common_options(ydl_opts: Dict, url: str, use_proxy: bool, verbose: bo
     if is_youtube_url(url):
         print_status("Using yt-dlp for YouTube", "INFO", verbose)
 
-    proxy_url = get_webshare_proxy_url(use_proxy)
+    proxy_url = get_proxy_url(use_proxy, url) if should_proxy_url(url, use_proxy) else None
     if proxy_url:
         ydl_opts["proxy"] = proxy_url
-        print_status("Using Webshare proxy for yt-dlp", "INFO", verbose)
+        print_status("Using HTTP proxy for yt-dlp", "INFO", verbose)
 
 
 class YtdlpDownloader(BaseDownloader):

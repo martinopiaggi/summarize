@@ -9,7 +9,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 from summarizer.downloaders import DownloadManager
-from summarizer.downloaders.ytdlp import YtdlpDownloader
+from summarizer.downloaders.ytdlp import YtdlpDownloader, _apply_common_options
 from summarizer.downloaders.cobalt import CobaltDownloader
 from summarizer.exceptions import AudioProcessingError
 
@@ -93,6 +93,48 @@ class TestYtdlpDownloaderVideo:
                 assert "js_runtimes" in opts
         finally:
             os.remove(fake_path)
+
+    def test_youtube_uses_configured_proxy(self, monkeypatch):
+        monkeypatch.setenv("PROXY_USERNAME", "user")
+        monkeypatch.setenv("PROXY_PASSWORD", "pass")
+        monkeypatch.setenv("PROXY_HOST", "proxy.example.com")
+        monkeypatch.setenv("PROXY_PORT", "8080")
+
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
+            f.write(b"fake video")
+            fake_path = f.name
+        try:
+            dl = YtdlpDownloader()
+            with patch("summarizer.downloaders.ytdlp._load_ytdlp") as mock_load, \
+                 patch("summarizer.downloaders.ytdlp._find_produced_files", return_value=[fake_path]):
+                mock_ydl_class = MagicMock()
+                mock_ydl_instance = mock_ydl_class.return_value
+                mock_ydl_instance.__enter__ = MagicMock(return_value=mock_ydl_instance)
+                mock_ydl_instance.__exit__ = MagicMock(return_value=False)
+                mock_load.return_value.YoutubeDL = mock_ydl_class
+                result = dl.download_video(
+                    "https://www.youtube.com/watch?v=abc",
+                    use_proxy=True,
+                )
+                assert result == fake_path
+                opts = mock_ydl_class.call_args[0][0]
+                assert opts["proxy"] == "http://user:pass@proxy.example.com:8080"
+        finally:
+            os.remove(fake_path)
+
+    def test_ytdlp_honors_no_proxy(self, monkeypatch):
+        monkeypatch.setenv("PROXY_URL", "http://proxy.example.com:8080")
+        monkeypatch.setenv("NO_PROXY", ".internal.example")
+        opts = {}
+
+        _apply_common_options(
+            opts,
+            "https://media.internal.example/video",
+            use_proxy=True,
+            verbose=False,
+        )
+
+        assert "proxy" not in opts
 
     def test_instagram_does_not_force_youtube_clients(self):
         with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:

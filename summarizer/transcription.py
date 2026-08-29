@@ -49,7 +49,7 @@ def get_youtube_transcript(
         proxy_config = get_youtube_transcript_proxy_config(use_proxy)
         if proxy_config is not None:
             ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config)
-            print_status("Using Webshare proxy for YouTube transcript", "INFO", verbose)
+            print_status("Using HTTP proxy for YouTube transcript", "INFO", verbose)
         else:
             ytt_api = YouTubeTranscriptApi()
 

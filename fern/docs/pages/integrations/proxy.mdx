@@ -3,32 +3,93 @@
 Proxy support matters in two separate places:
 
 1. The Python app, when fetching YouTube transcripts or downloading YouTube and social audio with `yt-dlp` / `pytubefix`
-2. The Python app, when downloading supported social URLs with `yt-dlp`
+2. The Cobalt container (optional fallback)
 
 For Cobalt container proxy configuration, see the [Cobalt](cobalt) page.
 
-## Python App (Webshare)
+## Python App
 
-This repo expects **Webshare** credentials for the Python app.
+The Python app accepts vendor-neutral proxy URLs. Configuration stays in your
+ignored `.env` file and is only used when `use-proxy` is enabled.
 
-1. Add credentials to `.env`:
+1. Add one proxy URL to `.env`:
 
 ```ini
-WEBSHARE_PROXY_USERNAME = YOUR_WEBSHARE_USERNAME
-WEBSHARE_PROXY_PASSWORD = YOUR_WEBSHARE_PASSWORD
+PROXY_URL = http://username:password@proxy.example.com:8080
 ```
 
-2. Enable proxy for `pytubefix` and `yt-dlp` downloads in `summarizer.yaml`:
+Authentication is optional:
+
+```ini
+PROXY_URL = http://proxy.example.com:8080
+```
+
+Use separate URLs when HTTP and HTTPS targets need different proxies:
+
+```ini
+PROXY_HTTP_URL = http://proxy-http.example.com:8080
+PROXY_HTTPS_URL = http://proxy-https.example.com:8080
+```
+
+Standard `HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY` variables are also
+supported. Supported URL schemes depend on the downstream client.
+
+As an alternative, build one proxy URL from components. Username and password
+must either both be present or both be omitted; special characters in component
+credentials are percent-encoded automatically.
+
+```ini
+PROXY_SCHEME = http
+PROXY_HOST = proxy.example.com
+PROXY_PORT = 8080
+PROXY_USERNAME = YOUR_PROXY_USERNAME
+PROXY_PASSWORD = YOUR_PROXY_PASSWORD
+```
+
+2. Enable proxy use in `summarizer.yaml`:
 
 ```yaml
 defaults:
   use-proxy: true
 ```
 
+## Direct/local destinations
+
+Loopback and private/link-local IP addresses, single-label service names such as
+`ollama` or `cobalt`, `host.docker.internal`, `.local` hosts, and Groq stay
+direct. `NO_PROXY` / `no_proxy` is also honored for other destinations that must
+not use the proxy:
+
+```ini
+NO_PROXY = localhost,127.0.0.1,::1,.internal.example.com,10.0.0.0/8
+```
+
+Add dotted Docker, LAN, or corporate service names to `NO_PROXY`. The app does
+not resolve public-looking hostnames just to determine whether their current IP
+is private.
+
+## Backward compatibility
+
+Existing Webshare settings remain supported:
+
+```ini
+WEBSHARE_PROXY_USERNAME = YOUR_WEBSHARE_USERNAME
+WEBSHARE_PROXY_PASSWORD = YOUR_WEBSHARE_PASSWORD
+```
+
+This legacy path retains `youtube-transcript-api`'s Webshare-specific rotating
+username, blocked-IP retry, and connection behavior. Prefer `PROXY_URL` for new
+setups.
+
+Proxy settings are resolved in this order: split `PROXY_HTTP_URL` /
+`PROXY_HTTPS_URL`, `PROXY_URL`, component `PROXY_*` settings, legacy Webshare
+credentials, then standard proxy environment variables.
+
 Notes:
-- YouTube transcript fetching uses Webshare **automatically** when credentials are present.
-- `defaults.use-proxy: true` affects `yt-dlp` and `pytubefix` downloads.
-- yt-dlp authentication is independent from Webshare proxy settings.
-- Optional `YOUTUBE_COOKIES_FILE` (Netscape cookies.txt) if YouTube still asks to sign in.
+
+- Keep `.env` private. If credentials are embedded in `PROXY_URL`, percent-encode reserved characters.
+- `defaults.use-proxy: true` affects YouTube transcripts, `yt-dlp` / `pytubefix` downloads, Google Drive and Dropbox downloads, and supported external LLM requests.
+- Optional `YOUTUBE_COOKIES_FILE` (Netscape cookies.txt) can help if YouTube still asks you to sign in.
+- yt-dlp authentication is independent from HTTP proxy settings.
 - Host-specific cookie files such as `INSTAGRAM_COOKIES_FILE` win over `YTDLP_COOKIES_FILE`.
 - Cookie-file authentication wins over username/password authentication.

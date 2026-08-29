@@ -10,7 +10,7 @@ from .api import parse_response_content
 from .exceptions import APIError, ConfigurationError, VideoValidationError
 from .progress import print_status
 from .prompts import load_prompt_template
-from .proxy import get_webshare_proxy_url, should_proxy_url
+from .proxy import get_proxy_url, should_proxy_url
 
 logger = logging.getLogger(__name__)
 
@@ -225,7 +225,7 @@ async def _process_video_openai_url(
     url = f"{base_url}/chat/completions"
     proxy = None
     if should_proxy_url(url, bool(config.get("use_proxy", False))):
-        proxy = get_webshare_proxy_url(True)
+        proxy = get_proxy_url(True, url)
 
     data_url = payload["messages"][1]["content"][0]["video_url"]["url"]
     print_status(

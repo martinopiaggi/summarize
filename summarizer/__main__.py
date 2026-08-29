@@ -187,7 +187,7 @@ Examples:
         dest="use_proxy",
         action="store_true",
         default=None,
-        help="Route supported requests through Webshare proxies",
+        help="Route supported requests through the configured HTTP proxy",
     )
     parser.add_argument(
         "--visual",

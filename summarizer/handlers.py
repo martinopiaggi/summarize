@@ -9,7 +9,7 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 import requests
 
 from .exceptions import SourceNotFoundError, UnsupportedSourceError, AudioProcessingError
-from .proxy import get_webshare_proxies, should_proxy_url
+from .proxy import get_proxies, should_proxy_url
 
 
 DROPBOX_HOST_SUFFIXES = ("dropbox.com", "dropboxusercontent.com")
@@ -213,7 +213,7 @@ class GoogleDriveHandler(VideoSourceHandler):
         download_url = build_google_drive_download_url(file_id)
         proxies = None
         if should_proxy_url(download_url, self.use_proxy):
-            proxies = get_webshare_proxies(True)
+            proxies = get_proxies(True)
 
         session = requests.Session()
         response = None
@@ -258,7 +258,7 @@ class GoogleDriveHandler(VideoSourceHandler):
         download_url = build_google_drive_download_url(file_id)
         proxies = None
         if should_proxy_url(download_url, self.use_proxy):
-            proxies = get_webshare_proxies(True)
+            proxies = get_proxies(True)
 
         session = requests.Session()
         response = None
@@ -336,7 +336,7 @@ class DropboxHandler(VideoSourceHandler):
         download_url = normalize_dropbox_url(self.source_path)
         proxies = None
         if should_proxy_url(download_url, self.use_proxy):
-            proxies = get_webshare_proxies(True)
+            proxies = get_proxies(True)
 
         try:
             with requests.get(
@@ -360,7 +360,7 @@ class DropboxHandler(VideoSourceHandler):
         download_url = normalize_dropbox_url(self.source_path)
         proxies = None
         if should_proxy_url(download_url, self.use_proxy):
-            proxies = get_webshare_proxies(True)
+            proxies = get_proxies(True)
 
         try:
             with requests.get(

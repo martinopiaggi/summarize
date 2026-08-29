@@ -429,7 +429,7 @@
                 "type": "null"
               }
             ],
-            "description": "Route through Webshare proxy",
+            "description": "Route through the configured HTTP proxy",
             "title": "Use Proxy"
           },
           "api_key": {
@@ -1118,7 +1118,7 @@
                 "type": "null"
               }
             ],
-            "description": "Route through Webshare proxy",
+            "description": "Route through the configured HTTP proxy",
             "title": "Use Proxy"
           },
           "api_key": {

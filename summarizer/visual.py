@@ -29,7 +29,7 @@ from .handlers import (
     normalize_dropbox_url,
 )
 from .progress import ProgressSpinner, print_status
-from .proxy import get_webshare_proxies, should_proxy_url
+from .proxy import get_proxies, should_proxy_url
 
 # Hardcoded YouTube hosts for URL passthrough mode.
 _YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
@@ -151,7 +151,7 @@ def _download_google_drive_video(
         )
 
     download_url = build_google_drive_download_url(file_id)
-    proxies = get_webshare_proxies(use_proxy) if should_proxy_url(download_url, use_proxy) else None
+    proxies = get_proxies(use_proxy) if should_proxy_url(download_url, use_proxy) else None
 
     temp_dir = tempfile.gettempdir()
     temp_path = os.path.join(temp_dir, f"gdrive_visual_{uuid.uuid4().hex}.mp4")
@@ -198,7 +198,7 @@ def _download_dropbox_video(
         raise SourceNotFoundError(f"Not a valid Dropbox URL: {url}")
 
     download_url = normalize_dropbox_url(url)
-    proxies = get_webshare_proxies(use_proxy) if should_proxy_url(download_url, use_proxy) else None
+    proxies = get_proxies(use_proxy) if should_proxy_url(download_url, use_proxy) else None
 
     temp_dir = tempfile.gettempdir()
     temp_path = os.path.join(temp_dir, f"dropbox_visual_{uuid.uuid4().hex}.mp4")
