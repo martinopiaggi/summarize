@@ -9,7 +9,7 @@
 - **11+ sources**: Local-first summarization for YouTube, Instagram, TikTok, X, Reddit, Facebook, Drive, Dropbox, local files
 - **Bring your own API keys**: Works with any OpenAI-compatible LLM, Perplexity models, LiteLLM
 - **CLI · Streamlit · HTTP API · Docker · Raycast · Agent skill**
-- **Transcript cache** + optional Cobalt sidecar for yt-dlp fallbacks + optional vision mode
+- **Transcript cache** + optional JEV prefiltering + optional Cobalt sidecar for yt-dlp fallbacks + optional vision mode
 - **Documentation**: https://summarize.martino.im
 - **Background**: [more on this project](https://martino.im/Summarize.html)
 
@@ -43,6 +43,8 @@ docker compose up -d    # → http://localhost:8501
 Or pull the pre-built image: `docker pull ghcr.io/martinopiaggi/summarize:latest`. 
 
 ## Optional JEV prefilter
+
+Full guide: [JEV Prefiltering](https://summarize.martino.im/features/jev-prefiltering).
 
 Check **Use JEV prefiltering** to reveal two optional fields:
 

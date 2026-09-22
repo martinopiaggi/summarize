@@ -30,7 +30,7 @@ The key is a **SHA-256 hash** of these parameters joined together:
 | `speed` | `1.0` |
 | `use_youtube_captions` | `true` |
 
-Changing **any** of these values produces a different key and triggers a fresh transcription. Changing the summary style, provider, or output language does **not** affect the key, so those re-runs are instant.
+Changing **any** of these values produces a different key and triggers a fresh transcription. Changing the summary style, provider, output language, or JEV include/exclude rules does **not** affect the key, so those re-runs are instant.
 
 ## In-Memory Cache (Default)
 
@@ -72,4 +72,5 @@ Or pass `--no-config` and the cache is bypassed entirely.
 
 - In-memory entries are always used first; disk is checked on a miss.
 - The cache does not apply to **visual mode** (`--visual`), which skips transcription entirely.
+- JEV prefiltering runs after a cache read or write and never stores its selected text in the transcript cache. See [JEV Prefiltering](jev-prefiltering).
 - The cache applies to **TXT files** too, since they bypass audio processing and are treated as pre-existing transcripts.

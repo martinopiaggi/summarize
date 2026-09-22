@@ -24,6 +24,9 @@ More background on this project: [martino.im/Summarize](https://martino.im/Summa
   <Card title="Two Modes" icon="fa-solid fa-eye">
     Audio transcription + text summary, or visual mode sending video directly to vision-capable models
   </Card>
+  <Card title="JEV Prefiltering" icon="fa-solid fa-filter">
+    Optional selection of transcript passages before the summary model, including or excluding a particular concept
+  </Card>
   <Card title="Summary Styles" icon="fa-solid fa-palette">
     Q&A, distillation, fact-checking, tutorials, Mermaid diagrams, essays, and more. Add your own instantly by editing `summarizer/prompts.json`.
   </Card>
@@ -99,7 +102,7 @@ See the [HTTP API guide](api-reference/http-api) for endpoint details, request e
 
 ## Two Processing Paths
 
-- **Transcript path** (default): downloads audio/video, transcribes with Whisper or captions, caches the transcript, then summarizes with an LLM.
+- **Transcript path** (default): downloads audio/video, transcribes with Whisper or captions, caches the complete transcript, optionally applies [JEV prefiltering](features/jev-prefiltering), then summarizes with an LLM.
 - **Visual path** (`--visual`): sends the video directly to a vision-capable model, skipping transcription. Uses the same prompts, provider config, and `.env` keys as the transcript path. Supports `base64` chunks (default) and `url` passthrough for YouTube.
 
 See [How It Works](how-it-works) for the full pipeline diagram and [Visual Mode](features/visual-mode) for provider setup.

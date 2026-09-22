@@ -52,9 +52,15 @@
         |                                                     |                 |  
         |                                                     +-----------------+  
         |                                                     |                    
+        |                                                     v                    
+        |                                            +--------+--------+           
+        |                                            |  Optional JEV   |           
+        |                                            |  prefilter      |           
+        |                                            +--------+--------+           
+        |                                                     |                    
         |                                                     |         Transcript 
         |                                                     |                    
-        |                                                     v                        
+        |                                                     v                    
         |                                summarizer.yaml -> +------------+----------+
         |                                 prompts.json  ->  |    Prompt + LLM       |
         |                                                   |    Merge              |
@@ -91,7 +97,7 @@ If a downloader does not support a URL or fails, the next one is tried automatic
 
 ## Processing Paths
 
-- **Transcript path** (default): downloads audio/video, transcribes with Whisper or captions, caches the transcript, then summarizes with an LLM.
+- **Transcript path** (default): downloads audio/video, transcribes with Whisper or captions, caches the complete transcript, optionally selects passages with JEV, then summarizes with an LLM.
 - **Visual path** (`--visual`): sends the video directly to a vision-capable model, skipping transcription. Uses the same prompts, provider config, and `.env` keys as the transcript path. Supports `base64` chunks (default) and `url` passthrough for YouTube.
 
 See [Visual Mode](features/visual-mode) for provider setup and [Transcription](features/transcription) for Whisper options.
@@ -100,7 +106,7 @@ See [Visual Mode](features/visual-mode) for provider setup and [Transcription](f
 
 > **Tip:** If YouTube captions are unavailable, the tool automatically falls back to audio download + Whisper transcription.
 >
-> **Tip:** Transcripts are cached in memory by default. Re-summarizing the same source with a different style or provider skips transcription entirely. Disable with `cache-transcript: false` in `summarizer.yaml`.
+> **Tip:** Transcripts are cached in memory by default. Re-summarizing the same source with a different style, provider, or JEV selection skips transcription entirely. Disable with `cache-transcript: false` in `summarizer.yaml`.
 
 - Cloud Whisper uses **Groq Cloud API** and requires a Groq API key.
 - The Docker image does **not** include Local Whisper and is aimed at lightweight VPS deployment.

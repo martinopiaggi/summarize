@@ -1,0 +1,77 @@
+# JEV Prefiltering
+
+By default, the app sends the full transcript to the summary model. **JEV prefiltering** runs after the transcript cache and selects original passages before summarization, so the model sees a shorter transcript. The summary provider, prompt, and cached transcript stay unchanged.
+
+**How to enable it:**
+- **CLI:** Add `--use-jev-prefiltering` to your command
+- **Streamlit GUI:** Check "Use JEV prefiltering" in the left sidebar
+
+The scoring provider and selection fields appear only after it is enabled. Visual mode and grammar-correction prompts bypass it.
+
+## Why JEV Prefiltering Exists
+
+Long transcripts are expensive to summarize and often contain filler, sponsorship, or material you do not want in the result. JEV scores passages before the summary model and keeps the original wording of the passages that match.
+
+> **Use cases where JEV prefiltering shines:**
+> - **Podcasts** — keep only a particular concept about this video to filter
+> - **Sponsor-heavy videos** — exclude sponsorship and self-promotion
+> - **Long lectures** — send the summary model roughly the most relevant 35% of each chunk
+> - **Repeated runs** — change the selection without downloading or transcribing again
+
+## Selection Fields
+
+| Field | Blank | Example |
+| --- | --- | --- |
+| **I want to include only…** | Keep generally relevant passages | `a particular concept about this video to filter` |
+| **I want to exclude…** | No additional exclusions | `Sponsorship and self-promotion` |
+
+An included subject can be selected even when it is not the video's main topic. Exclusions take priority, including in mixed passages.
+
+## Example Config
+
+JEV reuses an existing OpenRouter or TypeSafe provider and its API key. The default provider is `openrouter`; no separate provider entry is required. Scoring calls `jev-latest` on `/systemone`, not the provider's chat model.
+
+```yaml
+defaults:
+  use-jev-prefiltering: true
+  jev-provider: openrouter
+  jev-include: "a particular concept about this video to filter"
+  jev-exclude: "Sponsorship and self-promotion"
+  jev-keep-ratio: 0.35
+  chunk-size: 10000
+```
+
+## CLI Examples
+
+```bash
+# General compression
+python -m summarizer --source "URL" --use-jev-prefiltering
+
+# Keep one concept and drop sponsorship
+python -m summarizer --source "URL" \
+  --use-jev-prefiltering \
+  --jev-include "a particular concept about this video to filter" \
+  --jev-exclude "Sponsorship and self-promotion"
+
+# Turn it off for one run
+python -m summarizer --source "URL" --no-use-jev-prefiltering
+```
+
+HTTP JSON, upload, and batch requests accept `use_jev_prefiltering`, `jev_provider`, `jev_include`, and `jev_exclude`. An empty string clears a rule set in YAML.
+
+## Selection Limits
+
+- Default retention ceiling: about 35% of each original chunk
+- Recommended text chunk size: 10,000 characters
+- Scoring provider: existing OpenRouter or TypeSafe provider
+- One scoring request per eligible chunk
+
+`jev-keep-ratio` is a ceiling, not a quota. Irrelevant text is not added to fill unused space. Set `jev-keep-ratio: 1.0` to keep every qualifying passage.
+
+If nothing matches, the summary model is not called. With both fields blank, chunks under 1,000 characters or with only one or two units skip scoring. Explicit rules also score those small chunks.
+
+<Callout type="warning">
+  Explicit include or exclude rules stop the run if scoring times out, returns an error, or the request is too large. They do not send the unfiltered transcript to the summary model. With both fields blank, the original chunk is used after a warning.
+</Callout>
+
+Selected passages stay in their original order. A mixed passage is kept or dropped as a whole, so an exclusion can also remove neighboring useful text. Compare an important result with JEV disabled.

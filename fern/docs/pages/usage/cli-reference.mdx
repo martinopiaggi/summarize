@@ -68,6 +68,12 @@
 
     # Write the summary in Italian
     python -m summarizer --source "URL" --output-language "Italian"
+
+    # Select passages before summarization
+    python -m summarizer --source "URL" \
+      --use-jev-prefiltering \
+      --jev-include "a particular concept about this video to filter" \
+      --jev-exclude "Sponsorship and self-promotion"
     ```
   </Tab>
 </Tabs>
@@ -98,6 +104,10 @@
 | `--no-save` | Print to stdout only, no file output | `False` |
 | `--verbose`, `-v` | Detailed output | `False` |
 | `--visual` | Send video directly to a video-capable model | `False` |
+| `--use-jev-prefiltering` / `--no-use-jev-prefiltering` | Enable or disable transcript selection before summarization | From YAML (`false`) |
+| `--jev-provider` | Existing OpenRouter or TypeSafe provider used for scoring | `openrouter` |
+| `--jev-include` | Include only passages about this concept; blank means general relevance | `""` |
+| `--jev-exclude` | Exclude matching passages; exclusions take priority | `""` |
 | `--use-proxy` | Route supported requests through the configured HTTP proxy | From YAML |
 | `--config` | Path to config file | auto-detect |
 | `--no-config` | Ignore config file, use CLI args only | - |

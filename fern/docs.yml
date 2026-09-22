@@ -93,6 +93,8 @@ navigation:
         path: ./docs/pages/features/webapp.mdx
       - page: Caching
         path: ./docs/pages/features/caching.mdx
+      - page: JEV Prefiltering
+        path: ./docs/pages/features/jev-prefiltering.mdx
 
   - section: Integrations
     icon: fa-solid fa-plug
