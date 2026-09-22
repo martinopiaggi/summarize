@@ -56,7 +56,14 @@ def _reject_legacy_audio_speed_field(data: Any) -> Any:
     return data
 
 
-class SummarizeRequest(BaseModel):
+class JevOptions(BaseModel):
+    use_jev_prefiltering: Optional[bool] = None
+    jev_provider: Optional[str] = None
+    jev_include: Optional[str] = Field(None, max_length=2000)
+    jev_exclude: Optional[str] = Field(None, max_length=2000)
+
+
+class SummarizeRequest(JevOptions):
     source: str = Field(..., description="Video URL or file path")
     type: SourceType = Field("YouTube Video", description="Source type")
     provider: Optional[str] = Field(None, description="Provider name from config")
@@ -106,7 +113,7 @@ class SummarizeResponse(BaseModel):
     error_type: Optional[str] = None
 
 
-class BatchRequest(BaseModel):
+class BatchRequest(JevOptions):
     sources: List[str] = Field(..., min_length=1, description="List of URLs or file paths")
     type: SourceType = Field("YouTube Video", description="Source type for all items")
     provider: Optional[str] = Field(None, description="Provider name from config")
@@ -195,6 +202,10 @@ SNAKE_OVERRIDES = {
     "cobalt_url": "cobalt_base_url",
     "use_proxy": "use_proxy",
     "visual": "visual",
+    "use_jev_prefiltering": "use_jev_prefiltering",
+    "jev_provider": "jev_provider",
+    "jev_include": "jev_include",
+    "jev_exclude": "jev_exclude",
 }
 
 
@@ -386,6 +397,10 @@ def create_app(allow_origins: Optional[List[str]] = None) -> FastAPI:
         speed: Optional[float] = Form(None),
         output_format: str = Form("markdown"),
         visual: bool = Form(False),
+        use_jev_prefiltering: Optional[bool] = Form(None),
+        jev_provider: Optional[str] = Form(None),
+        jev_include: Optional[str] = Form(None),
+        jev_exclude: Optional[str] = Form(None),
         use_proxy: Optional[bool] = Form(None),
         api_key: Optional[str] = Form(None),
         base_url: Optional[str] = Form(None),
@@ -449,6 +464,10 @@ def create_app(allow_origins: Optional[List[str]] = None) -> FastAPI:
                 speed=speed,
                 output_format=output_format,  # type: ignore[arg-type]
                 visual=visual,
+                use_jev_prefiltering=use_jev_prefiltering,
+                jev_provider=jev_provider,
+                jev_include=jev_include,
+                jev_exclude=jev_exclude,
                 use_proxy=use_proxy,
                 api_key=api_key,
                 base_url=base_url,
@@ -520,6 +539,10 @@ def create_app(allow_origins: Optional[List[str]] = None) -> FastAPI:
                     speed=req.speed,
                     output_format=req.output_format,
                     visual=req.visual,
+                    use_jev_prefiltering=req.use_jev_prefiltering,
+                    jev_provider=req.jev_provider,
+                    jev_include=req.jev_include,
+                    jev_exclude=req.jev_exclude,
                     use_proxy=req.use_proxy,
                     api_key=req.api_key,
                     base_url=req.base_url,

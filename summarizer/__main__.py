@@ -199,6 +199,13 @@ Examples:
         ),
     )
 
+    jev_toggle = parser.add_mutually_exclusive_group()
+    jev_toggle.add_argument("--use-jev-prefiltering", action="store_true", default=None)
+    jev_toggle.add_argument("--no-use-jev-prefiltering", dest="use_jev_prefiltering", action="store_false")
+    parser.add_argument("--jev-provider", help="Existing provider name used for JEV scoring, e.g. openrouter")
+    parser.add_argument("--jev-include", help="Select passages about this subject; blank means general relevance")
+    parser.add_argument("--jev-exclude", help="Exclude matching passages; exclusions take priority")
+
     return parser.parse_args()
 
 
@@ -315,6 +322,10 @@ def cli():
         "cobalt_base_url": args.cobalt_url,
         "use_proxy": args.use_proxy,
         "visual": args.visual,
+        "use_jev_prefiltering": args.use_jev_prefiltering,
+        "jev_provider": args.jev_provider,
+        "jev_include": args.jev_include,
+        "jev_exclude": args.jev_exclude,
     }
 
     # Merge configs

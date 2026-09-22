@@ -30,6 +30,11 @@ providers:
     model: google/gemini-3.1-flash-lite
 
 defaults:
+  use-jev-prefiltering: false
+  jev-provider: openrouter
+  jev-include: ""
+  jev-exclude: ""
+  jev-keep-ratio: 0.35
   prompt-type: Questions and answers
   chunk-size: 120000
   parallel-calls: 10

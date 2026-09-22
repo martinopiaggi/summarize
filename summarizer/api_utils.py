@@ -168,6 +168,11 @@ def build_runtime_config(
         "visual_chunk_overlap_seconds": merged.get("visual_chunk_overlap_seconds", 0),
     }
 
+    from summarizer.jev import JEV_DEFAULTS
+
+    config.update({key: merged.get(key, value) for key, value in JEV_DEFAULTS.items()})
+    config["jev_provider_config"] = merged.get("jev_provider_config")
+
     if merged.get("api_key"):
         config["api_key"] = merged["api_key"]
 

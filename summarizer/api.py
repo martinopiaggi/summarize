@@ -306,6 +306,12 @@ async def process_chunks(
     Returns:
         List of (timestamp, summary) tuples
     """
+    from .jev import prefilter_chunks
+
+    filtered_chunks = await prefilter_chunks(chunks, config, template)
+    if chunks and not filtered_chunks:
+        return [("", "No relevant content matched the JEV filter.")]
+    chunks = filtered_chunks
     verbose = config.get("verbose", False)
     semaphore = asyncio.Semaphore(config.get("parallel_api_calls", 5))
     completed = [0]  # Using list to allow mutation in nested function

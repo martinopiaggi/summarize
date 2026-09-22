@@ -36,12 +36,16 @@ def run_summarization(
     verbose: bool = False,
     status_container=None,
     visual: bool = False,
+    use_jev_prefiltering=None,
+    jev_provider=None,
+    jev_include=None,
+    jev_exclude=None,
 ) -> str:
     """Run the summarizer pipeline and return the generated markdown."""
     from summarizer.core import main
     from summarizer.progress import set_progress_callback, clear_progress_callback
 
-    _, _, defaults = load_config()
+    providers, _, defaults = load_config()
 
     parallel_api_calls = coerce_int(
         provider_config.get(
@@ -117,6 +121,21 @@ def run_summarization(
             defaults.get("visual_chunk_overlap_seconds", 0),
         ),
     }
+
+    from summarizer.jev import JEV_DEFAULTS, resolve_provider
+
+    config.update({key: defaults.get(key, value) for key, value in JEV_DEFAULTS.items()})
+    for key, value in {
+        "use_jev_prefiltering": use_jev_prefiltering,
+        "jev_provider": jev_provider,
+        "jev_include": jev_include,
+        "jev_exclude": jev_exclude,
+    }.items():
+        if value is not None:
+            config[key] = value
+    config["jev_provider_config"] = resolve_provider(config, providers)
+    if provider_config.get("api_key"):
+        config["api_key"] = provider_config["api_key"]
 
     if status_container is not None:
         def _callback(message: str, status: str) -> None:

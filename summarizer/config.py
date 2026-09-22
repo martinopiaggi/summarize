@@ -35,6 +35,7 @@ DEFAULT_CONFIG = {
 # Keep lower-case aliases for existing .env files, and add conventional
 # *_API_KEY names where providers commonly document them.
 API_PROVIDERS = {
+    "typesafe.ai": ("TYPESAFE_API_KEY", "typesafe"),
     "generativelanguage.googleapis.com": ("GOOGLE_API_KEY", "generativelanguage"),
     "integrate.api.nvidia.com": ("NVIDIA_API_KEY", "nvidia"),
     "nvidia": ("NVIDIA_API_KEY", "nvidia"),

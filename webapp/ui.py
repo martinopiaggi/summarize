@@ -16,6 +16,7 @@ import yaml
 
 from summarizer.downloaders import is_youtube_url
 from summarizer.prompts import get_available_prompts
+from summarizer.jev import JEV_DEFAULTS, enabled, supports_systemone
 
 from webapp.clipboard import copy_to_clipboard
 from webapp.config import (
@@ -220,6 +221,39 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
                 ),
             )
 
+        use_jev_prefiltering = st.checkbox(
+            "Use JEV prefiltering",
+            value=bool(defaults.get("use_jev_prefiltering", False)),
+            help="Select original passages before summarization. The summary model and style stay unchanged.",
+        )
+        jev_provider = defaults.get("jev_provider", JEV_DEFAULTS["jev_provider"])
+        jev_include = defaults.get("jev_include", "")
+        jev_exclude = defaults.get("jev_exclude", "")
+        if use_jev_prefiltering:
+            jev_names = [name for name, cfg in providers.items() if supports_systemone(cfg)]
+            if jev_names:
+                jev_provider = st.selectbox(
+                    "JEV PROVIDER", jev_names,
+                    index=jev_names.index(jev_provider) if jev_provider in jev_names else 0,
+                )
+            else:
+                st.warning("Need an OpenRouter or TypeSafe provider, e.g. openrouter.")
+            jev_include = st.text_area(
+                "I want to include only…", value=jev_include, max_chars=2000,
+                placeholder="a particular concept about this video to filter",
+                help="Blank: general relevance. Otherwise, select passages about this subject, even if it is not the main topic.",
+            )
+            jev_exclude = st.text_area(
+                "I want to exclude…", value=jev_exclude, max_chars=2000,
+                placeholder="Sponsorship and self-promotion",
+                help="Blank: no additional exclusions. Exclusions take priority over inclusions, including mixed passages.",
+            )
+            st.caption("Matching passages are kept in order, targeting 35% of the original text by default. No matches means no LLM call.")
+            if chunk_size > 10000:
+                st.caption("For JEV, use chunk-size: 10000 in YAML (including provider overrides). Larger chunks may exceed the scoring request limit.")
+            if not enabled({"use_jev_prefiltering": True, "visual": visual, "prompt_type": prompt_type}):
+                st.warning("Visual mode and grammar correction bypass JEV; include/exclude rules will not be applied.")
+
         # -- YAML editor --
         with st.expander("EDIT CONFIG"):
             st.caption("Edit summarizer.yaml. Save to update all defaults above.")
@@ -267,6 +301,10 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
         "whisper_model": whisper_model,
         "speed": speed,
         "visual": visual,
+        "use_jev_prefiltering": use_jev_prefiltering,
+        "jev_provider": jev_provider,
+        "jev_include": jev_include,
+        "jev_exclude": jev_exclude,
     }
 
 
@@ -287,6 +325,10 @@ def _run_and_store(source, display_name, source_type, force_download, sidebar, d
         sidebar["verbose"],
         status_container=status_ctx,
         visual=sidebar.get("visual", False),
+        use_jev_prefiltering=sidebar.get("use_jev_prefiltering"),
+        jev_provider=sidebar.get("jev_provider"),
+        jev_include=sidebar.get("jev_include"),
+        jev_exclude=sidebar.get("jev_exclude"),
     )
     status_ctx.update(label="Complete", state="complete", expanded=False)
     add_to_history(display_name, sidebar["provider"], sidebar["prompt_type"], summary)

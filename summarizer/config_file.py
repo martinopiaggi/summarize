@@ -168,6 +168,11 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         if key not in explicit_keys:
             merged[key] = value
 
+    from .jev import JEV_DEFAULTS, resolve_provider
+
+    for key, value in JEV_DEFAULTS.items():
+        merged.setdefault(key, value)
+    merged["jev_provider_config"] = resolve_provider(merged, file_config.get("providers", {}))
     return merged
 
 
