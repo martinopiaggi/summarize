@@ -16,6 +16,8 @@ python -m streamlit run app.py
 
 Text files bypass audio processing entirely and go straight to summarization.
 
+After running a source, switch between **OUTPUT** and **TRANSCRIPT**. The transcript tab shows the complete cached transcript when available (not the passages selected by JEV). **DOWNLOAD**, **COPY TO CLIPBOARD**, and **PUBLISH AND SHARE WITH TINYPASTE** use whichever tab is selected. If no transcript is available for a result, the transcript actions are hidden. Summaries restored from disk do not include their transcripts.
+
 ## Sidebar Controls
 
 - **Provider** — Choose from configured providers in `summarizer.yaml`
@@ -54,7 +56,7 @@ When a summary contains ` ```mermaid ` blocks, the webapp renders them as intera
 
 ## Clipboard
 
-Copy the full summary to the system clipboard with a single button. Works in both secure and non-secure browser contexts.
+Copy the selected output or full cached transcript to the system clipboard with a single button. Works in both secure and non-secure browser contexts.
 
 ## Themes
 

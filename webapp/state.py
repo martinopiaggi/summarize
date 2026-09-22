@@ -49,18 +49,12 @@ def init_session_state(defaults=None):
         st.session_state.current_summary = None
     if "current_transcript" not in st.session_state:
         st.session_state.current_transcript = None
-    if "current_transcript_source" not in st.session_state:
-        st.session_state.current_transcript_source = None
     if "show_history_item" not in st.session_state:
         st.session_state.show_history_item = None
     if "theme" not in st.session_state:
         st.session_state.theme = "system"
-    if "tinypaste_summary_hash" not in st.session_state:
-        st.session_state.tinypaste_summary_hash = None
-    if "tinypaste_url" not in st.session_state:
-        st.session_state.tinypaste_url = None
-    if "tinypaste_error" not in st.session_state:
-        st.session_state.tinypaste_error = None
+    if "tinypaste_results" not in st.session_state:
+        st.session_state.tinypaste_results = {}
     if UPLOADED_FILE_STATE_KEY not in st.session_state:
         st.session_state[UPLOADED_FILE_STATE_KEY] = None
 
