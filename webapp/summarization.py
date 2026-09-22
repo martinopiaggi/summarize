@@ -21,7 +21,7 @@ _STATUS_ICONS = {
 }
 
 
-def run_summarization(
+def build_runtime_config(
     source: str,
     provider_config: dict,
     prompt_type: str,
@@ -34,17 +34,13 @@ def run_summarization(
     transcription_method: str = "Cloud Whisper",
     whisper_model: str = "tiny",
     verbose: bool = False,
-    status_container=None,
     visual: bool = False,
     use_jev_prefiltering=None,
     jev_provider=None,
     jev_include=None,
     jev_exclude=None,
-) -> str:
-    """Run the summarizer pipeline and return the generated markdown."""
-    from summarizer.core import main
-    from summarizer.progress import set_progress_callback, clear_progress_callback
-
+) -> dict:
+    """Build the runtime config shared by summary and transcript-only actions."""
     providers, _, defaults = load_config()
 
     parallel_api_calls = coerce_int(
@@ -137,6 +133,40 @@ def run_summarization(
     if provider_config.get("api_key"):
         config["api_key"] = provider_config["api_key"]
 
+    return config
+
+
+def run_summarization(
+    source: str,
+    provider_config: dict,
+    prompt_type: str,
+    chunk_size: int,
+    force_download: bool,
+    language: str,
+    output_language: str,
+    speed: float,
+    source_type: str = "YouTube Video",
+    transcription_method: str = "Cloud Whisper",
+    whisper_model: str = "tiny",
+    verbose: bool = False,
+    status_container=None,
+    visual: bool = False,
+    use_jev_prefiltering=None,
+    jev_provider=None,
+    jev_include=None,
+    jev_exclude=None,
+) -> str:
+    """Run the summarizer pipeline and return the generated markdown."""
+    from summarizer.core import main
+    from summarizer.progress import set_progress_callback, clear_progress_callback
+
+    config = build_runtime_config(
+        source, provider_config, prompt_type, chunk_size, force_download,
+        language, output_language, speed, source_type, transcription_method,
+        whisper_model, verbose, visual, use_jev_prefiltering, jev_provider,
+        jev_include, jev_exclude,
+    )
+
     if status_container is not None:
         def _callback(message: str, status: str) -> None:
             icon = _STATUS_ICONS.get(status, "\u2022")
@@ -145,6 +175,51 @@ def run_summarization(
 
     try:
         return main(config)
+    finally:
+        if status_container is not None:
+            clear_progress_callback()
+
+
+def fetch_cached_transcript(
+    source: str,
+    provider_config: dict,
+    prompt_type: str,
+    chunk_size: int,
+    force_download: bool,
+    language: str,
+    output_language: str,
+    speed: float,
+    source_type: str = "YouTube Video",
+    transcription_method: str = "Cloud Whisper",
+    whisper_model: str = "tiny",
+    verbose: bool = False,
+    status_container=None,
+    visual: bool = False,
+) -> str:
+    """Fetch or reuse the complete transcript without JEV or the summary model."""
+    from summarizer.progress import clear_progress_callback, print_status, set_progress_callback
+    from summarizer.transcription import get_transcript
+
+    config = build_runtime_config(
+        source, provider_config, prompt_type, chunk_size, force_download,
+        language, output_language, speed, source_type, transcription_method,
+        whisper_model, verbose, visual,
+    )
+    config["use_jev_prefiltering"] = False
+
+    if status_container is not None:
+        def _callback(message: str, status: str) -> None:
+            icon = _STATUS_ICONS.get(status, "\u2022")
+            status_container.write(f"`{icon}` {message}")
+        set_progress_callback(_callback)
+
+    try:
+        print_status("Fetching transcript only", "PROCESSING", verbose)
+        transcript = get_transcript(config)
+        if not transcript or not transcript.strip():
+            raise RuntimeError("No transcript content available")
+        print_status("Transcript ready", "SUCCESS", verbose)
+        return transcript
     finally:
         if status_container is not None:
             clear_progress_callback()

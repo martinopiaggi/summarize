@@ -35,7 +35,7 @@ from webapp.state import (
     init_session_state,
     remember_uploaded_file,
 )
-from webapp.summarization import run_summarization
+from webapp.summarization import fetch_cached_transcript, run_summarization
 from webapp.theme import get_custom_css
 from webapp.tinypaste import TinypastePublishError, publish_to_tinypaste
 
@@ -331,6 +331,10 @@ def _run_and_store(source, display_name, source_type, force_download, sidebar, d
     status_ctx.update(label="Complete", state="complete", expanded=False)
     add_to_history(display_name, sidebar["provider"], sidebar["prompt_type"], summary)
     st.session_state.current_summary = summary
+    st.session_state.current_transcript = _lookup_cached_transcript(
+        source, source_type, sidebar, force_download
+    )
+    st.session_state.current_transcript_source = display_name
     st.session_state.show_history_item = None
     if defaults.get("keep_history"):
         save_summary_to_disk(display_name, summary, defaults.get("output_dir", "summaries"))
@@ -344,10 +348,22 @@ def _render_url_tab(sidebar, defaults):
             placeholder="https://youtube.com/watch?v=...",
             label_visibility="collapsed",
         )
-    with col2:
+    action_run, action_transcript = st.columns(2)
+    with action_run:
         url_btn = st.button(
             "RUN", type="primary", use_container_width=True, key="run_url"
         )
+    with action_transcript:
+        transcript_btn = st.button(
+            "JUST TRANSCRIPT", use_container_width=True, key="transcript_url"
+        )
+
+    if transcript_btn and video_url:
+        if not video_url.startswith("http"):
+            st.warning("URL must start with http or https")
+            return
+        source_type = "YouTube Video" if is_youtube_url(video_url) else "Video URL"
+        _fetch_and_store_transcript(video_url, source_type, sidebar)
 
     if url_btn and video_url:
         if not video_url.startswith("http"):
@@ -391,7 +407,33 @@ def _render_file_tab(sidebar, defaults):
             clear_uploaded_file_state()
             st.rerun()
 
-    if st.button("RUN", type="primary", disabled=uploaded_state is None, key="run_file"):
+    action_run, action_transcript = st.columns(2)
+    with action_run:
+        file_btn = st.button("RUN", type="primary", disabled=uploaded_state is None, key="run_file")
+    with action_transcript:
+        transcript_btn = st.button(
+            "JUST TRANSCRIPT", disabled=uploaded_state is None, use_container_width=True, key="transcript_file"
+        )
+
+    if transcript_btn and uploaded_state:
+        file_ext = Path(uploaded_state["name"]).suffix.lower()
+        is_text_file = file_ext in TEXT_EXTENSIONS
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext, mode="wb") as tmp:
+                tmp.write(uploaded_state["bytes"])
+                tmp_path = tmp.name
+            _fetch_and_store_transcript(
+                tmp_path, "TXT" if is_text_file else "Local File", sidebar, force_download=not is_text_file
+            )
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+
+    if file_btn:
         if not uploaded_state:
             return
         file_ext = Path(uploaded_state["name"]).suffix.lower()
@@ -427,6 +469,45 @@ def _render_file_tab(sidebar, defaults):
                         pass
 
 
+def _runtime_args(source, source_type, sidebar, force_download):
+    return (
+        source, sidebar["provider_config"], sidebar["prompt_type"], sidebar["chunk_size"],
+        force_download, sidebar["language"], sidebar["output_language"], sidebar["speed"],
+        source_type, sidebar["transcription_method"], sidebar["whisper_model"], sidebar["verbose"],
+    )
+
+
+def _lookup_cached_transcript(source, source_type, sidebar, force_download):
+    from summarizer.transcript_cache import get_cached_transcript
+    from webapp.summarization import build_runtime_config
+
+    config = build_runtime_config(*_runtime_args(source, source_type, sidebar, force_download))
+    transcript, _, _ = get_cached_transcript(config)
+    return transcript
+
+
+def _fetch_and_store_transcript(source, source_type, sidebar, force_download=None):
+    if force_download is None:
+        force_download = sidebar["force_download"]
+    status_ctx = st.status("Fetching transcript...", expanded=False)
+    with status_ctx:
+        try:
+            transcript = fetch_cached_transcript(
+                *_runtime_args(source, source_type, sidebar, force_download),
+                status_container=status_ctx,
+                visual=sidebar.get("visual", False),
+            )
+        except Exception as error:
+            status_ctx.update(label="Failed", state="error", expanded=True)
+            st.error(f"Error: {error}")
+            with st.expander("DETAILS"):
+                st.code(traceback.format_exc())
+            return
+    status_ctx.update(label="Transcript ready", state="complete", expanded=False)
+    st.session_state.current_transcript = transcript
+    st.session_state.current_transcript_source = source
+
+
 def _render_summary_panel():
     display_summary = None
     if st.session_state.show_history_item is not None:
@@ -442,6 +523,12 @@ def _render_summary_panel():
         display_summary = st.session_state.current_summary
 
     if not display_summary:
+        if st.session_state.current_transcript:
+            st.success("TRANSCRIPT READY")
+            st.text_area(
+                "Cached transcript", st.session_state.current_transcript,
+                height=420, label_visibility="collapsed",
+            )
         return
 
     summary_hash = hashlib.sha256(display_summary.encode("utf-8")).hexdigest()
@@ -483,7 +570,22 @@ def _render_summary_panel():
         st.error(st.session_state.tinypaste_error)
 
     st.divider()
-    render_summary_with_mermaid(display_summary)
+    output_tab, transcript_tab = st.tabs(["OUTPUT", "CACHED TRANSCRIPT"])
+    with output_tab:
+        render_summary_with_mermaid(display_summary)
+    with transcript_tab:
+        transcript = st.session_state.current_transcript
+        if transcript:
+            st.download_button(
+                "DOWNLOAD TRANSCRIPT",
+                data=transcript,
+                file_name=f"transcript_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
+            st.text_area("Cached transcript", transcript, height=420, label_visibility="collapsed")
+        else:
+            st.info("No cached transcript is available for this result.")
 
 
 def main():

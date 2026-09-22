@@ -47,6 +47,10 @@ def init_session_state(defaults=None):
             st.session_state.history = load_history_from_disk(output_dir)
     if "current_summary" not in st.session_state:
         st.session_state.current_summary = None
+    if "current_transcript" not in st.session_state:
+        st.session_state.current_transcript = None
+    if "current_transcript_source" not in st.session_state:
+        st.session_state.current_transcript_source = None
     if "show_history_item" not in st.session_state:
         st.session_state.show_history_item = None
     if "theme" not in st.session_state:
