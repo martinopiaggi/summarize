@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 MAX_STATE_BYTES = 28000
 MAX_REQUEST_BYTES = 60000
+MAX_BATCH_TEXT_BYTES = 16000
+MAX_BATCH_UNITS = 128
 
 JEV_DEFAULTS = {
     "use_jev_prefiltering": False,
@@ -23,7 +25,6 @@ JEV_DEFAULTS = {
     "jev_include": "",
     "jev_exclude": "",
     "jev_keep_ratio": 0.35,
-    "jev_min_chars": 1000,
     "jev_threshold": 0.5,
     "jev_timeout": 5.0,
 }
@@ -74,7 +75,6 @@ def validate_settings(config):
     for name, minimum, maximum in (
         ("jev_keep_ratio", 0.01, 1.0),
         ("jev_threshold", 0.0, 1.0),
-        ("jev_min_chars", 0, 1000000),
         ("jev_timeout", 0.1, 60.0),
     ):
         value = config.get(name, JEV_DEFAULTS[name])
@@ -197,9 +197,37 @@ def prepare_payload(units, context, model, include="", exclude=""):
         units = ["\n".join(units[index:index + 2]) for index in range(0, len(units), 2)]
 
 
+def plan_requests(units, context, model, include="", exclude=""):
+    batches = []
+    current = []
+    current_bytes = 0
+    for unit in units:
+        unit_bytes = len(unit.encode("utf-8"))
+        if current and (current_bytes + unit_bytes > MAX_BATCH_TEXT_BYTES or len(current) >= MAX_BATCH_UNITS):
+            batches.append(current)
+            current = []
+            current_bytes = 0
+        current.append(unit)
+        current_bytes += unit_bytes
+    if current:
+        batches.append(current)
+
+    plans = []
+    for batch in batches:
+        try:
+            plans.append(prepare_payload(batch, context, model, include, exclude))
+        except JEVRequestBudgetError:
+            if len(batch) == 1:
+                raise
+            midpoint = len(batch) // 2
+            plans.extend(plan_requests(batch[:midpoint], context, model, include, exclude))
+            plans.extend(plan_requests(batch[midpoint:], context, model, include, exclude))
+    return plans
+
+
 def selection_failure(error):
     if isinstance(error, JEVRequestBudgetError):
-        reason = f"{error}; reduce chunk-size."
+        reason = f"{error}; scoring request cannot fit even after partitioning."
     elif isinstance(error, asyncio.TimeoutError):
         reason = "JEV scoring timed out. Check the provider or increase jev-timeout."
     elif isinstance(error, APIError):
@@ -277,10 +305,7 @@ async def prefilter_chunks(chunks, config, template=""):
     explicit_rules = has_selection_rules(config)
     started = time.monotonic()
     prepared = [(timestamp, text, split_units(text)) for timestamp, text in chunks]
-    eligible = [
-        bool(units) and (explicit_rules or (len(text) >= config.get("jev_min_chars", 1000) and len(units) > 2))
-        for _, text, units in prepared
-    ]
+    eligible = [bool(units) for _, _, units in prepared]
     if not any(eligible):
         return chunks
     provider = dict(config.get("jev_provider_config") or {})
@@ -293,18 +318,17 @@ async def prefilter_chunks(chunks, config, template=""):
     plans = []
     for (_, _, units), should_filter in zip(prepared, eligible):
         if not should_filter:
-            plans.append((units, None, None))
+            plans.append((None, None))
             continue
         try:
-            fitted_units, payload = prepare_payload(
+            plans.append((plan_requests(
                 units, context, provider["model"],
                 config.get("jev_include", ""), config.get("jev_exclude", ""),
-            )
-            plans.append((fitted_units, payload, None))
-        except ValueError as error:
+            ), None))
+        except JEVRequestBudgetError as error:
             if explicit_rules:
                 raise selection_failure(error) from error
-            plans.append((units, None, error))
+            plans.append((None, error))
     semaphore = asyncio.Semaphore(config.get("parallel_api_calls", 5))
     failures = 0
     requests = 0
@@ -315,12 +339,30 @@ async def prefilter_chunks(chunks, config, template=""):
             timestamp, text, _ = item
             if not should_filter:
                 return timestamp, text
-            units, payload, error = plan
+            batches, error = plan
             if error is None:
                 try:
-                    async with semaphore:
-                        requests += 1
-                        scores = await score_units(session, payload, provider, config)
+                    async def score_batch(payload):
+                        nonlocal requests
+                        async with semaphore:
+                            requests += 1
+                            return await score_units(session, payload, provider, config)
+
+                    batch_scores = await asyncio.gather(
+                        *(score_batch(payload) for _, payload in batches),
+                        return_exceptions=True,
+                    )
+                    for result in batch_scores:
+                        if isinstance(result, BaseException):
+                            raise result
+                    units = []
+                    scores = {}
+                    for (batch_units, _), batch_result in zip(batches, batch_scores):
+                        offset = len(units)
+                        units.extend(batch_units)
+                        for key, value in batch_result.items():
+                            category, index = key.rsplit("_", 1)
+                            scores[f"{category}_{offset + int(index)}"] = value
                     filtered = select_units(units, scores, config)
                     match = re.search(r"\b\d{2}:\d{2}:\d{2}\b", filtered)
                     return (match.group() if match else timestamp), filtered

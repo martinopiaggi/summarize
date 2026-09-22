@@ -38,7 +38,6 @@ defaults:
   jev-include: "a particular concept about this video to filter"
   jev-exclude: "Sponsorship and self-promotion"
   jev-keep-ratio: 0.35
-  chunk-size: 10000
 ```
 
 ## CLI Examples
@@ -62,16 +61,16 @@ HTTP JSON, upload, and batch requests accept `use_jev_prefiltering`, `jev_provid
 ## Selection Limits
 
 - Default retention ceiling: about 35% of each original chunk
-- Recommended text chunk size: 10,000 characters
+- Any summary chunk size: JEV splits oversized scoring work into bounded requests without changing your summary chunk size
 - Scoring provider: existing OpenRouter or TypeSafe provider
-- One scoring request per eligible chunk
+- One or more scoring requests per eligible chunk, depending on its size
 
 `jev-keep-ratio` is a ceiling, not a quota. Irrelevant text is not added to fill unused space. Set `jev-keep-ratio: 1.0` to keep every qualifying passage.
 
-If nothing matches, the summary model is not called. With both fields blank, chunks under 1,000 characters or with only one or two units skip scoring. Explicit rules also score those small chunks.
+If nothing matches, the summary model is not called. When enabled, JEV scores every non-empty text chunk, including single-unit chunks, regardless of its configured summary chunk size.
 
 <Callout type="warning">
-  Explicit include or exclude rules stop the run if scoring times out, returns an error, or the request is too large. They do not send the unfiltered transcript to the summary model. With both fields blank, the original chunk is used after a warning.
+  Explicit include or exclude rules stop the run if scoring times out, returns an error, or a scoring unit cannot fit in a request. They do not send the unfiltered transcript to the summary model. With both fields blank, the original chunk is used after a warning.
 </Callout>
 
 Selected passages stay in their original order. A mixed passage is kept or dropped as a whole, so an exclusion can also remove neighboring useful text. Compare an important result with JEV disabled.

@@ -75,8 +75,8 @@ def test_short_caption_tail_uses_one_request_and_fitted_ids():
 
 
 def test_impossible_state_rejects_before_any_chunk_is_sent():
-    with patch("summarizer.jev.score_units", new_callable=AsyncMock) as scoring, patch("summarizer.api.process_chunk", new_callable=AsyncMock) as llm:
-        with pytest.raises(APIError, match="state .* bytes"):
+    with patch("summarizer.jev.MAX_STATE_BYTES", 1), patch("summarizer.jev.score_units", new_callable=AsyncMock) as scoring, patch("summarizer.api.process_chunk", new_callable=AsyncMock) as llm:
+        with pytest.raises(APIError, match="cannot fit even after partitioning"):
             asyncio.run(process_chunks([("", "A valid short chunk"), ("", "word " * 10000)], "{text}", CONFIG))
     scoring.assert_not_called()
     llm.assert_not_called()

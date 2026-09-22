@@ -307,13 +307,18 @@ header[data-testid="stHeader"],
     color: var(--text) !important;
 }
 
-.stSidebar .stTextArea > div > div {
+[data-testid="stSidebar"] [data-testid="stTextArea"] > div > div,
+[data-testid="stSidebar"] [data-testid="stTextArea"] [data-baseweb="textarea"],
+[data-testid="stSidebar"] [data-testid="stTextArea"] [data-baseweb="textarea"] > div,
+[data-testid="stSidebar"] [data-testid="stTextArea"] textarea {
     background-color: var(--secondary) !important;
+    color: var(--text) !important;
+    border-radius: 0 !important;
+    caret-color: var(--text) !important;
 }
 
-.stSidebar .stTextArea > div > div > textarea {
-    background-color: transparent !important;
-    color: var(--text) !important;
+[data-testid="stSidebar"] [data-testid="stTextArea"] [data-baseweb="textarea"] {
+    border: 1px solid var(--text) !important;
 }
 
 .stSidebar .stCheckbox [data-baseweb="checkbox"] > div,

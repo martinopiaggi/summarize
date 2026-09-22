@@ -75,8 +75,8 @@ def test_partial_filter_failure_does_not_summarize_successful_chunks_either():
 
 
 def test_explicit_rules_over_budget_fail_without_extra_calls():
-    with patch("summarizer.jev.score_units", new_callable=AsyncMock) as scoring:
-        with pytest.raises(APIError, match="reduce chunk-size"):
+    with patch("summarizer.jev.MAX_REQUEST_BYTES", 1), patch("summarizer.jev.score_units", new_callable=AsyncMock) as scoring:
+        with pytest.raises(APIError, match="cannot fit even after partitioning"):
             asyncio.run(prefilter_chunks([("", "word " * 10000)], {**CONFIG, "jev_exclude": "sponsorship"}))
     scoring.assert_not_called()
 
@@ -112,11 +112,12 @@ def test_invalid_selection_settings(key, value):
         validate_settings({key: value})
 
 
-def test_whitespace_rules_do_not_trigger_extra_scoring():
-    with patch("summarizer.jev.score_units", new_callable=AsyncMock) as scoring:
+def test_whitespace_rules_use_general_scoring_even_for_tiny_chunks():
+    with patch("summarizer.jev.score_units", new_callable=AsyncMock, return_value={"keep_0": 0.9}) as scoring:
         chunks = [("", "Small")]
-        assert asyncio.run(prefilter_chunks(chunks, {**CONFIG, "jev_include": "  ", "jev_exclude": "\n"})) is chunks
-    scoring.assert_not_called()
+        assert asyncio.run(prefilter_chunks(chunks, {**CONFIG, "jev_include": "  ", "jev_exclude": "\n"})) == chunks
+    scoring.assert_awaited_once()
+    assert set(scoring.call_args.args[1]["questions"]) == {"keep_0"}
 
 
 def test_cli_explicit_empty_clears_yaml_rules(monkeypatch):

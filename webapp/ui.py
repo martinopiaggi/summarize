@@ -249,8 +249,6 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
                 help="Blank: no additional exclusions. Exclusions take priority over inclusions, including mixed passages.",
             )
             st.caption("Matching passages are kept in order, targeting 35% of the original text by default. No matches means no LLM call.")
-            if chunk_size > 10000:
-                st.caption("For JEV, use chunk-size: 10000 in YAML (including provider overrides). Larger chunks may exceed the scoring request limit.")
             if not enabled({"use_jev_prefiltering": True, "visual": visual, "prompt_type": prompt_type}):
                 st.warning("Visual mode and grammar correction bypass JEV; include/exclude rules will not be applied.")
 

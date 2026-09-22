@@ -74,7 +74,6 @@ defaults:
   jev-include: ""  # e.g. a particular concept about this video to filter
   jev-exclude: ""  # e.g. Sponsorship and self-promotion
   jev-keep-ratio: 0.35
-  jev-min-chars: 1000
   jev-threshold: 0.5
   jev-timeout: 5.0
   prompt-type: Questions and answers

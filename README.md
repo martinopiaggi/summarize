@@ -60,7 +60,6 @@ defaults:
   jev-include: "a particular concept about this video to filter"
   jev-exclude: "Sponsorship and self-promotion"
   jev-keep-ratio: 0.35
-  chunk-size: 10000
 ```
 
 Uses the existing OpenRouter (default) or TypeSafe provider's API key, with a JEV model instead of its chat model. [`/systemone`](https://openrouter.ai/docs/guides/community/typesafe-sdk) is the structured scoring endpoint, not a system prompt. No separate provider entry is needed.
@@ -68,12 +67,12 @@ Uses the existing OpenRouter (default) or TypeSafe provider's API key, with a JE
 CLI: `--use-jev-prefiltering --jev-include "X" --jev-exclude "Sponsorship"`. YAML accepts `jev-include` / `jev-exclude`; HTTP single/batch/upload requests accept `jev_include` / `jev_exclude`. Empty strings clear configured rules.
 
 **Compression and limits:**
-- One batched scoring request per eligible existing chunk, with bounded concurrency and no retries. Independent inclusion/exclusion scores prevent a high inclusion score from overriding an exclusion.
+- Bounded batched scoring requests per eligible chunk (more than one for large chunks), with existing concurrency limits and no retries. The summary chunk size is unchanged. Independent inclusion/exclusion scores prevent a high inclusion score from overriding an exclusion.
 - The default budget is about **35% of each original chunk**, including when using exclusion only. It is a ceiling, not a quota: irrelevant text never fills unused space. Whole units are retained; one best matching unit can exceed the budget. Set `jev-keep-ratio: 1.0` in YAML to retain all qualifying units instead of ranking down to 35%.
 - All-rejected chunks are omitted; if none remain, return a no-match message without calling the LLM.
-- Explicit rules also filter tiny chunks and single units. On timeout, malformed response, HTTP error or request-budget overflow, stop before any summary request rather than sending unfiltered text. With both fields blank, the existing tiny-chunk bypass and warning/original-text fallback remain.
+- Every non-empty text chunk is scored when enabled, including single-unit chunks. On timeout, malformed response, HTTP error or an unsplittable request, explicit rules stop before any summary request rather than sending unfiltered text. With both fields blank, scoring failure warns and falls back to the original chunk.
 - Visual mode and grammar correction bypass JEV entirely, with a warning that selection rules do not apply.
-- Use `chunk-size: 10000`; provider-level chunk sizes override defaults. Conservative limits are 28 KB state / 60 KB total JSON per request. If many short captions inflate the questions, adjacent units are merged locally until the request fits, without deleting source text or adding requests. Explicit-rule requests are all checked before sending any chunk; genuinely oversized source text still requires a smaller chunk size.
+- JEV works with any configured summary `chunk-size`: it divides oversized scoring work into bounded requests (28 KB state / 60 KB total JSON each), then ranks all scored units across the original chunk. Short captions may be merged locally to fit; no source text is deleted. Explicit-rule requests are planned before sending any scoring or summary requests. A single unsplittable unit or scoring error stops explicit-rule runs rather than leaking unfiltered text.
 - Semantic classification is not guaranteed. Long chunks use roughly 800–1,200-character units; an exclusion in a mixed unit drops the whole unit, potentially losing useful neighboring text. Compare with an unfiltered summary for important material.
 
 Progress reports retained characters, requests, exclusions, fallbacks and elapsed time. Automated tests use mocked scores; live classification quality, cost and latency are not benchmarked.

@@ -58,9 +58,14 @@ def test_custom_grammar_template_bypasses():
 
 
 @pytest.mark.parametrize("text", ["Tiny transcript.", "x" * 1500, "x" * 600 + ".\n" + "y" * 600])
-def test_tiny_or_two_units_skip_without_provider(text):
-    chunks = [("", text)]
-    assert asyncio.run(prefilter_chunks(chunks, {"use_jev_prefiltering": True})) == chunks
+def test_tiny_or_two_units_are_scored_when_enabled(text):
+    async def score(session, payload, provider, config):
+        return scores_for(payload["state"]["units"])
+
+    with patch("summarizer.jev.score_units", new_callable=AsyncMock, side_effect=score) as scoring:
+        result = asyncio.run(prefilter_chunks([("", text)], CONFIG))
+    scoring.assert_awaited_once()
+    assert result[0][1]
 
 
 def test_sentence_and_long_paragraph_units():
@@ -241,7 +246,7 @@ def test_openrouter_environment_key(monkeypatch):
     assert get_api_key({"base_url": OPENROUTER["base_url"]}) == "or-env"
 
 
-@pytest.mark.parametrize("key,value", [("jev_keep_ratio", 0), ("jev_keep_ratio", "0.35"), ("jev_timeout", float("nan")), ("jev_threshold", 2), ("jev_min_chars", -1)])
+@pytest.mark.parametrize("key,value", [("jev_keep_ratio", 0), ("jev_keep_ratio", "0.35"), ("jev_timeout", float("nan")), ("jev_threshold", 2)])
 def test_invalid_settings(key, value):
     with pytest.raises(ConfigurationError):
         validate_settings({key: value})
@@ -253,8 +258,12 @@ def test_global_context_includes_end_of_video_and_is_bounded():
     assert len(context) < 2100
 
 
-def test_request_budget_does_not_split_into_extra_calls():
+def test_large_summary_chunk_is_scored_in_bounded_batches():
+    async def score(session, payload, provider, config):
+        return scores_for(payload["state"]["units"])
+
     chunks = [("", TEXT * 40)]
-    with patch("summarizer.jev.score_units", new_callable=AsyncMock) as score:
-        assert asyncio.run(prefilter_chunks(chunks, CONFIG)) == chunks
-    score.assert_not_called()
+    with patch("summarizer.jev.score_units", new_callable=AsyncMock, side_effect=score) as mock:
+        result = asyncio.run(prefilter_chunks(chunks, CONFIG))
+    assert mock.await_count > 1
+    assert 0 < len(result[0][1]) < len(chunks[0][1])
