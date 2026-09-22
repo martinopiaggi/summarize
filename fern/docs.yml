@@ -12,22 +12,22 @@ instances:
 colors:
   accent-primary:
     light: "#6366F1"
-    dark: "#818CF8"
+    dark: "#E8E8E8"
   background:
     light: "#FAFAFA"
-    dark: "#0F172A"
+    dark: "#0A0A0A"
   border:
     light: "#E5E7EB"
-    dark: "#1E293B"
+    dark: "#3A3A3A"
   sidebar-background:
     light: "#FFFFFF"
-    dark: "#0F172A"
+    dark: "#141414"
   header-background:
     light: "#FFFFFF"
-    dark: "#0F172A"
+    dark: "#0A0A0A"
   card-background:
     light: "#FFFFFF"
-    dark: "#1E293B"
+    dark: "#141414"
 
 navbar-links:
   - type: github
