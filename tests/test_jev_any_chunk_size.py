@@ -114,6 +114,8 @@ def test_sidebar_textareas_use_theme_colors_in_dark_and_system_mode():
         css = get_custom_css(theme)
         assert '[data-testid="stSidebar"] [data-testid="stTextArea"] textarea' in css
         assert '[data-testid="stSidebar"] [data-testid="stTextArea"] [data-baseweb="textarea"]' in css
+        assert '[data-testid="stSidebar"] [data-testid="stNumberInput"] [data-baseweb="input"]' in css
+        assert '[data-testid="stSidebar"] [data-testid="stNumberInput"] button' in css
         assert "background-color: var(--secondary) !important;" in css
         assert "color: var(--text) !important;" in css
     assert "--secondary: #141414" in get_custom_css("dark")

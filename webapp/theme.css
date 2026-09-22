@@ -69,19 +69,22 @@ header[data-testid="stHeader"],
     border: none !important;
 }
 
-/* Number input (BaseWeb) background fix */
-.stNumberInput [data-baseweb="input"] {
+[data-testid="stSidebar"] [data-testid="stNumberInput"] [data-baseweb="input"],
+[data-testid="stSidebar"] [data-testid="stNumberInput"] [data-baseweb="input"] > div,
+[data-testid="stSidebar"] [data-testid="stNumberInput"] input,
+[data-testid="stSidebar"] [data-testid="stNumberInput"] button {
     background-color: var(--secondary) !important;
-    border: 1px solid var(--text) !important;
+    color: var(--text) !important;
+    caret-color: var(--text) !important;
     border-radius: 0 !important;
 }
 
-.stNumberInput [data-baseweb="input"] > div {
-    background-color: transparent !important;
+[data-testid="stSidebar"] [data-testid="stNumberInput"] [data-baseweb="input"] {
+    border: 1px solid var(--text) !important;
 }
 
-.stNumberInput [data-baseweb="input"] input {
-    background-color: transparent !important;
+[data-testid="stSidebar"] [data-testid="stNumberInput"] button svg {
+    fill: var(--text) !important;
     color: var(--text) !important;
 }
 
