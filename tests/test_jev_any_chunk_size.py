@@ -109,11 +109,13 @@ def test_general_filter_late_batch_failure_keeps_entire_original_chunk():
     assert result == [("", source)]
 
 
-def test_sidebar_textareas_use_theme_colors_in_dark_and_system_mode():
+def test_all_textareas_use_theme_colors_in_dark_and_system_mode():
     for theme in ("dark", "system"):
         css = get_custom_css(theme)
-        assert '[data-testid="stSidebar"] [data-testid="stTextArea"] textarea' in css
-        assert '[data-testid="stSidebar"] [data-testid="stTextArea"] [data-baseweb="textarea"]' in css
+        assert '[data-testid="stTextAreaRootElement"]' in css
+        assert '[data-testid="stTextArea"] textarea' in css
+        assert '-webkit-text-fill-color: var(--text) !important;' in css
+        assert '[data-testid="stSidebar"] [data-testid="stTextArea"]' not in css
         assert '[data-testid="stSidebar"] [data-testid="stNumberInput"] [data-baseweb="input"]' in css
         assert '[data-testid="stSidebar"] [data-testid="stNumberInput"] button' in css
         assert "background-color: var(--secondary) !important;" in css

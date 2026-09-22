@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "martino-summarize"
-version = "0.3.0"
+version = "0.3.1"
 description = "Local-first multi-source video summarization with any OpenAI-compatible LLM"
 readme = "README.md"
 license = { text = "MIT" }

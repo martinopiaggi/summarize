@@ -310,17 +310,16 @@ header[data-testid="stHeader"],
     color: var(--text) !important;
 }
 
-[data-testid="stSidebar"] [data-testid="stTextArea"] > div > div,
-[data-testid="stSidebar"] [data-testid="stTextArea"] [data-baseweb="textarea"],
-[data-testid="stSidebar"] [data-testid="stTextArea"] [data-baseweb="textarea"] > div,
-[data-testid="stSidebar"] [data-testid="stTextArea"] textarea {
+[data-testid="stTextAreaRootElement"],
+[data-testid="stTextArea"] textarea {
     background-color: var(--secondary) !important;
     color: var(--text) !important;
-    border-radius: 0 !important;
+    -webkit-text-fill-color: var(--text) !important;
     caret-color: var(--text) !important;
+    border-radius: 0 !important;
 }
 
-[data-testid="stSidebar"] [data-testid="stTextArea"] [data-baseweb="textarea"] {
+[data-testid="stTextAreaRootElement"] {
     border: 1px solid var(--text) !important;
 }
 
