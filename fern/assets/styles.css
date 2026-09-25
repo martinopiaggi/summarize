@@ -1,42 +1,131 @@
-/* Custom styles for summarize docs */
+/* Custom styles for summarize docs - RaggioProietto palette (Raycast-derived).
+   Colors come from docs.yml; this file adds typography and shape only. */
 
-/* Make the hero section on welcome page stand out */
-.fern-logo {
-  font-weight: 700;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap');
+
+/* html:root beats the :root block Fern generates from docs.yml. */
+html:root {
+  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-heading: var(--font-body);
+  --font-code: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-mono: var(--font-code);
+  --default-font-family: var(--font-body);
+  --default-mono-font-family: var(--font-code);
+  /* RaggioProietto base radius is 6px (theme scale: 6/8/12/16). */
+  --radius: 0.375rem;
 }
 
-/* Enhance code blocks */
-.fern-code-block {
-  border-radius: 0.75rem;
+body {
+  font-feature-settings: "ss03" 1, "calt" 1, "kern" 1, "liga" 1;
+}
+
+/* Header logo: Fern hardcodes a 20px inline height, which shrinks the
+   wordmark to ~9px. Scale it to the 64px header instead. */
+a[data-fern-logo] img {
+  height: 2rem !important;
+  max-height: none !important;
+  width: auto !important;
+}
+
+/* Contrast fixes from the webapp theme review, applied to docs:
+   - coral filled buttons need dark text in dark mode (white on #ff7373 = 2.6:1)
+   - three Shiki light tokens fall below 4.5:1 on the light code surface */
+html.dark .fern-button.filled.primary,
+html.dark .fern-button.filled.primary .fern-button-content,
+html.dark .fern-button.filled.primary .fern-button-text {
+  color: #101010 !important;
+}
+
+html:not(.dark) span[style*="#c2c3c5" i],
+html:not(.dark) span[style*="rgb(194, 195, 197)" i],
+html:not(.dark) span[style*="rgb(194,195,197)" i] {
+  color: #707070 !important;
+}
+
+html:not(.dark) span[style*="#1976d2" i],
+html:not(.dark) span[style*="rgb(25, 118, 210)" i],
+html:not(.dark) span[style*="rgb(25,118,210)" i] {
+  color: #1565c0 !important;
+}
+
+html:not(.dark) span[style*="#22863a" i],
+html:not(.dark) span[style*="rgb(34, 134, 58)" i],
+html:not(.dark) span[style*="rgb(34,134,58)" i] {
+  color: #186a30 !important;
+}
+
+/* Code blocks and groups */
+.fern-code-block,
+.fern-code-group {
+  border-radius: var(--radius);
   border: 1px solid var(--border);
 }
 
-/* Better callout styling */
-.fern-callout {
-  border-radius: 0.75rem;
+.fern-code-group-tab {
+  border-radius: var(--radius);
 }
 
-/* Smooth transitions for interactive elements */
-a,
-button {
-  transition: all 0.2s ease;
+/* Callouts keep Fern's per-type tint, only the shape changes */
+.fern-callout,
+.fern-card,
+.fern-collapsible-card {
+  border-radius: var(--radius);
 }
 
-/* Enhance tables */
-.fern-table {
-  border-radius: 0.75rem;
+.fern-card,
+.fern-collapsible-card {
+  border-color: var(--border);
+}
+
+/* Prose tables and API reference tables */
+.fern-prose table,
+.fern-table-root {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   overflow: hidden;
-  border: 1px solid var(--border);
 }
 
-.fern-table th {
+.fern-prose th,
+.fern-prose td,
+.fern-table-root th,
+.fern-table-root td {
+  border-color: var(--border);
+}
+
+.fern-prose th,
+.fern-table-root th {
   background: var(--card-background);
   font-weight: 600;
 }
 
-/* Better mermaid diagram containers */
+/* Mermaid diagram containers */
 .fern-mermaid {
-  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   background: var(--card-background);
   padding: 1rem;
+}
+
+/* Nav and links */
+.fern-sidebar-link {
+  border-radius: var(--radius);
+}
+
+.fern-prose a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+/* Coral highlight, matching the theme's --ray-highlight/--ray-selection */
+::selection {
+  background: rgba(255, 99, 99, 0.22);
+}
+
+/* Thin hairline scrollbars, like the theme's rail */
+.fern-scroll-area-thumb {
+  background: var(--border);
+}
+
+.fern-scroll-area-thumb:hover {
+  background: var(--card-border);
 }

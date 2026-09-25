@@ -9,25 +9,33 @@ instances:
         repo: summarize
         branch: main
 
+# RaggioProietto palette (Raycast-derived). Light links use the darker red
+# so they keep contrast on white; dark mode keeps coral.
 colors:
   accent-primary:
-    light: "#6366F1"
-    dark: "#E8E8E8"
+    light: "#a52222"
+    dark: "#ff7373"
   background:
-    light: "#FAFAFA"
-    dark: "#0A0A0A"
+    light: "#ffffff"
+    dark: "#101010"
   border:
-    light: "#E5E7EB"
-    dark: "#3A3A3A"
+    light: "#e4e4e4"
+    dark: "#242728"
   sidebar-background:
-    light: "#FFFFFF"
-    dark: "#141414"
+    light: "#ffffff"
+    dark: "#101010"
   header-background:
-    light: "#FFFFFF"
-    dark: "#0A0A0A"
+    light: "#ffffff"
+    dark: "#101010"
   card-background:
-    light: "#FFFFFF"
+    light: "#f7f7f7"
     dark: "#141414"
+
+logo:
+  light: ./assets/images/logo-light.svg
+  dark: ./assets/images/logo-dark.svg
+
+css: ./assets/styles.css
 
 navbar-links:
   - type: github

@@ -83,30 +83,27 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
     with st.sidebar:
         # -- Theme Toggle --
         current_theme = st.session_state.theme
-        theme_options = ["System", "Light", "Dark"]
-        if current_theme == "dark":
-            theme_index = 2
-        elif current_theme == "light":
-            theme_index = 1
-        else:
-            theme_index = 0
+        theme_options = ["system", "light", "dark"]
+        theme_labels = {
+            "system": "🖥️  Auto",
+            "light": "☀️  Light",
+            "dark": "🌙  Dark",
+        }
+        theme_index = (
+            theme_options.index(current_theme) if current_theme in theme_options else 0
+        )
 
         selected_theme = st.radio(
             "THEME",
             options=theme_options,
             index=theme_index,
+            format_func=lambda value: theme_labels[value],
             horizontal=True,
             key="theme_selector",
         )
 
-        if selected_theme == "Dark":
-            new_theme = "dark"
-        elif selected_theme == "Light":
-            new_theme = "light"
-        else:
-            new_theme = "system"
-        if new_theme != current_theme:
-            st.session_state.theme_restart = new_theme
+        if selected_theme != current_theme:
+            st.session_state.theme_restart = selected_theme
             st.rerun()
 
         st.divider()

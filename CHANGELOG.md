@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-09-25
+
+### Changed
+
+- Streamlit and Fern docs use the RaggioProietto palette, including matching dark surfaces, coral accents, and the header logo
+- Streamlit theme control is a full-width Auto / Light / Dark segmented switch
+
+### Fixed
+
+- Dark-mode contrast for Streamlit widgets that Streamlit 1.64 no longer styles with the old selectors, including the file upload button, help tooltips, and primary buttons
+- Fern docs contrast for the dark filled button and light-mode code comments, numbers, and strings
+
 ## [0.3.1] - 2026-09-22
 
 ### Fixed
@@ -49,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial public development: multi-source video ingest, transcript + visual summarization paths, CLI, FastAPI, Streamlit, Docker, Raycast extension, and agent skill.
 
+[0.3.2]: https://github.com/martinopiaggi/summarize/releases/tag/v0.3.2
 [0.3.1]: https://github.com/martinopiaggi/summarize/releases/tag/v0.3.1
 [0.3.0]: https://github.com/martinopiaggi/summarize/releases/tag/v0.3.0
 [0.2.0]: https://github.com/martinopiaggi/summarize/releases/tag/v0.2.0

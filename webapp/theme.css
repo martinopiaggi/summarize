@@ -1,5 +1,10 @@
+/* RaggioProietto palette (Raycast-derived: coral #ff6363 on grayscale
+   surfaces, hairline borders, 6/8/12px radii). Tokens are injected by
+   theme.py; this file only maps them onto Streamlit's DOM. */
+
 .stApp {
-    font-family: 'Space Grotesk', sans-serif !important;
+    font-family: var(--font-ui, 'Inter', sans-serif) !important;
+    font-feature-settings: "ss03" 1, "calt" 1, "kern" 1, "liga" 1;
     background-color: var(--bg) !important;
     color: var(--text) !important;
 }
@@ -10,8 +15,9 @@
 }
 
 .stApp [data-testid="stSidebar"] {
-    background-color: var(--secondary) !important;
+    background-color: var(--bg) !important;
     color: var(--text) !important;
+    border-right: 1px solid var(--border) !important;
 }
 
 header[data-testid="stHeader"],
@@ -19,6 +25,7 @@ header[data-testid="stHeader"],
 [data-testid="stDecoration"] {
     background-color: var(--bg) !important;
     color: var(--text) !important;
+    border-bottom: 1px solid var(--border) !important;
 }
 
 [data-testid="stHeader"] svg,
@@ -28,22 +35,31 @@ header[data-testid="stHeader"],
 }
 
 .main-header {
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 2.5rem !important;
-    font-weight: 700 !important;
-    letter-spacing: -0.05em !important;
-    text-transform: uppercase !important;
-    border-bottom: 2px solid var(--text) !important;
+    font-family: var(--font-ui, 'Inter', sans-serif) !important;
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em !important;
+    border-bottom: 1px solid var(--border) !important;
     color: var(--text) !important;
-    padding-bottom: 0.5rem !important;
-    margin-bottom: 2rem !important;
+    padding-bottom: 0.75rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+::selection {
+    background: var(--selection) !important;
+    color: var(--text) !important;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus) !important;
+    outline-offset: 2px !important;
 }
 
 .stTextInput > div > div > input,
 .stNumberInput > div {
-    border-radius: 0 !important;
+    border-radius: var(--radius-m) !important;
     background-color: var(--secondary) !important;
-    border: 1px solid var(--text) !important;
+    border: 1px solid var(--border) !important;
     color: var(--text) !important;
     caret-color: var(--text) !important;
 }
@@ -57,13 +73,18 @@ header[data-testid="stHeader"],
 .stTextInput [data-baseweb="input"],
 .stTextInput [data-baseweb="input"] > div {
     background-color: var(--secondary) !important;
-    border: 1px solid var(--text) !important;
-    border-radius: 0 !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-m) !important;
+}
+
+.stTextInput [data-baseweb="input"]:focus-within,
+.stTextInput [data-baseweb="input"]:focus-within > div {
+    border-color: var(--accent) !important;
 }
 
 .stNumberInput > div > div > input {
-    border-radius: 0 !important;
-    font-family: 'JetBrains Mono', monospace !important;
+    border-radius: var(--radius-m) !important;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
     background-color: transparent !important;
     color: var(--text) !important;
     border: none !important;
@@ -76,11 +97,11 @@ header[data-testid="stHeader"],
     background-color: var(--secondary) !important;
     color: var(--text) !important;
     caret-color: var(--text) !important;
-    border-radius: 0 !important;
+    border-radius: var(--radius-s) !important;
 }
 
 [data-testid="stSidebar"] [data-testid="stNumberInput"] [data-baseweb="input"] {
-    border: 1px solid var(--text) !important;
+    border: 1px solid var(--border) !important;
 }
 
 [data-testid="stSidebar"] [data-testid="stNumberInput"] button svg {
@@ -90,15 +111,16 @@ header[data-testid="stHeader"],
 
 .stButton > button,
 .stDownloadButton > button {
-    border-radius: 0 !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-weight: 700 !important;
-    font-size: 0.8125rem !important;
-    line-height: 1.15 !important;
+    border-radius: var(--radius-s) !important;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+    font-weight: 500 !important;
+    font-size: 0.6875rem !important;
+    letter-spacing: 0.02em !important;
+    line-height: 1.5 !important;
     text-transform: uppercase !important;
     background-color: var(--secondary) !important;
     color: var(--text) !important;
-    border: 1px solid var(--text) !important;
+    border: 1px solid var(--border-strong) !important;
     min-height: 2.5rem !important;
     padding: 0.55rem 0.65rem !important;
     width: 100% !important;
@@ -107,6 +129,7 @@ header[data-testid="stHeader"],
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
+    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease !important;
 }
 
 .stButton > button p,
@@ -117,11 +140,33 @@ header[data-testid="stHeader"],
     color: inherit !important;
 }
 
+/* Button hover states */
+.stButton > button:hover,
+.stDownloadButton > button:hover {
+    background-color: var(--elevated) !important;
+    border-color: var(--border-strong) !important;
+    color: var(--text) !important;
+}
+
+.stButton > button[kind="primary"],
+.stDownloadButton > button[kind="primary"] {
+    background-color: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: var(--on-accent) !important;
+}
+
+.stButton > button[kind="primary"]:hover,
+.stDownloadButton > button[kind="primary"]:hover {
+    background-color: var(--accent-hover) !important;
+    border-color: var(--accent-hover) !important;
+    color: var(--on-accent) !important;
+}
+
 .stSelectbox > div > div {
-    border-radius: 0 !important;
+    border-radius: var(--radius-m) !important;
     background-color: var(--secondary) !important;
     color: var(--text) !important;
-    border: 1px solid var(--text) !important;
+    border: 1px solid var(--border) !important;
 }
 
 .stSelectbox [data-baseweb="select"] > div {
@@ -158,60 +203,88 @@ header[data-testid="stHeader"],
     color: var(--text) !important;
 }
 
+[data-baseweb="popover"] [role="option"]:hover,
+[data-baseweb="popover"] li[data-baseweb="menu"]:hover {
+    background-color: var(--elevated) !important;
+}
+
 .stSelectbox [data-baseweb="select"] span {
     color: var(--text) !important;
 }
 
-/* Button hover states */
-.stButton > button:hover,
-.stDownloadButton > button:hover {
-    background-color: var(--text) !important;
-    color: var(--bg) !important;
-}
-
 /* Selectbox hover */
 .stSelectbox > div > div:hover {
-    border: 1px solid var(--text) !important;
+    border: 1px solid var(--border-strong) !important;
 }
 
 .stRadio [data-baseweb="radio"] > div > div {
-    border: 1px solid var(--text) !important;
+    border: 1px solid var(--border-strong) !important;
     background-color: transparent !important;
+}
+
+.stRadio [data-baseweb="radio"] [aria-checked="true"] > div {
+    border-color: var(--accent) !important;
 }
 
 .stCheckbox [data-baseweb="checkbox"] > div > div {
-    border: 1px solid var(--text) !important;
+    border: 1px solid var(--border-strong) !important;
     background-color: transparent !important;
+    border-radius: 5px !important;
+}
+
+.stCheckbox [data-baseweb="checkbox"] [aria-checked="true"] > div {
+    border-color: var(--accent) !important;
 }
 
 .stExpander {
-    background-color: var(--secondary) !important;
-    border: 1px solid var(--text) !important;
+    background-color: var(--bg) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-m) !important;
+}
+
+.stTabs [data-baseweb="tab-highlight"],
+.stTabs [data-baseweb="tab-border"] {
+    display: none !important;
+}
+
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0.3rem !important;
+    border-bottom: 1px solid var(--border) !important;
 }
 
 .stTabs [data-baseweb="tab"] {
-    border-radius: 0 !important;
-    font-family: 'JetBrains Mono', monospace !important;
+    border-radius: var(--radius-s) !important;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+    font-size: 0.6875rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.04em !important;
     text-transform: uppercase !important;
+    color: var(--muted) !important;
+    border-bottom: none !important;
+    padding: 0.35rem 0.6rem !important;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
     color: var(--text) !important;
-    border-bottom: 2px solid transparent !important;
+    background-color: var(--row) !important;
 }
 
 .stTabs [data-baseweb="tab"][aria-selected="true"] {
-    border-bottom: 2px solid var(--text) !important;
+    background-color: var(--row) !important;
     color: var(--text) !important;
 }
 
 .streamlit-expanderHeader {
-    font-family: 'JetBrains Mono', monospace !important;
-    text-transform: uppercase !important;
-    border-radius: 0 !important;
+    font-family: var(--font-ui, 'Inter', sans-serif) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    border-radius: var(--radius-s) !important;
     color: var(--text) !important;
     background-color: transparent !important;
 }
 
 .streamlit-expanderHeader:hover {
-    background-color: transparent !important;
+    background-color: var(--row) !important;
     color: var(--text) !important;
 }
 
@@ -249,32 +322,35 @@ header[data-testid="stHeader"],
     display: flex !important;
     gap: 0 !important;
     background: transparent !important;
-    border: 1px solid var(--text) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: var(--radius-m) !important;
     padding: 2px !important;
 }
 
 .stSidebar [key="theme_selector"] [data-baseweb="button-group"] > div {
     flex: 1 !important;
     margin: 0 !important;
-    border-radius: 0 !important;
+    border-radius: var(--radius-s) !important;
     background: transparent !important;
-    color: var(--text) !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.75rem !important;
+    color: var(--muted) !important;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+    font-size: 0.6875rem !important;
+    letter-spacing: 0.02em !important;
     text-transform: uppercase !important;
     border: none !important;
     cursor: pointer !important;
-    transition: all 0.2s !important;
+    transition: background-color 0.12s ease, color 0.12s ease !important;
     padding: 0.4rem 0.2rem !important;
 }
 
 .stSidebar [key="theme_selector"] [data-baseweb="button-group"] > div:hover {
-    background: rgba(128, 128, 128, 0.2) !important;
+    background: var(--row) !important;
+    color: var(--text) !important;
 }
 
 .stSidebar [key="theme_selector"] [data-baseweb="button-group"] > div[aria-checked="true"] {
-    background: var(--text) !important;
-    color: var(--bg) !important;
+    background: var(--accent) !important;
+    color: var(--on-accent) !important;
 }
 
 .stSidebar [key="theme_selector"] [role="radio"] {
@@ -282,15 +358,15 @@ header[data-testid="stHeader"],
 }
 
 .stSidebar [data-testid="stExpander"] {
-    border-radius: 0 !important;
-    border: 1px solid var(--text) !important;
+    border-radius: var(--radius-m) !important;
+    border: 1px solid var(--border) !important;
 }
 
 .stSidebar [data-testid="stExpander"] summary,
 .stSidebar [data-testid="stExpander"] details {
-    background-color: var(--secondary) !important;
+    background-color: var(--bg) !important;
     color: var(--text) !important;
-    border-radius: 0 !important;
+    border-radius: var(--radius-s) !important;
 }
 
 .stSidebar [data-testid="stExpander"] summary {
@@ -299,6 +375,10 @@ header[data-testid="stHeader"],
     padding: 0.4rem 0.6rem !important;
     text-align: left !important;
     color: var(--text) !important;
+}
+
+.stSidebar [data-testid="stExpander"] summary:hover {
+    background-color: var(--row) !important;
 }
 
 .stSidebar [data-testid="stExpander"] summary p,
@@ -316,37 +396,55 @@ header[data-testid="stHeader"],
     color: var(--text) !important;
     -webkit-text-fill-color: var(--text) !important;
     caret-color: var(--text) !important;
-    border-radius: 0 !important;
+    border-radius: var(--radius-m) !important;
 }
 
 [data-testid="stTextAreaRootElement"] {
-    border: 1px solid var(--text) !important;
+    border: 1px solid var(--border) !important;
+}
+
+[data-testid="stTextAreaRootElement"]:focus-within {
+    border-color: var(--accent) !important;
 }
 
 .stSidebar .stCheckbox [data-baseweb="checkbox"] > div,
 .stSidebar .stCheckbox [data-baseweb="checkbox"] svg {
     background-color: transparent !important;
-    border-color: var(--text) !important;
+    border-color: var(--border-strong) !important;
     color: var(--text) !important;
     fill: var(--text) !important;
 }
 
 .stCaption {
-    font-family: 'JetBrains Mono', monospace !important;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+    font-size: 0.6875rem !important;
+    letter-spacing: 0.04em !important;
     text-transform: uppercase !important;
-    color: var(--text) !important;
+    color: var(--faint) !important;
 }
 
 .stSidebar .stCaption {
-    color: var(--text) !important;
+    color: var(--faint) !important;
 }
 
 .stMarkdown {
     color: var(--text) !important;
 }
 
+.stMarkdown a {
+    color: var(--link) !important;
+    text-decoration: underline !important;
+    text-decoration-thickness: 1px !important;
+    text-underline-offset: 0.16em !important;
+}
+
+.stMarkdown a:hover {
+    color: var(--link-hover) !important;
+}
+
 label, .stRadio label, .stCheckbox label, .stSelectbox label {
-    color: var(--text) !important;
+    color: var(--muted) !important;
+    font-size: 0.8125rem !important;
 }
 
 .stFileUploader label,
@@ -358,13 +456,38 @@ label, .stRadio label, .stCheckbox label, .stSelectbox label {
 
 .stFileUploader [data-testid="stFileUploaderDropzone"] {
     background-color: var(--secondary) !important;
-    border: 1px solid var(--text) !important;
+    border: 1px dashed var(--border-strong) !important;
+    border-radius: var(--radius-l) !important;
+}
+
+.stFileUploader [data-testid="stFileUploaderDropzone"]:hover {
+    background-color: var(--elevated) !important;
+}
+
+.stFileUploader button {
+    background-color: var(--secondary) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: var(--radius-s) !important;
+    color: var(--text) !important;
+}
+
+.stFileUploader button p,
+.stFileUploader button span {
+    color: var(--text) !important;
+}
+
+.stFileUploader button svg {
+    fill: var(--text) !important;
+}
+
+.stFileUploader button:hover {
+    background-color: var(--elevated) !important;
 }
 
 .stTextInput input::placeholder,
 .stTextArea textarea::placeholder {
-    color: var(--text) !important;
-    opacity: 0.7 !important;
+    color: var(--faint) !important;
+    opacity: 1 !important;
 }
 
 .stSidebar .stRadio [data-baseweb="radio"] span,
@@ -376,22 +499,348 @@ label, .stRadio label, .stCheckbox label, .stSelectbox label {
 .element-container .stMarkdown h1,
 .element-container .stMarkdown h2,
 .element-container .stMarkdown h3 {
-    font-family: 'JetBrains Mono', monospace !important;
+    font-family: var(--font-ui, 'Inter', sans-serif) !important;
+    font-weight: 600 !important;
     color: var(--text) !important;
 }
 
 .app-footer {
     text-align: center;
     margin: 0;
-    font-size: 0.8rem;
-    opacity: 0.65;
+    font-size: 0.8125rem;
+    color: var(--faint);
+    opacity: 1;
 }
 
 .app-footer a {
-    color: var(--text);
-    text-decoration: none;
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.16em;
 }
 
 .app-footer a:hover {
-    text-decoration: underline;
+    color: var(--link-hover);
+}
+
+/* ---- Streamlit 1.64 react-aria mappings -------------------------------
+   Streamlit >= 1.60 renders widgets with react-aria instead of
+   BaseWeb. The selectors above (data-baseweb, .streamlit-expanderHeader)
+   stay for older installs; these match the current DOM so the theme
+   is not defeated by the light theme baked into Streamlit's runtime. */
+
+/* Buttons: header / collapse */
+button[kind="headerNoPadding"],
+[data-testid="stSidebarCollapseButton"] button {
+    color: var(--text) !important;
+}
+
+button[kind="headerNoPadding"] svg,
+[data-testid="stSidebarCollapseButton"] button svg {
+    fill: var(--text) !important;
+}
+
+/* Text input (root element wrapper) */
+[data-testid="stTextInputRootElement"],
+[data-testid="stNumberInputContainer"] {
+    background-color: var(--secondary) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-m) !important;
+}
+
+[data-testid="stTextInputRootElement"]:focus-within,
+[data-testid="stNumberInputContainer"]:focus-within {
+    border-color: var(--accent) !important;
+}
+
+[data-testid="stTextInputField"],
+[data-testid="stNumberInputField"] {
+    background-color: transparent !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    caret-color: var(--text) !important;
+}
+
+.stNumberInput button svg {
+    fill: var(--text) !important;
+}
+
+/* Selectbox (react-aria ComboBox) */
+.stSelectbox .react-aria-ComboBox > div[role="group"] {
+    background-color: var(--secondary) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-m) !important;
+}
+
+.stSelectbox .react-aria-ComboBox > div[role="group"]:focus-within {
+    border-color: var(--accent) !important;
+}
+
+.stSelectbox input[role="combobox"] {
+    background-color: transparent !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
+
+.stSelectbox input[role="combobox"]::placeholder {
+    color: var(--faint) !important;
+}
+
+.stSelectbox button[aria-label="Open"] {
+    background-color: transparent !important;
+}
+
+.stSelectbox button[aria-label="Open"] svg {
+    fill: var(--text) !important;
+}
+
+/* Dropdown list (portal) */
+[role="listbox"],
+[data-baseweb="popover"] [role="listbox"] {
+    background-color: var(--elevated) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-m) !important;
+}
+
+[role="option"] {
+    background-color: transparent !important;
+    color: var(--text) !important;
+}
+
+[role="option"]:hover,
+[role="option"][aria-selected="true"] {
+    background-color: var(--row) !important;
+}
+
+/* Radio options */
+[data-testid="stRadioOption"] {
+    color: var(--muted) !important;
+}
+
+[data-testid="stRadioOption"][data-selected="true"] {
+    color: var(--text) !important;
+}
+
+[data-testid="stRadioOption"] > div > div:not([data-testid]) {
+    border: 1px solid var(--border-strong) !important;
+    background-color: transparent !important;
+}
+
+[data-testid="stRadioOption"][data-selected="true"] > div > div:not([data-testid]) {
+    border-color: var(--accent) !important;
+}
+
+[data-testid="stRadioOption"] p {
+    color: inherit !important;
+}
+
+/* Theme toggle: segmented control */
+[data-testid="stRadioGroup"][aria-label="THEME"] {
+    display: flex !important;
+    width: 100% !important;
+    gap: 0.25rem !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: var(--radius-m) !important;
+    padding: 3px !important;
+}
+
+[data-testid="stRadioGroup"][aria-label="THEME"] [data-testid="stRadioOption"] {
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.35rem !important;
+    min-height: 2.25rem !important;
+    border: none !important;
+    border-radius: var(--radius-s) !important;
+    padding: 0.45rem 0.3rem !important;
+    font-family: var(--font-ui, 'Inter', sans-serif) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.01em !important;
+    text-transform: none !important;
+    cursor: pointer !important;
+    transition: background-color 0.12s ease, color 0.12s ease !important;
+}
+
+[data-testid="stRadioGroup"][aria-label="THEME"] [data-testid="stRadioOption"] > div > div:not([data-testid]) {
+    display: none !important;
+}
+
+[data-testid="stRadioGroup"][aria-label="THEME"] [data-testid="stRadioOption"]:hover {
+    background-color: var(--row) !important;
+}
+
+[data-testid="stRadioGroup"][aria-label="THEME"] [data-testid="stRadioOption"][data-selected="true"] {
+    background-color: var(--accent) !important;
+    color: var(--on-accent) !important;
+    font-weight: 700 !important;
+}
+
+/* Checkbox box */
+.stCheckbox label > span + div {
+    background-color: transparent !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 5px !important;
+}
+
+.stCheckbox label > span:has(input:checked) + div {
+    border-color: var(--accent) !important;
+}
+
+/* Tabs */
+.stTabs [data-testid="stTab"] {
+    border-radius: var(--radius-s) !important;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+    font-size: 0.6875rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    color: var(--muted) !important;
+    padding: 0.35rem 0.6rem !important;
+}
+
+.stTabs [data-testid="stTab"]:hover {
+    color: var(--text) !important;
+    background-color: var(--row) !important;
+}
+
+.stTabs [data-testid="stTab"][aria-selected="true"] {
+    background-color: var(--row) !important;
+    color: var(--text) !important;
+}
+
+.stTabs [data-testid="stTab"] p {
+    color: inherit !important;
+}
+
+/* Expander / status */
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary span {
+    color: var(--text) !important;
+}
+
+[data-testid="stExpander"] summary:hover {
+    background-color: var(--row) !important;
+}
+
+[data-testid="stExpander"] [data-testid="stIconMaterial"] {
+    color: var(--muted) !important;
+}
+
+/* Help tooltip icon + hover bubble */
+[data-testid="stTooltipIcon"] button,
+[data-testid="stTooltipHoverTarget"] button {
+    color: var(--muted) !important;
+    background-color: transparent !important;
+}
+
+[data-testid="stTooltipIcon"] svg {
+    stroke: var(--muted) !important;
+    color: var(--muted) !important;
+}
+
+[data-testid="stTooltipIcon"] button:hover svg {
+    stroke: var(--text) !important;
+    color: var(--text) !important;
+}
+
+[data-testid="stTooltipContent"] {
+    background-color: var(--elevated) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-s) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
+    color: var(--text) !important;
+}
+
+[data-testid="stTooltipContent"] p {
+    color: var(--text) !important;
+}
+
+/* Alerts */
+[data-testid="stAlertContainer"] {
+    background-color: var(--elevated) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-m) !important;
+}
+
+[data-testid="stAlertContentSuccess"],
+[data-testid="stAlertContentInfo"],
+[data-testid="stAlertContentWarning"],
+[data-testid="stAlertContentError"] {
+    color: var(--text) !important;
+}
+
+[data-testid="stAlert"] [data-testid="stMarkdownContainer"] {
+    color: var(--text) !important;
+}
+
+/* Captions */
+[data-testid="stCaptionContainer"] > p,
+.stMarkdown [data-testid="stCaptionContainer"] p,
+.stMarkdown [data-testid="stCaptionContainer"] > p {
+    color: var(--faint) !important;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+    font-size: 0.6875rem !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+}
+
+/* Code blocks and inline code in markdown */
+[data-testid="stCode"] {
+    background-color: var(--secondary) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-m) !important;
+}
+
+[data-testid="stCode"] pre,
+[data-testid="stCode"] code,
+[data-testid="stCode"] .token {
+    background-color: transparent !important;
+    color: var(--text) !important;
+}
+
+.stMarkdown code:not([class*="language-"]) {
+    background-color: var(--row) !important;
+    color: var(--text) !important;
+    border-radius: var(--radius-s) !important;
+}
+
+/* Markdown content blocks */
+.stMarkdown table {
+    border-color: var(--border) !important;
+}
+
+.stMarkdown th {
+    background-color: var(--secondary) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+.stMarkdown td {
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+.stMarkdown blockquote {
+    border-left-color: var(--border-strong) !important;
+    color: var(--muted) !important;
+}
+
+.stMarkdown hr {
+    border-color: var(--border) !important;
+}
+
+.element-container .stMarkdown h4,
+.element-container .stMarkdown h5,
+.element-container .stMarkdown h6 {
+    font-family: var(--font-ui, 'Inter', sans-serif) !important;
+    font-weight: 600 !important;
+    color: var(--text) !important;
+}
+
+.stMarkdown li,
+.stMarkdown p {
+    color: var(--text) !important;
 }

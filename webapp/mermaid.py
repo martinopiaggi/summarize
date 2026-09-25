@@ -34,7 +34,7 @@ def _render_mermaid_diagram(code: str, theme: str) -> None:
     height: 100%; overflow: hidden;
     color: var(--fg);
   }}
-  body {{ font-family: -apple-system, system-ui, 'Space Grotesk', sans-serif; }}
+  body {{ font-family: 'Inter', -apple-system, system-ui, sans-serif; }}
   .wrap {{
     position: relative;
     width: 100%;

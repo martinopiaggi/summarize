@@ -15,34 +15,50 @@ def _theme_vars(theme: str) -> str:
         return """
         :root {
             --copy-bg: #141414;
-            --copy-text: #e8e8e8;
-            --copy-hover-bg: #e8e8e8;
-            --copy-hover-text: #0a0a0a;
+            --copy-border: #242728;
+            --copy-text: #f4f4f6;
+            --copy-hover-bg: #1a1a1a;
+            --copy-success-bg: #59d499;
+            --copy-success-text: #101010;
+            --copy-danger-bg: #ff6363;
+            --copy-danger-text: #101010;
         }
         """
     if theme == "light":
         return """
         :root {
-            --copy-bg: #f0f0f0;
+            --copy-bg: #f7f7f7;
+            --copy-border: #e4e4e4;
             --copy-text: #1a1a1a;
-            --copy-hover-bg: #1a1a1a;
-            --copy-hover-text: #ffffff;
+            --copy-hover-bg: #efefef;
+            --copy-success-bg: #006b4f;
+            --copy-success-text: #ffffff;
+            --copy-danger-bg: #b12424;
+            --copy-danger-text: #ffffff;
         }
         """
     return """
     :root {
-        --copy-bg: #f0f0f0;
+        --copy-bg: #f7f7f7;
+        --copy-border: #e4e4e4;
         --copy-text: #1a1a1a;
-        --copy-hover-bg: #1a1a1a;
-        --copy-hover-text: #ffffff;
+        --copy-hover-bg: #efefef;
+        --copy-success-bg: #006b4f;
+        --copy-success-text: #ffffff;
+        --copy-danger-bg: #b12424;
+        --copy-danger-text: #ffffff;
     }
 
     @media (prefers-color-scheme: dark) {
         :root {
             --copy-bg: #141414;
-            --copy-text: #e8e8e8;
-            --copy-hover-bg: #e8e8e8;
-            --copy-hover-text: #0a0a0a;
+            --copy-border: #242728;
+            --copy-text: #f4f4f6;
+            --copy-hover-bg: #1a1a1a;
+            --copy-success-bg: #59d499;
+            --copy-success-text: #101010;
+            --copy-danger-bg: #ff6363;
+            --copy-danger-text: #101010;
         }
     }
     """
@@ -63,25 +79,26 @@ def copy_to_clipboard(text: str, theme: str = "system"):
         padding: 0.55rem 0.65rem;
         background: var(--copy-bg);
         color: var(--copy-text);
-        border: 1px solid var(--copy-text);
-        border-radius: 0;
+        border: 1px solid var(--copy-border);
+        border-radius: 6px;
         box-sizing: border-box;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         text-align: center;
         font-family: 'JetBrains Mono', monospace;
-        font-weight: 700;
-        font-size: 0.8125rem;
-        line-height: 1.15;
+        font-weight: 500;
+        font-size: 0.6875rem;
+        letter-spacing: 0.02em;
+        line-height: 1.5;
         text-transform: uppercase;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
     }}
 
     #copyBtn:hover {{
         background: var(--copy-hover-bg);
-        color: var(--copy-hover-text);
+        color: var(--copy-text);
     }}
     </style>
     <div style="width: 100%;">
@@ -103,6 +120,10 @@ def copy_to_clipboard(text: str, theme: str = "system"):
         const styles = getComputedStyle(document.documentElement);
         const defaultBackground = styles.getPropertyValue("--copy-bg").trim();
         const defaultColor = styles.getPropertyValue("--copy-text").trim();
+        const successBackground = styles.getPropertyValue("--copy-success-bg").trim();
+        const successColor = styles.getPropertyValue("--copy-success-text").trim();
+        const dangerBackground = styles.getPropertyValue("--copy-danger-bg").trim();
+        const dangerColor = styles.getPropertyValue("--copy-danger-text").trim();
 
         const setButtonState = (
             label,
@@ -131,26 +152,26 @@ def copy_to_clipboard(text: str, theme: str = "system"):
             try {{
                 if (window.isSecureContext && navigator.clipboard?.writeText) {{
                     await navigator.clipboard.writeText(text);
-                    setButtonState("COPIED", "#22c55e", "#fff");
+                    setButtonState("COPIED", successBackground, successColor);
                     return;
                 }}
 
                 if (fallbackCopy()) {{
-                    setButtonState("COPIED", "#22c55e", "#fff");
+                    setButtonState("COPIED", successBackground, successColor);
                     return;
                 }}
 
-                setButtonState("USE DOWNLOAD", "#600");
+                setButtonState("USE DOWNLOAD", dangerBackground, dangerColor);
             }} catch (error) {{
                 if (fallbackCopy()) {{
-                    setButtonState("COPIED", "#22c55e", "#fff");
+                    setButtonState("COPIED", successBackground, successColor);
                     return;
                 }}
 
                 setButtonState(
                     window.isSecureContext ? "FAILED" : "USE DOWNLOAD",
-                    "#600",
-                    "#fff",
+                    dangerBackground,
+                    dangerColor,
                 );
             }}
         }});
