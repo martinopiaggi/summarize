@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The summarization pipeline runs on a worker thread owned by the session. Toggling the theme (or any other widget) reruns the page but no longer aborts and loses an in-flight run; the rerun re-attaches to the running job and keeps streaming its progress.
+
+### Fixed
+
+- Dark-mode contrast for the expandable status bar (circular spinner + "Processing..."), which kept Streamlit's white summary background behind theme-colored text
+- Dark-mode contrast for the header Stop button, which was dark text over the dark header
+- Light-mode contrast for checkboxes (e.g. Visual mode), which were white over white
+
 ## [0.3.2] - 2026-09-25
 
 ### Changed

@@ -531,13 +531,20 @@ label, .stRadio label, .stCheckbox label, .stSelectbox label {
 
 /* Buttons: header / collapse */
 button[kind="headerNoPadding"],
+button[kind="header"],
 [data-testid="stSidebarCollapseButton"] button {
     color: var(--text) !important;
 }
 
 button[kind="headerNoPadding"] svg,
+button[kind="header"] svg,
 [data-testid="stSidebarCollapseButton"] button svg {
     fill: var(--text) !important;
+}
+
+button[kind="headerNoPadding"]:hover,
+button[kind="header"]:hover {
+    background-color: var(--row) !important;
 }
 
 /* Text input (root element wrapper) */
@@ -715,9 +722,24 @@ button[kind="headerNoPadding"] svg,
 }
 
 /* Expander / status */
+[data-testid="stExpander"] summary {
+    background-color: var(--secondary) !important;
+    border-radius: var(--radius-s) !important;
+}
+
 [data-testid="stExpander"] summary,
 [data-testid="stExpander"] summary p,
 [data-testid="stExpander"] summary span {
+    color: var(--text) !important;
+}
+
+[data-testid="stExpander"] summary svg {
+    fill: var(--text) !important;
+    stroke: var(--text) !important;
+}
+
+[data-testid="stExpander"] [data-testid="stExpanderIcon"],
+[data-testid="stExpander"] [data-testid="stExpanderIconSpinner"] {
     color: var(--text) !important;
 }
 
@@ -843,4 +865,40 @@ button[kind="headerNoPadding"] svg,
 .stMarkdown li,
 .stMarkdown p {
     color: var(--text) !important;
+}
+
+/* Checkbox + toggle (react-aria, Streamlit >= 1.60). Streamlit paints
+   the box and knob with its baked-in light-theme colors (white over
+   white in light mode); pin them to the theme tokens. The e15oan3xx
+   classes are the emotion targets Streamlit appends to these styled
+   elements; the data-baseweb rules above cover older installs. */
+[data-testid="stCheckbox"] {
+    color: var(--text) !important;
+}
+
+[data-testid="stCheckbox"] .e15oan335,
+[data-testid="stCheckbox"] .e15oan337 {
+    background-color: var(--secondary) !important;
+    transition: background-color 0.12s ease, border-color 0.12s ease !important;
+}
+
+[data-testid="stCheckbox"] .e15oan335 {
+    border-color: var(--border-strong) !important;
+}
+
+/* Streamlit only renders the check svg when the box is selected. */
+[data-testid="stCheckbox"] .e15oan335:has(> svg),
+[data-testid="stCheckbox"][aria-checked="true"] .e15oan337,
+[data-testid="stCheckbox"][data-selected="true"] .e15oan337 {
+    background-color: var(--accent) !important;
+    border-color: var(--accent) !important;
+}
+
+[data-testid="stCheckbox"] svg {
+    fill: none !important;
+    stroke: var(--on-accent) !important;
+}
+
+[data-testid="stCheckbox"] .e15oan338 {
+    background-color: var(--text) !important;
 }

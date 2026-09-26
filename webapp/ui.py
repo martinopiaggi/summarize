@@ -28,6 +28,7 @@ from webapp.config import (
     save_config_raw,
 )
 from webapp.history import add_to_history, save_summary_to_disk
+from webapp.jobs import SummarizeJob
 from webapp.mermaid import render_summary_with_mermaid
 from webapp.state import (
     clear_uploaded_file_state,
@@ -303,38 +304,137 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
     }
 
 
-def _run_and_store(source, display_name, source_type, force_download, sidebar, defaults, status_ctx):
-    """Invoke the pipeline and persist results into session state / disk."""
-    summary = run_summarization(
-        source,
-        sidebar["provider_config"],
-        sidebar["prompt_type"],
-        sidebar["chunk_size"],
-        force_download,
-        sidebar["language"],
-        sidebar["output_language"],
-        sidebar["speed"],
-        source_type,
-        sidebar["transcription_method"],
-        sidebar["whisper_model"],
-        sidebar["verbose"],
-        status_container=status_ctx,
-        visual=sidebar.get("visual", False),
-        use_jev_prefiltering=sidebar.get("use_jev_prefiltering"),
-        jev_provider=sidebar.get("jev_provider"),
-        jev_include=sidebar.get("jev_include"),
-        jev_exclude=sidebar.get("jev_exclude"),
+def _remove_quietly(path):
+    try:
+        os.unlink(path)
+    except OSError:
+        pass
+
+
+def _start_job(source, display_name, source_type, force_download, sidebar, defaults, cleanup=None):
+    """Start the pipeline on a worker thread that survives Streamlit reruns."""
+
+    def _runner(status):
+        return run_summarization(
+            source,
+            sidebar["provider_config"],
+            sidebar["prompt_type"],
+            sidebar["chunk_size"],
+            force_download,
+            sidebar["language"],
+            sidebar["output_language"],
+            sidebar["speed"],
+            source_type,
+            sidebar["transcription_method"],
+            sidebar["whisper_model"],
+            sidebar["verbose"],
+            status_container=status,
+            visual=sidebar.get("visual", False),
+            use_jev_prefiltering=sidebar.get("use_jev_prefiltering"),
+            jev_provider=sidebar.get("jev_provider"),
+            jev_include=sidebar.get("jev_include"),
+            jev_exclude=sidebar.get("jev_exclude"),
+        )
+
+    job = SummarizeJob(
+        _runner,
+        context={
+            "source": source,
+            "display_name": display_name,
+            "source_type": source_type,
+            "force_download": force_download,
+            "sidebar": sidebar,
+            "defaults": defaults,
+            "cleanup": cleanup,
+        },
     )
-    status_ctx.update(label="Complete", state="complete", expanded=False)
-    add_to_history(display_name, sidebar["provider"], sidebar["prompt_type"], summary)
-    st.session_state.current_summary = summary
-    st.session_state.current_transcript = _lookup_cached_transcript(
-        source, source_type, sidebar, force_download
+    st.session_state["active_job"] = job
+    return job
+
+
+def _await_job(job, status_ctx):
+    """Stream a job's progress into ``status_ctx`` until the job finishes."""
+    write = getattr(status_ctx, "write", None)
+    update = getattr(status_ctx, "update", None)
+    while True:
+        for line in job.drain_logs():
+            if write is not None:
+                write(line)
+        if job.done:
+            return
+        # Touch an st command every tick so Streamlit can interrupt this
+        # run (e.g. a theme toggle); the job keeps going on its thread.
+        if update is not None:
+            update(state="running")
+        job.wait(0.5)
+
+
+def _store_job_result(job, status_ctx):
+    """Persist a finished job into session state / disk."""
+    context = job.context
+    try:
+        if job.error is not None:
+            raise job.error
+        if status_ctx is not None:
+            status_ctx.update(label="Complete", state="complete", expanded=False)
+        sidebar = context["sidebar"]
+        defaults = context["defaults"]
+        summary = job.result
+        add_to_history(context["display_name"], sidebar["provider"], sidebar["prompt_type"], summary)
+        st.session_state.current_summary = summary
+        st.session_state.current_transcript = _lookup_cached_transcript(
+            context["source"], context["source_type"], sidebar, context["force_download"]
+        )
+        st.session_state.history[0]["transcript"] = st.session_state.current_transcript
+        st.session_state.show_history_item = None
+        if defaults.get("keep_history"):
+            save_summary_to_disk(
+                context["display_name"], summary, defaults.get("output_dir", "summaries")
+            )
+    finally:
+        cleanup = context.get("cleanup")
+        if cleanup is not None:
+            cleanup()
+        st.session_state["active_job"] = None
+
+
+def _run_and_store(source, display_name, source_type, force_download, sidebar, defaults, status_ctx, cleanup=None):
+    """Invoke the pipeline and persist results into session state / disk.
+
+    The pipeline runs on a worker thread so a Streamlit rerun cannot
+    abort it; this call only streams its progress into ``status_ctx``.
+    Reruns interrupted mid-run re-attach through ``active_job``.
+    """
+    job = st.session_state.get("active_job") or _start_job(
+        source, display_name, source_type, force_download, sidebar, defaults, cleanup
     )
-    st.session_state.history[0]["transcript"] = st.session_state.current_transcript
-    st.session_state.show_history_item = None
-    if defaults.get("keep_history"):
-        save_summary_to_disk(display_name, summary, defaults.get("output_dir", "summaries"))
+    _await_job(job, status_ctx)
+    _store_job_result(job, status_ctx)
+
+
+def _render_active_job():
+    """Re-attach to a job that a previous, interrupted run started."""
+    job = st.session_state.get("active_job")
+    if job is None:
+        return
+    context = job.context
+    status_ctx = st.status("Processing...", expanded=False)
+    with status_ctx:
+        try:
+            _run_and_store(
+                context["source"],
+                context["display_name"],
+                context["source_type"],
+                context["force_download"],
+                context["sidebar"],
+                context["defaults"],
+                status_ctx,
+            )
+        except Exception as e:
+            status_ctx.update(label="Failed", state="error", expanded=True)
+            st.error(f"Error: {str(e)}")
+            with st.expander("DETAILS"):
+                st.code(job.traceback_text or traceback.format_exc())
 
 
 def _render_url_tab(sidebar, defaults):
@@ -414,18 +514,13 @@ def _render_file_tab(sidebar, defaults):
                     sidebar,
                     defaults,
                     status_ctx,
+                    cleanup=lambda: _remove_quietly(tmp_path),
                 )
             except Exception as e:
                 status_ctx.update(label="Failed", state="error", expanded=True)
                 st.error(f"Error: {str(e)}")
                 with st.expander("DETAILS"):
                     st.code(traceback.format_exc())
-            finally:
-                if tmp_path and os.path.exists(tmp_path):
-                    try:
-                        os.unlink(tmp_path)
-                    except OSError:
-                        pass
 
 
 def _runtime_args(source, source_type, sidebar, force_download):
@@ -543,6 +638,8 @@ def main():
         _render_url_tab(sidebar, defaults)
     with tab_file:
         _render_file_tab(sidebar, defaults)
+
+    _render_active_job()
 
     _render_summary_panel()
 
