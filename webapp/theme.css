@@ -547,6 +547,28 @@ button[kind="header"]:hover {
     background-color: var(--row) !important;
 }
 
+/* Sidebar collapse / expand arrows: accent color in both themes. */
+[data-testid="stExpandSidebarButton"],
+button[kind="headerNoPadding"][data-testid="stExpandSidebarButton"],
+[data-testid="stSidebarCollapseButton"] button,
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="collapsedControl"] button,
+[data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"],
+[data-testid="stSidebarCollapseButton"] [data-testid="stIconMaterial"],
+[data-testid="stSidebarCollapsedControl"] [data-testid="stIconMaterial"],
+[data-testid="collapsedControl"] [data-testid="stIconMaterial"] {
+    color: var(--accent) !important;
+}
+
+[data-testid="stExpandSidebarButton"] svg,
+button[kind="headerNoPadding"][data-testid="stExpandSidebarButton"] svg,
+[data-testid="stSidebarCollapseButton"] button svg,
+[data-testid="stSidebarCollapsedControl"] svg,
+[data-testid="collapsedControl"] svg {
+    fill: var(--accent) !important;
+    stroke: var(--accent) !important;
+}
+
 /* Text input (root element wrapper) */
 [data-testid="stTextInputRootElement"],
 [data-testid="stNumberInputContainer"] {

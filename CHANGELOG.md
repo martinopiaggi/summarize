@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The summarization pipeline runs on a worker thread owned by the session. Toggling the theme (or any other widget) reruns the page but no longer aborts and loses an in-flight run; the rerun re-attaches to the running job and keeps streaming its progress.
+- The sidebar starts collapsed, and the sidebar expand/collapse arrows use the accent color in light and dark mode
 
 ### Fixed
 

@@ -620,7 +620,12 @@ def _render_summary_panel():
 
 def main():
     """Streamlit page entry point."""
-    st.set_page_config(page_title="SUMMARIZE", page_icon="S", layout="centered")
+    st.set_page_config(
+        page_title="SUMMARIZE",
+        page_icon="S",
+        layout="centered",
+        initial_sidebar_state="collapsed",
+    )
 
     # Re-read config every run so EDIT CONFIG changes apply immediately.
     providers, default_provider, defaults = load_config()

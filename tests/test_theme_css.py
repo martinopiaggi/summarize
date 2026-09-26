@@ -52,3 +52,31 @@ def test_checkbox_box_uses_theme_colors(theme):
         for b in _block_for(css, '[data-testid="stCheckbox"] .e15oan335')
     )
     assert "stroke: var(--on-accent) !important;" in css
+
+
+@pytest.mark.parametrize("theme", ["dark", "system", "light"])
+def test_sidebar_collapse_arrows_use_accent_color(theme):
+    """Both sidebar arrows must be accent-colored, and beat the generic
+    header-button rule that paints them with the text color."""
+    css = get_custom_css(theme)
+    assert any(
+        "color: var(--accent) !important;" in b
+        for b in _block_for(css, '[data-testid="stExpandSidebarButton"]')
+    )
+    assert any(
+        "fill: var(--accent) !important;" in b
+        for b in _block_for(css, '[data-testid="stExpandSidebarButton"] svg')
+    )
+    # The stronger variant is what actually outranks the header-button rule.
+    assert 'button[kind="headerNoPadding"][data-testid="stExpandSidebarButton"] svg' in css
+    assert css.index('[data-testid="stExpandSidebarButton"] svg') > css.index(
+        'button[kind="headerNoPadding"] svg'
+    )
+
+
+def test_sidebar_starts_collapsed():
+    import inspect
+
+    from webapp import ui
+
+    assert 'initial_sidebar_state="collapsed"' in inspect.getsource(ui.main)
