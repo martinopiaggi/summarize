@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-27
+
 ### Added
 
 - FILE tab: a "PASTE FROM CLIPBOARD" button above the uploader, plus a paste field that accepts Ctrl+V when the browser blocks clipboard reads. Pasted text always enters the pipeline as a plain `.txt` source, so a copied video URL is summarized as text rather than parsed as a video; a green status line under the button confirms each paste and stays visible (reporting which upload it replaced, or that nothing changed), and a blocked clipboard read reports the failure and asks for Ctrl+V
@@ -78,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial public development: multi-source video ingest, transcript + visual summarization paths, CLI, FastAPI, Streamlit, Docker, Raycast extension, and agent skill.
 
+[0.4.0]: https://github.com/martinopiaggi/summarize/releases/tag/v0.4.0
 [0.3.2]: https://github.com/martinopiaggi/summarize/releases/tag/v0.3.2
 [0.3.1]: https://github.com/martinopiaggi/summarize/releases/tag/v0.3.1
 [0.3.0]: https://github.com/martinopiaggi/summarize/releases/tag/v0.3.0
