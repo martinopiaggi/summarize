@@ -7,13 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- FILE tab: a "PASTE FROM CLIPBOARD" button above the uploader, plus a paste field that accepts Ctrl+V when the browser blocks clipboard reads. Pasted text always enters the pipeline as a plain `.txt` source, so a copied video URL is summarized as text rather than parsed as a video; a green status line under the button confirms each paste and stays visible (reporting which upload it replaced, or that nothing changed), and a blocked clipboard read reports the failure and asks for Ctrl+V
+
 ### Changed
 
 - The summarization pipeline runs on a worker thread owned by the session. Toggling the theme (or any other widget) reruns the page but no longer aborts and loses an in-flight run; the rerun re-attaches to the running job and keeps streaming its progress.
 - The sidebar starts collapsed, and the sidebar expand/collapse arrows use the accent color in light and dark mode
+- The Streamlit result panel no longer shows a redundant COMPLETE banner; the status bar already says Complete and the summary is the signal that work finished
 
 ### Fixed
 
+- Switching theme mid-run no longer duplicates the Processing status box: new and resumed jobs share one status renderer outside the URL/FILE tabs
 - Dark-mode contrast for the expandable status bar (circular spinner + "Processing..."), which kept Streamlit's white summary background behind theme-colored text
 - Dark-mode contrast for the header Stop button, which was dark text over the dark header
 - Light-mode contrast for checkboxes (e.g. Visual mode), which were white over white

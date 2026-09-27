@@ -8,6 +8,7 @@ import hashlib
 import os
 import tempfile
 import traceback
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
@@ -18,7 +19,7 @@ from summarizer.downloaders import is_youtube_url
 from summarizer.prompts import get_available_prompts
 from summarizer.jev import JEV_DEFAULTS, enabled, supports_systemone
 
-from webapp.clipboard import copy_to_clipboard
+from webapp.clipboard import copy_to_clipboard, paste_from_clipboard_button
 from webapp.config import (
     MAX_CHUNK_SIZE,
     MIN_CHUNK_SIZE,
@@ -34,6 +35,7 @@ from webapp.state import (
     clear_uploaded_file_state,
     get_uploaded_file_state,
     init_session_state,
+    remember_uploaded_bytes,
     remember_uploaded_file,
 )
 from webapp.summarization import run_summarization
@@ -64,8 +66,20 @@ _UPLOAD_TYPES = [
     "txt", "md", "vtt", "srt", "csv", "log", "rst", "html", "xml", "json",
 ]
 
+# Hidden transport input that the FILE-tab clipboard button writes into.
+CLIPBOARD_PASTE_KEY = "clipboard_paste"
+# Confirmation of the last paste, kept until the loaded source changes.
+CLIPBOARD_NOTICE_KEY = "clipboard_paste_notice"
+# Pasted text always enters the pipeline as a plain text source, never a URL.
+CLIPBOARD_FILE_NAME = "clipboard.txt"
+CLIPBOARD_ORIGIN = "clipboard"
+
 GITHUB_URL = "https://github.com/martinopiaggi/summarize"
 DOCS_URL = "https://summarize.martino.im"
+
+
+def _change_theme():
+    st.session_state.theme = st.session_state.theme_selector
 
 
 def _render_sidebar(providers, default_provider, defaults, prompt_types):
@@ -94,18 +108,15 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
             theme_options.index(current_theme) if current_theme in theme_options else 0
         )
 
-        selected_theme = st.radio(
+        st.radio(
             "THEME",
             options=theme_options,
             index=theme_index,
             format_func=lambda value: theme_labels[value],
             horizontal=True,
             key="theme_selector",
+            on_change=_change_theme,
         )
-
-        if selected_theme != current_theme:
-            st.session_state.theme_restart = selected_theme
-            st.rerun()
 
         st.divider()
 
@@ -312,7 +323,10 @@ def _remove_quietly(path):
 
 
 def _start_job(source, display_name, source_type, force_download, sidebar, defaults, cleanup=None):
-    """Start the pipeline on a worker thread that survives Streamlit reruns."""
+    """Start one pipeline with a snapshot of its settings."""
+    if st.session_state.get("active_job") is not None:
+        raise RuntimeError("A summarization is already running.")
+    sidebar, defaults = deepcopy(sidebar), deepcopy(defaults)
 
     def _runner(status):
         return run_summarization(
@@ -354,18 +368,18 @@ def _start_job(source, display_name, source_type, force_download, sidebar, defau
 
 def _await_job(job, status_ctx):
     """Stream a job's progress into ``status_ctx`` until the job finishes."""
-    write = getattr(status_ctx, "write", None)
-    update = getattr(status_ctx, "update", None)
+    offset = 0
     while True:
-        for line in job.drain_logs():
-            if write is not None:
-                write(line)
-        if job.done:
+        # Read done first: a finished worker has already appended its last log.
+        done = job.done
+        for line in job.logs_since(offset):
+            status_ctx.write(line)
+            offset += 1
+        if done:
             return
         # Touch an st command every tick so Streamlit can interrupt this
         # run (e.g. a theme toggle); the job keeps going on its thread.
-        if update is not None:
-            update(state="running")
+        status_ctx.update(state="running")
         job.wait(0.5)
 
 
@@ -375,8 +389,6 @@ def _store_job_result(job, status_ctx):
     try:
         if job.error is not None:
             raise job.error
-        if status_ctx is not None:
-            status_ctx.update(label="Complete", state="complete", expanded=False)
         sidebar = context["sidebar"]
         defaults = context["defaults"]
         summary = job.result
@@ -392,19 +404,13 @@ def _store_job_result(job, status_ctx):
                 context["display_name"], summary, defaults.get("output_dir", "summaries")
             )
     finally:
-        cleanup = context.get("cleanup")
-        if cleanup is not None:
-            cleanup()
         st.session_state["active_job"] = None
+    # No UI calls until the result is stored: they can interrupt for a rerun.
+    status_ctx.update(label="Complete", state="complete", expanded=False)
 
 
 def _run_and_store(source, display_name, source_type, force_download, sidebar, defaults, status_ctx, cleanup=None):
-    """Invoke the pipeline and persist results into session state / disk.
-
-    The pipeline runs on a worker thread so a Streamlit rerun cannot
-    abort it; this call only streams its progress into ``status_ctx``.
-    Reruns interrupted mid-run re-attach through ``active_job``.
-    """
+    """Start or resume a job and persist its result. Used by tests."""
     job = st.session_state.get("active_job") or _start_job(
         source, display_name, source_type, force_download, sidebar, defaults, cleanup
     )
@@ -413,23 +419,15 @@ def _run_and_store(source, display_name, source_type, force_download, sidebar, d
 
 
 def _render_active_job():
-    """Re-attach to a job that a previous, interrupted run started."""
+    """The only status renderer, used for both new and resumed jobs."""
     job = st.session_state.get("active_job")
     if job is None:
         return
-    context = job.context
     status_ctx = st.status("Processing...", expanded=False)
     with status_ctx:
         try:
-            _run_and_store(
-                context["source"],
-                context["display_name"],
-                context["source_type"],
-                context["force_download"],
-                context["sidebar"],
-                context["defaults"],
-                status_ctx,
-            )
+            _await_job(job, status_ctx)
+            _store_job_result(job, status_ctx)
         except Exception as e:
             status_ctx.update(label="Failed", state="error", expanded=True)
             st.error(f"Error: {str(e)}")
@@ -447,42 +445,85 @@ def _render_url_tab(sidebar, defaults):
         )
     with col2:
         url_btn = st.button(
-            "RUN", type="primary", use_container_width=True, key="run_url"
+            "RUN", type="primary", use_container_width=True, key="run_url",
+            disabled=st.session_state.get("active_job") is not None,
         )
 
     if url_btn and video_url:
         if not video_url.startswith("http"):
             st.warning("URL must start with http or https")
             return
-        status_ctx = st.status("Processing...", expanded=False)
-        with status_ctx:
-            try:
-                source_type = (
-                    "YouTube Video" if is_youtube_url(video_url) else "Video URL"
-                )
-                _run_and_store(
-                    video_url,
-                    video_url,
-                    source_type,
-                    sidebar["force_download"],
-                    sidebar,
-                    defaults,
-                    status_ctx,
-                )
-            except Exception as e:
-                status_ctx.update(label="Failed", state="error", expanded=True)
-                st.error(f"Error: {str(e)}")
-                with st.expander("DETAILS"):
-                    st.code(traceback.format_exc())
+        source_type = "YouTube Video" if is_youtube_url(video_url) else "Video URL"
+        _start_job(video_url, video_url, source_type, sidebar["force_download"], sidebar, defaults)
+
+
+def _paste_notice(previous, text: str) -> str:
+    """Say what the paste did, especially when it replaced something."""
+    characters = f"{len(text):,} characters"
+    if previous is None:
+        return f"\u2713 Pasted text from clipboard ({characters})."
+    if previous["bytes"] == text.encode("utf-8"):
+        return (
+            f"\u2713 Pasted the same clipboard text again, "
+            f"nothing changed ({characters})."
+        )
+    return f"\u2713 Pasted text replaced {previous['name']} ({characters})."
+
+
+def _consume_clipboard_paste():
+    """Move text pasted from the clipboard into the upload slot.
+
+    The hidden input is only transport: the browser writes into it and
+    this callback (which runs before the rerun) stores the text as a
+    plain ``.txt`` source, replacing any uploaded file. The widget is
+    cleared so the same text can be pasted again; confirmation survives reruns.
+    """
+    text = st.session_state.get(CLIPBOARD_PASTE_KEY, "")
+    if not text.strip():
+        return
+
+    previous = get_uploaded_file_state()
+    st.session_state.pop("uploaded_file_widget", None)
+    remember_uploaded_bytes(
+        CLIPBOARD_FILE_NAME, text.encode("utf-8"), origin=CLIPBOARD_ORIGIN
+    )
+    st.session_state[CLIPBOARD_PASTE_KEY] = ""
+    st.session_state[CLIPBOARD_NOTICE_KEY] = _paste_notice(previous, text)
 
 
 def _render_file_tab(sidebar, defaults):
+    # Paste first, full width, so it lines up with the uploader box below
+    # instead of floating beside it at a different height. The status line
+    # inside the button block carries the paste confirmation across reruns.
+    loaded = get_uploaded_file_state()
+    if not (loaded and loaded.get("origin") == CLIPBOARD_ORIGIN):
+        # Nothing pasted is loaded any more (cleared, or superseded by a
+        # file upload): drop the stale confirmation.
+        st.session_state.pop(CLIPBOARD_NOTICE_KEY, None)
+    paste_from_clipboard_button(
+        CLIPBOARD_PASTE_KEY,
+        st.session_state.theme,
+        notice=st.session_state.get(CLIPBOARD_NOTICE_KEY, ""),
+    )
+
     uploaded = st.file_uploader(
         "Drop file",
         type=_UPLOAD_TYPES,
         label_visibility="collapsed",
         key="uploaded_file_widget",
     )
+
+    # Paste target the clipboard button writes into; also usable with Ctrl+V
+    # when the browser blocks clipboard reads (hence not hidden).
+    st.text_area(
+        "Pasted text",
+        key=CLIPBOARD_PASTE_KEY,
+        height=80,
+        placeholder="Or paste with Ctrl+V",
+        label_visibility="collapsed",
+        on_change=_consume_clipboard_paste,
+    )
+
     remember_uploaded_file(uploaded)
     uploaded_state = get_uploaded_file_state()
 
@@ -492,35 +533,28 @@ def _render_file_tab(sidebar, defaults):
             clear_uploaded_file_state()
             st.rerun()
 
-    if st.button("RUN", type="primary", disabled=uploaded_state is None, key="run_file"):
+    if st.button(
+        "RUN", type="primary", key="run_file",
+        disabled=uploaded_state is None or st.session_state.get("active_job") is not None,
+    ):
         if not uploaded_state:
             return
         file_ext = Path(uploaded_state["name"]).suffix.lower()
         is_text_file = file_ext in TEXT_EXTENSIONS
-        status_ctx = st.status("Processing...", expanded=False)
-        with status_ctx:
-            tmp_path = None
-            try:
-                with tempfile.NamedTemporaryFile(
-                    delete=False, suffix=file_ext, mode="wb"
-                ) as tmp:
-                    tmp.write(uploaded_state["bytes"])
-                    tmp_path = tmp.name
-                _run_and_store(
-                    tmp_path,
-                    uploaded_state["name"],
-                    "TXT" if is_text_file else "Local File",
-                    not is_text_file,  # force_download only for media files
-                    sidebar,
-                    defaults,
-                    status_ctx,
-                    cleanup=lambda: _remove_quietly(tmp_path),
-                )
-            except Exception as e:
-                status_ctx.update(label="Failed", state="error", expanded=True)
-                st.error(f"Error: {str(e)}")
-                with st.expander("DETAILS"):
-                    st.code(traceback.format_exc())
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext, mode="wb") as tmp:
+                tmp_path = tmp.name
+                tmp.write(uploaded_state["bytes"])
+            _start_job(
+                tmp_path, uploaded_state["name"],
+                "TXT" if is_text_file else "Local File", not is_text_file,
+                sidebar, defaults, cleanup=lambda: _remove_quietly(tmp_path),
+            )
+        except Exception as e:
+            if tmp_path:
+                _remove_quietly(tmp_path)
+            st.error(f"Error: {e}")
 
 
 def _runtime_args(source, source_type, sidebar, force_download):
@@ -602,7 +636,6 @@ def _render_summary_panel():
     if not display_summary:
         return
 
-    st.success("COMPLETE")
     st.divider()
     output_tab, transcript_tab = st.tabs(["OUTPUT", "TRANSCRIPT"])
     with output_tab:
@@ -644,7 +677,9 @@ def main():
     with tab_file:
         _render_file_tab(sidebar, defaults)
 
-    _render_active_job()
+    # Stable location on every run; never create status panels inside tabs.
+    with st.container(key="processing_status"):
+        _render_active_job()
 
     _render_summary_panel()
 

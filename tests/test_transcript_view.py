@@ -45,6 +45,7 @@ def test_tabs_show_output_and_complete_cached_transcript():
     app = _result_app().run()
     assert not app.exception
     assert [tab.label for tab in app.tabs] == ["OUTPUT", "TRANSCRIPT"]
+    assert not any(getattr(s, "value", "") == "COMPLETE" for s in app.success)
     assert any(area.value == "00:00:00 cached transcript" for area in app.text_area)
 
 
@@ -86,6 +87,8 @@ from webapp.ui import _run_and_store
 init_session_state({})
 class Status:
     def update(self, **kwargs):
+        pass
+    def write(self, message):
         pass
 sidebar = {
     "provider_config": {}, "provider": "test", "prompt_type": "Questions and answers",

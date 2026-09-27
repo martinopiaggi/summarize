@@ -10,16 +10,32 @@ import streamlit as st
 UPLOADED_FILE_STATE_KEY = "uploaded_file_state"
 
 
+def remember_uploaded_bytes(
+    name: str,
+    data: bytes,
+    mime: str = "text/plain",
+    origin: str = "upload",
+) -> None:
+    """Persist raw bytes as the current upload.
+
+    Used for the file uploader and for text pasted from the clipboard,
+    which enters the app through a hidden input instead of an upload.
+    ``origin`` lets the UI tell a pasted source apart from a real file.
+    """
+    st.session_state[UPLOADED_FILE_STATE_KEY] = {
+        "name": name,
+        "type": mime,
+        "bytes": data,
+        "origin": origin,
+    }
+
+
 def remember_uploaded_file(uploaded_file) -> None:
     """Persist uploaded files across Streamlit reruns."""
     if uploaded_file is None:
         return
 
-    st.session_state[UPLOADED_FILE_STATE_KEY] = {
-        "name": uploaded_file.name,
-        "type": uploaded_file.type,
-        "bytes": uploaded_file.getvalue(),
-    }
+    remember_uploaded_bytes(uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)
 
 
 def get_uploaded_file_state():
@@ -57,8 +73,3 @@ def init_session_state(defaults=None):
         st.session_state.tinypaste_results = {}
     if UPLOADED_FILE_STATE_KEY not in st.session_state:
         st.session_state[UPLOADED_FILE_STATE_KEY] = None
-
-    # Apply a pending theme change requested on the previous run.
-    if "theme_restart" in st.session_state:
-        st.session_state.theme = st.session_state.theme_restart
-        del st.session_state.theme_restart
