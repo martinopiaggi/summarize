@@ -15,7 +15,7 @@
 
 ## Quick Start
 
-Requires Python 3.7+, **ffmpeg** on `PATH`, and an OpenAI-compatible API key in `.env`. 
+Requires Python 3.10+, **ffmpeg** on `PATH`, and an OpenAI-compatible API key in `.env`. 
 Recommended: install with `pipx` for an isolated environment.
 
 [Groq](https://groq.com/) (`GROQ_API_KEY`) offers a free tier; `OPENAI_API_KEY` works with `--provider openai`.

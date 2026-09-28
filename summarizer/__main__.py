@@ -69,6 +69,11 @@ Examples:
         help="Generate example config file and exit",
     )
     parser.add_argument(
+        "--force",
+        action="store_true",
+        help="With --init-config: overwrite an existing config file",
+    )
+    parser.add_argument(
         "--no-config", action="store_true", help="Ignore config file, use CLI args only"
     )
 
@@ -287,7 +292,19 @@ def cli():
 
     # Handle --init-config
     if args.init_config:
-        config_path = os.path.join(os.getcwd(), "summarizer.yaml")
+        config_path = os.path.abspath(
+            args.config if args.config else os.path.join(os.getcwd(), "summarizer.yaml")
+        )
+        if os.path.exists(config_path) and not args.force:
+            print(
+                f"Refusing to overwrite existing config: {config_path}\n"
+                "Pass --force to overwrite it, or --config PATH to write elsewhere.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        parent_dir = os.path.dirname(config_path)
+        if parent_dir:
+            os.makedirs(parent_dir, exist_ok=True)
         with open(config_path, "w", encoding="utf-8") as f:
             f.write(create_example_config())
         print(f"Created example config: {config_path}")
