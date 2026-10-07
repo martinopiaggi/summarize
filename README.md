@@ -4,16 +4,22 @@
     <img alt="Video summarizer demo" src="./summarize_sample.gif">
 </p>
 
+https://github.com/user-attachments/assets/d59e4879-f527-47c0-bdcc-bc512a87ce94
+
 > Turn any video — a lecture, TikTok, or Drive recording — into distilled markdown: Q&A, fact-checks, tutorials, Mermaid diagrams, essays, and more. 
 
 - **11+ sources**: Local-first summarization for YouTube, Instagram, TikTok, X, Reddit, Facebook, Drive, Dropbox, local files
 - **Bring your own API keys**: Works with any OpenAI-compatible LLM, Perplexity models, LiteLLM
 - **CLI · Streamlit · HTTP API · Docker · Raycast · Agent skill**
 - **Transcript cache** + optional JEV prefiltering + optional Cobalt sidecar for yt-dlp fallbacks + optional vision mode
-- **Documentation**: https://summarize.martino.im
-- **Background**: [more on this project](https://martino.im/Summarize.html)
 
-https://github.com/user-attachments/assets/d59e4879-f527-47c0-bdcc-bc512a87ce94
+## Documentation
+ 
+https://summarize.martino.im
+
+## Background
+
+[more on this project](https://martino.im/Summarize.html)
 
 ## Quick Start
 
@@ -44,40 +50,8 @@ docker compose up -d    # → http://localhost:8501
 
 Or pull the pre-built image: `docker pull ghcr.io/martinopiaggi/summarize:latest`. 
 
-## Optional JEV prefilter
 
-Full guide: [JEV Prefiltering](https://summarize.martino.im/features/jev-prefiltering).
 
-Check **Use JEV prefiltering** to reveal two optional fields:
-
-- **I want to include only…** — e.g. `a particular concept about this video to filter`. Selects that subject even when it is not the main topic. Blank means general relevance to the video.
-- **I want to exclude…** — e.g. `Sponsorship and self-promotion`. Removes matching passages. Blank means no additional exclusions. Exclusions win when a passage matches both fields.
-
-JEV selects original passages **before** the existing LLM request. It does not rewrite the transcript, change the summary prompt/model, or modify the cached transcript. The selected passages stay in source order. With JEV off, the existing pipeline is unchanged.
-
-```yaml
-defaults:
-  use-jev-prefiltering: true
-  jev-provider: openrouter
-  jev-include: "a particular concept about this video to filter"
-  jev-exclude: "Sponsorship and self-promotion"
-  jev-keep-ratio: 0.35
-```
-
-Uses the existing OpenRouter (default) or TypeSafe provider's API key, with a JEV model instead of its chat model. [`/systemone`](https://openrouter.ai/docs/guides/community/typesafe-sdk) is the structured scoring endpoint, not a system prompt. No separate provider entry is needed.
-
-CLI: `--use-jev-prefiltering --jev-include "X" --jev-exclude "Sponsorship"`. YAML accepts `jev-include` / `jev-exclude`; HTTP single/batch/upload requests accept `jev_include` / `jev_exclude`. Empty strings clear configured rules.
-
-**Compression and limits:**
-- Bounded batched scoring requests per eligible chunk (more than one for large chunks), with existing concurrency limits and no retries. The summary chunk size is unchanged. Independent inclusion/exclusion scores prevent a high inclusion score from overriding an exclusion.
-- The default budget is about **35% of each original chunk**, including when using exclusion only. It is a ceiling, not a quota: irrelevant text never fills unused space. Whole units are retained; one best matching unit can exceed the budget. Set `jev-keep-ratio: 1.0` in YAML to retain all qualifying units instead of ranking down to 35%.
-- All-rejected chunks are omitted; if none remain, return a no-match message without calling the LLM.
-- Every non-empty text chunk is scored when enabled, including single-unit chunks. On timeout, malformed response, HTTP error or an unsplittable request, explicit rules stop before any summary request rather than sending unfiltered text. With both fields blank, scoring failure warns and falls back to the original chunk.
-- Visual mode and grammar correction bypass JEV entirely, with a warning that selection rules do not apply.
-- JEV works with any configured summary `chunk-size`: it divides oversized scoring work into bounded requests (28 KB state / 60 KB total JSON each), then ranks all scored units across the original chunk. Short captions may be merged locally to fit; no source text is deleted. Explicit-rule requests are planned before sending any scoring or summary requests. A single unsplittable unit or scoring error stops explicit-rule runs rather than leaking unfiltered text.
-- Semantic classification is not guaranteed. Long chunks use roughly 800–1,200-character units; an exclusion in a mixed unit drops the whole unit, potentially losing useful neighboring text. Compare with an unfiltered summary for important material.
-
-Progress reports retained characters, requests, exclusions, fallbacks and elapsed time. Automated tests use mocked scores; live classification quality, cost and latency are not benchmarked.
 
 ## Contributing
 
