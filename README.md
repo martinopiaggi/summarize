@@ -13,6 +13,8 @@
 - **Documentation**: https://summarize.martino.im
 - **Background**: [more on this project](https://martino.im/Summarize.html)
 
+https://github.com/user-attachments/assets/d59e4879-f527-47c0-bdcc-bc512a87ce94
+
 ## Quick Start
 
 Requires Python 3.10+, **ffmpeg** on `PATH`, and an OpenAI-compatible API key in `.env`. 
