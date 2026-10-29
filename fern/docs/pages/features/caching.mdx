@@ -17,6 +17,19 @@ Cache hits are reported in verbose mode:
 [+] Transcript cache hit (disk, a3f7b2d8e1c4) — skipping transcription
 ```
 
+```mermaid
+flowchart TD
+  key[key from source, language, method, model, speed, captions] --> on{cache on?}
+  on -->|no| fetch[download and transcribe] --> hit([return transcript])
+  on -->|yes| mem{memory hit?}
+  mem -->|yes| hit
+  mem -->|no| disk{disk file?}
+  disk -->|yes| load[load into memory] --> hit
+  disk -->|no| miss[download and transcribe]
+  miss --> save[store in memory, and on disk if persist]
+  save --> hit
+```
+
 ## Cache Key
 
 The key is a **SHA-256 hash** of these parameters joined together:

@@ -374,6 +374,29 @@ The `/summarize/upload` endpoint accepts files up to **500 MB**. Larger files ar
 - CORS is disabled by default.
 - If you need to expose the API beyond localhost, use a reverse proxy with authentication.
 
+## Request Lifecycle
+
+A `POST /summarize` call builds the runtime config, runs the pipeline in a thread pool, and reports failures inside the JSON body.
+
+```mermaid
+sequenceDiagram
+  actor Client
+  participant API as FastAPI
+  participant Cfg as runtime config
+  participant Core as core.main
+  Client->>API: POST /summarize
+  API->>Cfg: merge request
+  Cfg-->>API: config
+  API->>Core: thread pool
+  alt success
+    Core-->>API: summary
+    API-->>Client: 200, success true
+  else error
+    Core-->>API: exception
+    API-->>Client: 200, success false
+  end
+```
+
 ## Async Behavior
 
 Summarization is long-running and I/O-heavy. The API runs each job in a thread pool so that the event loop remains responsive to health checks, docs, and other concurrent requests. Batch requests process sources sequentially within the same request.

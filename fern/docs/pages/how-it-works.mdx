@@ -1,80 +1,75 @@
 # How It Works
 
-```text
-               +--------------------+
-               |  Video URL/Path    |
-               +---------+----------+
-                         |
-                         v
-               +---------+----------+
-               |    Source Type?    |
-               +---------+----------+
-                         |
-        +----------------+--------------------+
-        | visual flag                         |
-        v                                     v
-+-------+--------+                  +---------+----------+
-|  Visual Mode   |                  | Transcript Cache   |-------------> HIT ---+
-|  base64 / url  |                  +---------+----------+                      |  
-+-------+--------+                            | MISS                            |  
-        |                                     |                                 |  
-        |                                     v                                 |  
-        |         +-------+ +-------+ +-------+ +-------+                       |  
-        |         |YouTube| |yt-dlp | | Local | |Dropbox|                       |  
-        |         |       | |X.com  | | File  | |G.Drive|                       |  
-        |         |       | |TikTok | |       | |       |                       |  
-        |         |       | |etc.   | |       | |       |                       |  
-        |         +---+---+ +---+---+ +---+---+ +---+---+                       |  
-        |             |         |         |         |                           |  
-        |             v         v         |         |                           |  
-        |         +----+---+  +--+---+    |         |                           |  
-        |         |Captions|  |Cobalt|    |         |                           |  
-        |         | Exist? |  +--+---+    |         |                           |  
-        |         +---+----+         |    |         |                           |  
-        |          Yes  No           |    |         |                           |  
-        |          +----+            |    +--------+--------------+             |  
-        |            |               |                            |             |  
-        |            +-------------->|                            v             |  
-        |                            |                   +--------+--------+    |  
-        |                            |                   |     Whisper     |    |  
-        |                            |                   |    endpoint?    |    |  
-        |                            |                   +--------+--------+    |  
-        |                            |                            |             |  
-        |                            |                +-----------+-----------+ |  
-        |                            |                |                       | |  
-        |                            |                |  Cloud Whisper Local  | |  
-        |                            |                |                       | |  
-        |                            |                +----------+------------+ |  
-        |                            |                           |              |  
-        |                            +------------------------|--+              |  
-        |                                                     v                 |  
-        |                                               store in cache          |  
-        |                                                     |                 |  
-        |                                                     +-----------------+  
-        |                                                     |                    
-        |                                                     v                    
-        |                                            +--------+--------+           
-        |                                            |  Optional JEV   |           
-        |                                            |  prefilter      |           
-        |                                            +--------+--------+           
-        |                                                     |                    
-        |                                                     |         Transcript 
-        |                                                     |                    
-        |                                                     v                    
-        |                                summarizer.yaml -> +------------+----------+
-        |                                 prompts.json  ->  |    Prompt + LLM       |
-        |                                                   |    Merge              |
-        |                                                   +------------+----------+
-        |                                                            |
-        |                                                            v
-        v                                                   +------------+----------+
-+-------+--------+                                          |                       |
-| Vision-capable |                                          |          Output       |
-|     model      |----------------------------------------->+                       |
-+-------+--------+                                          +-----------------------+
-        ^ 
-        | 
-        +----- prompts.json
+## Architecture
+
+Three surfaces — the CLI, the Streamlit webapp, and the HTTP API — all drive the same engine.
+
+```mermaid
+flowchart TD
+  user([User or agent]) --> cli[CLI] & ui[Streamlit :8501] & api[HTTP API :8000]
+  cli & ui & api --> core[core.main]
+  core --> cfg[(yaml, .env, prompts)]
+  core --> dl[downloaders] --> src[sources]
+  core --> tr[transcription and cache] --> prov[LLM, Whisper, Cobalt]
+  core --> jev[chunking and JEV] --> prov
+  core --> vis[visual mode] --> prov
+  core --> out[summaries]
+```
+
+## Pipeline
+
+The default transcript path runs in two stages.
+
+### 1. Acquire the transcript
+
+Cache first, then the downloader fallback chain, then captions or Whisper.
+
+```mermaid
+sequenceDiagram
+  actor Caller
+  participant Core as core.main
+  participant Cache as transcript cache
+  participant Handlers as handlers
+  participant DM as DownloadManager
+  participant Trans as transcription
+  Caller->>Core: main(config)
+  Core->>Cache: get_cached_transcript()
+  alt hit
+    Cache-->>Core: transcript
+  else miss
+    Core->>Handlers: _fetch_transcript()
+    Handlers->>DM: download_audio()
+    DM-->>Handlers: temp path
+    Handlers->>Trans: captions or Whisper
+    Trans-->>Handlers: transcript
+    Handlers-->>Core: transcript
+    Core->>Cache: put_cached_transcript()
+  end
+  Core-->>Caller: transcript
+```
+
+### 2. Chunk, filter, summarize
+
+```mermaid
+sequenceDiagram
+  participant Core as core.main
+  participant API as api.py
+  participant JEV as jev.py
+  participant LLM as LLM
+  Core->>API: extract_and_clean_chunks()
+  API-->>Core: timestamped chunks
+  opt JEV enabled
+    API->>JEV: prefilter_chunks()
+    JEV->>LLM: SystemOne scores
+    LLM-->>JEV: keep or exclude
+    JEV-->>API: selected passages
+  end
+  par each chunk
+    API->>LLM: process_chunk()
+    LLM-->>API: chunk summary
+  end
+  API-->>Core: summaries
+  Core->>Core: format with timestamps
 ```
 
 ## Download Pipeline

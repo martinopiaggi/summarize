@@ -18,6 +18,22 @@ Text files bypass audio processing entirely and go straight to summarization.
 
 After running a source, switch between **OUTPUT** and **TRANSCRIPT**. The transcript tab shows the complete cached transcript when available (not the passages selected by JEV). **DOWNLOAD**, **COPY TO CLIPBOARD**, and **PUBLISH AND SHARE WITH TINYPASTE** use whichever tab is selected. If no transcript is available for a result, the transcript actions are hidden. Summaries restored from disk do not include their transcripts.
 
+## Job Lifecycle
+
+Each run executes on a background thread, so rerunning the page replays progress instead of restarting the work. Finished runs are stored in history, rendered in the summary panel, and can be copied, downloaded, or published.
+
+```mermaid
+stateDiagram-v2
+  [*] --> Idle
+  Idle --> Running: start thread
+  Running --> Running: log, and replay on rerun
+  Running --> Done: summary returned
+  Running --> Failed: exception
+  Done --> Panel: store, history, render
+  Failed --> Panel: show traceback
+  Panel --> Idle: copy, download, or publish
+```
+
 ## Sidebar Controls
 
 - **Provider** — Choose from configured providers in `summarizer.yaml`

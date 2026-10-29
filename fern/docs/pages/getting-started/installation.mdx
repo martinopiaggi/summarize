@@ -147,6 +147,18 @@ Each of those tools may depend on **pydantic**. When one package upgrades `pydan
 
     `docker-compose.yml` mounts `.env`, `summarizer.yaml`, and `./summaries/`. Cobalt runs as a sidecar for TikTok, Instagram, and other yt-dlp fallbacks.
 
+    **Deployment topology**
+
+    ```mermaid
+    flowchart TD
+      registry[GHCR or PyPI] --> app[summarizer container]
+      mounts[(summaries, .env, yaml)] --- app
+      app --> cobalt[Cobalt sidecar :9000]
+      app --> llm[LLM and Whisper APIs]
+      app --> media[YouTube and other sources]
+      cobalt --> media
+    ```
+
     See the [Cobalt](integrations/cobalt) page for standalone and proxy setups.
   </Tab>
 </Tabs>

@@ -18,6 +18,21 @@ Long transcripts are expensive to summarize and often contain filler, sponsorshi
 > - **Long lectures** — send the summary model roughly the most relevant 35% of each chunk
 > - **Repeated runs** — change the selection without downloading or transcribing again
 
+## How Selection Works
+
+```mermaid
+flowchart TD
+  chunk[chunk text] --> units[split into passages]
+  units --> score[POST provider /systemone]
+  score -->|ok| rank[keep score, drop exclusions, cap at keep-ratio]
+  rank --> sel{anything kept?}
+  sel -->|yes| llm[send selected text]
+  sel -->|no| skip[skip this chunk]
+  score -->|error| rules{include or exclude set?}
+  rules -->|yes| stop[stop the run]
+  rules -->|no| orig[warn and use the original chunk]
+```
+
 ## Selection Fields
 
 | Field | Blank | Example |

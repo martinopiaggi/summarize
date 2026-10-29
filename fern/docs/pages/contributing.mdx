@@ -38,6 +38,20 @@ Add API keys to `.env`.
 | Streamlit | `python -m streamlit run app.py` → http://localhost:8501 |
 | Docker | `docker compose up -d` |
 
+## Repository Layout
+
+```mermaid
+flowchart TD
+  web[Streamlit webapp] --> engine[summarizer engine]
+  ray[Raycast extension] --> engine
+  skill[agent skill] --> engine
+  tests[pytest] --> engine
+  ci[GitHub workflows] --> engine
+  ci --> docs[Fern docs]
+```
+
+Every surface calls `summarizer.core.main(config)`; the webapp, HTTP API, CLI, and Docker image share the same engine.
+
 ## Tests
 
 ```bash

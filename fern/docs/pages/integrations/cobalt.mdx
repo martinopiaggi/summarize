@@ -21,6 +21,47 @@
 
 > **Tip:** For **YouTube, Instagram, TikTok, Twitter/X, Reddit, and Facebook**, yt-dlp is the **primary** downloader. It is faster, requires no extra container, and supports per-platform cookie authentication. Cobalt is only used as a fallback when yt-dlp fails or does not recognize the URL.
 
+## Downloader Classes
+
+Each downloader implements the same `BaseDownloader` interface, and `DownloadManager` tries them in order. Download failures are `AudioProcessingError`; a URL no downloader claims raises `UnsupportedSourceError`.
+
+```mermaid
+classDiagram
+  class BaseDownloader {
+    +supports(url)
+    +download_audio()
+    +download_video()
+  }
+  class CobaltDownloader {
+    +base_url
+  }
+  BaseDownloader <|-- YtdlpDownloader
+  BaseDownloader <|-- YouTubeDownloader
+  BaseDownloader <|-- CobaltDownloader
+  DownloadManager o-- BaseDownloader : tries in order
+  DownloadManager ..> AudioProcessingError : combined failure
+  DownloadManager ..> UnsupportedSourceError : no match
+  SummarizerError <|-- AudioProcessingError
+  SummarizerError <|-- UnsupportedSourceError
+```
+
+## Where Cobalt Fits in the Chain
+
+Every download walks the same fallback chain, and Cobalt is the last resort before the app gives up.
+
+```mermaid
+flowchart TD
+  url([URL]) --> pick{next downloader supports it?}
+  pick -->|no| more{any left?}
+  pick -->|yes| try[download audio or video]
+  try -->|ok| done([return temp path])
+  try -->|AudioProcessingError| rec[record the error]
+  rec --> more
+  more -->|yes| pick
+  more -->|errors recorded| ape[AudioProcessingError]
+  more -->|nobody claimed the URL| use[UnsupportedSourceError]
+```
+
 ## When yt-dlp Is Better
 
 | Use Case | Preferred Tool | Reason |

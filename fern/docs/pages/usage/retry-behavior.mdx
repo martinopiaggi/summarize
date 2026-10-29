@@ -7,4 +7,18 @@ The API layer automatically retries on transient failures:
 - **Authentication errors** — Fail immediately
 - **Bad requests** — Fail immediately
 
+```mermaid
+stateDiagram-v2
+  [*] --> Request: attempt 1 of 3
+  Request --> Done: 200 OK
+  Request --> Failed: auth or bad request
+  Request --> Backoff: rate limit, timeout, or other error
+  Backoff --> Request: wait 1s, then 2s
+  Backoff --> Failed: attempts exhausted
+  Backoff --> Empty: unexpected error exhausted
+  Done --> [*]: chunk summary
+  Failed --> [*]: APIError
+  Empty --> [*]: drop the chunk
+```
+
 > **Tip:** Use `--verbose` to see the retry attempts in real time.

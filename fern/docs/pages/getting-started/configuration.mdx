@@ -4,6 +4,23 @@
   CLI flags override everything in `summarizer.yaml`. Use `--no-config` to ignore the config file entirely.
 </Callout>
 
+## How Settings Are Resolved
+
+Each run merges built-in defaults, the `defaults:` block, the chosen provider, and finally CLI or API overrides. Later layers win.
+
+```mermaid
+flowchart TD
+  a[built-in defaults] --> b[YAML defaults]
+  b --> c{provider set?}
+  c -->|yes| d[provider URL, model, keys]
+  c -->|no| e[CLI or API overrides]
+  d --> e
+  e --> f[env fallbacks for unset keys]
+  f --> g[JEV defaults]
+  g --> h[API key: flag, YAML, .env]
+  h --> i([core.main])
+```
+
 ## Providers (`summarizer.yaml`)
 
 Define your LLM providers and defaults. See [`summarizer.example.yaml`](https://github.com/martinopiaggi/summarize/blob/main/summarizer.example.yaml) for a complete starter file.

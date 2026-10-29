@@ -19,6 +19,22 @@ The idea for visual mode came from a community discussion in [PR #13](https://gi
 
 For long-form content like lectures and podcasts, audio-only summaries are usually more accurate. Visual mode is designed for content where **what you see matters as much as what you hear**.
 
+## How a Visual Run Works
+
+```mermaid
+flowchart TD
+  start([visual mode]) --> mode{delivery}
+  mode -->|YouTube URL| url[send the video URL]
+  mode -->|base64 default| src[local file or download]
+  src --> norm[ffmpeg normalize]
+  norm --> split[split into chunks]
+  split --> send[encode and send each segment]
+  url --> fmt[format timestamps]
+  send --> fmt
+  fmt --> clean[delete temp files]
+  clean --> out([markdown])
+```
+
 ## Visual Input Modes
 
 | Mode | Behavior | Use it for |
