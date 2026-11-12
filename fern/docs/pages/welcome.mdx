@@ -43,14 +43,14 @@ More background on this project: [martino.im/Summarize](https://martino.im/Summa
 
 ## Requirements
 
-- **Python** 3.7+
+- **Python** 3.10+
 - **ffmpeg** (must be on `PATH`)
 - At least one **LLM API key** in `.env`
-- **Cobalt** fallback downloader for URLs that yt-dlp cannot handle (included in Docker Compose). See [Cobalt](integrations/cobalt).
+- **Cobalt** fallback downloader for URLs that yt-dlp cannot handle (included in Docker Compose). See [Cobalt](../integrations/cobalt).
 
 ## Quick Start
 
-Install in an **isolated environment** (pipx recommended) so other Python tools cannot break summarizer. See [Installation](getting-started/installation) for venv, Docker, and development setup.
+Install in an **isolated environment** (pipx recommended) so other Python tools cannot break summarizer. See [Installation](../getting-started/installation) for venv, Docker, and development setup.
 
 You need any OpenAI-compatible API key in `.env` (for example [Groq](https://groq.com/) `GROQ_API_KEY` is free-tier friendly; `OPENAI_API_KEY` works with `--provider openai`).
 
@@ -101,21 +101,21 @@ docker pull ghcr.io/martinopiaggi/summarize:latest
 | **Agent Skill** | [`.agent/skills/summarize/SKILL.md`](https://github.com/martinopiaggi/summarize/blob/main/.agent/skills/summarize/SKILL.md) |
 | **Raycast** | [`extensions/raycast-summarize/`](https://github.com/martinopiaggi/summarize/tree/main/extensions/raycast-summarize) |
 
-See the [HTTP API guide](api-reference/http-api) for endpoint details, request examples, and CORS configuration.
+See the [HTTP API guide](../usage/http-api) for endpoint details, request examples, and CORS configuration.
 
 ## Two Processing Paths
 
-- **Transcript path** (default): downloads audio/video, transcribes with Whisper or captions, caches the complete transcript, optionally applies [JEV prefiltering](features/jev-prefiltering), then summarizes with an LLM.
+- **Transcript path** (default): downloads audio/video, transcribes with Whisper or captions, caches the complete transcript, optionally applies [JEV prefiltering](../features/jev-prefiltering), then summarizes with an LLM.
 - **Visual path** (`--visual`): sends the video directly to a vision-capable model, skipping transcription. Uses the same prompts, provider config, and `.env` keys as the transcript path. Supports `base64` chunks (default) and `url` passthrough for YouTube.
 
-See [How It Works](how-it-works) for the full pipeline diagram and [Visual Mode](features/visual-mode) for provider setup.
+See [How It Works](how-it-works) for the full pipeline diagram and [Visual Mode](../features/visual-mode) for provider setup.
 
 ## Common Issues
 
-- **pydantic / pydantic-core mismatch on `serve`:** environment problem, not a summarizer bug — reinstall with `pipx install "martino-summarize[server]"` or see [Errors and Troubleshooting](usage/errors-and-troubleshooting)
+- **pydantic / pydantic-core mismatch on `serve`:** environment problem, not a summarizer bug — reinstall with `pipx install "martino-summarize[server]"` or see [Errors and Troubleshooting](../usage/errors-and-troubleshooting)
 - **yt-dlp / platform errors:** ensure Cobalt is running (`docker compose` includes it) or set `COBALT_BASE_URL`
 - **Missing API key:** add the provider key to `.env` (see `summarizer.example.yaml` for provider names)
 - **No config file:** run `summarizer --init-config` or pass `--base-url` and `--model` with `--no-config`
-- **Removed `audio-speed` key:** use `speed` in YAML instead (see [Configuration](getting-started/configuration))
+- **Removed `audio-speed` key:** use `speed` in YAML instead (see [Configuration](../getting-started/configuration))
 
-Full guide: [Errors and Troubleshooting](usage/errors-and-troubleshooting)
+Full guide: [Errors and Troubleshooting](../usage/errors-and-troubleshooting)

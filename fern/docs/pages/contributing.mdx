@@ -4,7 +4,7 @@ Thanks for helping improve [martinopiaggi/summarize](https://github.com/martinop
 
 ## Prerequisites
 
-- **Python** 3.7+ (3.12 recommended)
+- **Python** 3.10+ (3.12 recommended)
 - **ffmpeg** on your `PATH`
 - At least one **LLM API key** in `.env` (see `summarizer.example.yaml` for provider names)
 - **Git**

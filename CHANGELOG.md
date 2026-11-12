@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Dark mode: checked sidebar boxes (e.g. "Visual mode") fill with the accent color again, so the dark check mark is visible instead of black on the dark panel
 - Dark mode: the help (?) icons inside checkbox labels (e.g. next to "Visual mode") no longer disappear; the check-mark rule now only targets the box so the icons keep the muted text color
+- Docs: links between sections of [summarize.martino.im](https://summarize.martino.im) no longer lead to 404 pages, the summary styles list no longer includes `DNA Extractor` (it never existed), and the documented Python requirement is 3.10+, matching the package
 
 ## [0.4.0] - 2026-09-27
 

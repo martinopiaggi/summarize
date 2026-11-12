@@ -2,7 +2,7 @@
 name: summarize
 description: Transcribe and summarize videos from YouTube, local files, Google Drive, Dropbox, and social media platforms (TikTok, Instagram, Twitter/X, Reddit) using any OpenAI-compatible LLM. Use when asked to summarize, analyze, extract insights, fact-check, or create study materials from video content.
 license: MIT
-compatibility: Requires Python 3.7+, ffmpeg, and at least one OpenAI-compatible LLM API key in .env. Social media platforms (TikTok, Instagram, Twitter/X, Reddit, Facebook) are handled by yt-dlp by default; Cobalt is used as a fallback for unsupported URLs.
+compatibility: Requires Python 3.10+, ffmpeg, and at least one OpenAI-compatible LLM API key in .env. Social media platforms (TikTok, Instagram, Twitter/X, Reddit, Facebook) are handled by yt-dlp by default; Cobalt is used as a fallback for unsupported URLs.
 metadata:
   author: summarize
   version: "1.0"
@@ -116,7 +116,6 @@ Use with `--prompt-type`. Defined in `summarizer/prompts.json`.
 | `Questions and answers` | Q&A extraction from content |
 | `Summarization` | Standard summary with title |
 | `Distill Wisdom` | Ideas, quotes, and references extraction |
-| `DNA Extractor` | Core truth distilled to 200 words max |
 | `Fact Checker` | Claim verification with TRUE/FALSE/MISLEADING labels |
 | `Tutorial` | Step-by-step instructions from content |
 | `Research` | Deep analysis with broader context |
