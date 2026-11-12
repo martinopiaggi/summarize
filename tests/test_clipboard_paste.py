@@ -42,12 +42,12 @@ def test_paste_button_scripts_the_clipboard_into_the_target_input():
 
     markup = html.call_args.args[0]
     assert html.call_args.kwargs["unsafe_allow_javascript"] is True
-    assert "PASTE FROM CLIPBOARD" in markup
+    assert "Paste from clipboard" in markup
     assert 'const target = "clipboard_paste"' in markup
     assert "navigator.clipboard" in markup
     # Not every deployment is a secure context: the failure path must tell
     # the user to fall back to the keyboard.
-    assert "FAILED - USE CTRL+V" in markup
+    assert "Failed, use Ctrl+V" in markup
 
 
 def test_file_tab_registers_the_paste_target():

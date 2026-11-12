@@ -10,6 +10,7 @@ import tempfile
 import traceback
 from copy import deepcopy
 from datetime import datetime
+from html import escape
 from pathlib import Path
 
 import streamlit as st
@@ -100,16 +101,16 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
         current_theme = st.session_state.theme
         theme_options = ["system", "light", "dark"]
         theme_labels = {
-            "system": "🖥️  Auto",
-            "light": "☀️  Light",
-            "dark": "🌙  Dark",
+            "system": "Auto",
+            "light": "Light",
+            "dark": "Dark",
         }
         theme_index = (
             theme_options.index(current_theme) if current_theme in theme_options else 0
         )
 
         st.radio(
-            "THEME",
+            "Theme",
             options=theme_options,
             index=theme_index,
             format_func=lambda value: theme_labels[value],
@@ -126,11 +127,10 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
             if default_provider in provider_names
             else 0
         )
-        selected_provider = st.selectbox("PROVIDER", provider_names, index=default_idx)
+        selected_provider = st.selectbox("Provider", provider_names, index=default_idx)
         provider_config = providers[selected_provider] if selected_provider else {}
 
         model_label = provider_config.get("model", "n/a")
-        st.caption(f"model: {model_label}")
 
         # Use provider-level chunk-size if defined, else global default
         chunk_size_override = provider_config.get("chunk_size")
@@ -140,9 +140,6 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
             minimum=MIN_CHUNK_SIZE,
             maximum=MAX_CHUNK_SIZE,
         )
-        chunk_size_source = "provider override" if chunk_size_override is not None else "default"
-        st.caption(f"chunk size: {chunk_size:,} ({chunk_size_source})")
-
         parallel_api_calls = coerce_int(
             provider_config.get(
                 "parallel_api_calls",
@@ -152,25 +149,33 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
             minimum=1,
             maximum=100,
         )
-        st.caption(f"parallel calls: {parallel_api_calls}")
-
-        st.divider()
+        model_short = str(model_label).split("/")[-1]
+        chunk_label = (
+            f"{chunk_size / 1000:.0f}k chars"
+            if chunk_size >= 1000
+            else f"{chunk_size} chars"
+        )
+        st.markdown(
+            f'<div class="slate"><span>{escape(model_short)}</span>'
+            f"<span>{chunk_label} · {parallel_api_calls} parallel</span></div>",
+            unsafe_allow_html=True,
+        )
 
         # -- Style --
         prompt_idx = 0
         if default_prompt in prompt_types:
             prompt_idx = prompt_types.index(default_prompt)
-        prompt_type = st.selectbox("STYLE", prompt_types, index=prompt_idx)
+        prompt_type = st.selectbox("Style", prompt_types, index=prompt_idx)
 
         # -- Language --
         language = st.selectbox(
-            "LANGUAGE",
+            "Language",
             options=[code for code, _ in LANGUAGES],
             format_func=lambda x: dict(LANGUAGES)[x],
             index=0,
         )
         output_language = st.text_input(
-            "OUTPUT LANGUAGE",
+            "Output language",
             value=str(
                 provider_config.get(
                     "output_language",
@@ -185,7 +190,7 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
         st.divider()
 
         # -- Settings (less common options) --
-        with st.expander("SETTINGS"):
+        with st.expander("Settings"):
             default_verbose = bool(defaults.get("verbose", False))
             verbose = st.checkbox(
                 "Verbose output",
@@ -198,19 +203,19 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
                 help="Skip captions and download audio for transcription instead.",
             )
             transcription_method = st.selectbox(
-                "TRANSCRIPTION",
+                "Transcription",
                 ["Cloud Whisper", "Local Whisper"],
                 index=0,
                 help="Cloud Whisper uses Groq API (free). Local Whisper runs on your machine.",
             )
             whisper_model = st.selectbox(
-                "WHISPER MODEL",
+                "Whisper model",
                 ["tiny", "base", "small", "medium", "large"],
                 index=0,
                 help="Only used with Local Whisper. tiny=fastest, large=most accurate.",
             )
             speed = st.number_input(
-                "SPEED",
+                "Speed",
                 min_value=0.01,
                 value=default_speed,
                 step=0.01,
@@ -242,7 +247,7 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
             jev_names = [name for name, cfg in providers.items() if supports_systemone(cfg)]
             if jev_names:
                 jev_provider = st.selectbox(
-                    "JEV PROVIDER", jev_names,
+                    "JEV provider", jev_names,
                     index=jev_names.index(jev_provider) if jev_provider in jev_names else 0,
                 )
             else:
@@ -262,7 +267,7 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
                 st.warning("Visual mode and grammar correction bypass JEV; include/exclude rules will not be applied.")
 
         # -- YAML editor --
-        with st.expander("EDIT CONFIG"):
+        with st.expander("Edit config"):
             st.caption("Edit summarizer.yaml. Save to update all defaults above.")
             yaml_content = load_config_raw()
             edited_yaml = st.text_area(
@@ -270,7 +275,7 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
             )
             col_save, col_reset = st.columns(2)
             with col_save:
-                if st.button("SAVE", use_container_width=True):
+                if st.button("Save", use_container_width=True):
                     try:
                         yaml.safe_load(edited_yaml)
                         save_config_raw(edited_yaml)
@@ -279,13 +284,13 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
                     except yaml.YAMLError:
                         st.error("Invalid YAML")
             with col_reset:
-                if st.button("RELOAD", use_container_width=True):
+                if st.button("Reload", use_container_width=True):
                     st.rerun()
 
         # -- History --
         if st.session_state.history:
             st.divider()
-            st.markdown("### HISTORY")
+            st.markdown("### History")
             for i, item in enumerate(st.session_state.history[:5]):
                 if st.button(
                     item["provider"],
@@ -440,12 +445,12 @@ def _render_url_tab(sidebar, defaults):
     with col1:
         video_url = st.text_input(
             "Video URL",
-            placeholder="https://youtube.com/watch?v=...",
+            placeholder="Paste a video link",
             label_visibility="collapsed",
         )
     with col2:
         url_btn = st.button(
-            "RUN", type="primary", use_container_width=True, key="run_url",
+            "Run", type="primary", use_container_width=True, key="run_url",
             disabled=st.session_state.get("active_job") is not None,
         )
 
@@ -455,6 +460,12 @@ def _render_url_tab(sidebar, defaults):
             return
         source_type = "YouTube Video" if is_youtube_url(video_url) else "Video URL"
         _start_job(video_url, video_url, source_type, sidebar["force_download"], sidebar, defaults)
+
+    st.markdown(
+        '<p class="composer-note">YouTube, X, TikTok, Instagram, Reddit, '
+        "Facebook, Drive, Dropbox and local files</p>",
+        unsafe_allow_html=True,
+    )
 
 
 def _paste_notice(previous, text: str) -> str:
@@ -507,7 +518,7 @@ def _render_file_tab(sidebar, defaults):
     )
 
     uploaded = st.file_uploader(
-        "Drop file",
+        "Drop a file",
         type=_UPLOAD_TYPES,
         label_visibility="collapsed",
         key="uploaded_file_widget",
@@ -528,15 +539,25 @@ def _render_file_tab(sidebar, defaults):
     uploaded_state = get_uploaded_file_state()
 
     if uploaded_state:
-        st.caption(f"Ready to rerun with: {uploaded_state['name']}")
-        if st.button("CLEAR FILE", use_container_width=True, key="clear_uploaded_file"):
-            clear_uploaded_file_state()
-            st.rerun()
+        st.caption(f"Ready to run with: {uploaded_state['name']}")
 
-    if st.button(
-        "RUN", type="primary", key="run_file",
-        disabled=uploaded_state is None or st.session_state.get("active_job") is not None,
-    ):
+    run_col, clear_col = st.columns([3, 1])
+    with run_col:
+        run_clicked = st.button(
+            "Run", type="primary", use_container_width=True, key="run_file",
+            disabled=uploaded_state is None or st.session_state.get("active_job") is not None,
+        )
+    with clear_col:
+        clear_clicked = st.button(
+            "Clear", use_container_width=True, key="clear_uploaded_file",
+            disabled=uploaded_state is None,
+        )
+
+    if clear_clicked:
+        clear_uploaded_file_state()
+        st.rerun()
+
+    if run_clicked:
         if not uploaded_state:
             return
         file_ext = Path(uploaded_state["name"]).suffix.lower()
@@ -587,7 +608,7 @@ def _render_result_actions(content, view):
     col_dl, col_copy, col_publish = st.columns([1, 1, 1.35])
     with col_dl:
         st.download_button(
-            "DOWNLOAD",
+            "Download",
             data=content,
             file_name=f"{file_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{extension}",
             mime=mime,
@@ -598,7 +619,7 @@ def _render_result_actions(content, view):
         copy_to_clipboard(content, st.session_state.theme)
     with col_publish:
         if st.button(
-            "PUBLISH AND SHARE WITH TINYPASTE",
+            "Publish",
             use_container_width=True,
             key=f"publish_tinypaste_{file_type}",
         ):
@@ -611,7 +632,7 @@ def _render_result_actions(content, view):
 
     if published["url"]:
         url = published["url"]
-        st.markdown(f"Published with tinypaste: [{url}]({url})")
+        st.markdown(f"Published to tinypaste: [{url}]({url})")
     elif published["error"]:
         st.error(published["error"])
 
@@ -623,10 +644,10 @@ def _render_summary_panel():
         idx = st.session_state.show_history_item
         if idx < len(st.session_state.history):
             item = st.session_state.history[idx]
-            st.info(f"Viewing: {item['source']}...")
+            st.info(f"Viewing: {item['source']}")
             display_summary = item["summary"]
             display_transcript = item.get("transcript")
-            if st.button("CLOSE"):
+            if st.button("Close"):
                 st.session_state.show_history_item = None
                 st.rerun()
     elif st.session_state.current_summary:
@@ -637,7 +658,7 @@ def _render_summary_panel():
         return
 
     st.divider()
-    output_tab, transcript_tab = st.tabs(["OUTPUT", "TRANSCRIPT"])
+    output_tab, transcript_tab = st.tabs(["Summary", "Transcript"])
     with output_tab:
         _render_result_actions(display_summary, "OUTPUT")
         render_summary_with_mermaid(display_summary)
@@ -654,9 +675,9 @@ def _render_summary_panel():
 def main():
     """Streamlit page entry point."""
     st.set_page_config(
-        page_title="SUMMARIZE",
+        page_title="Summarize",
         page_icon="S",
-        layout="centered",
+        layout="wide",
         initial_sidebar_state="collapsed",
     )
 
@@ -669,9 +690,15 @@ def main():
     sidebar = _render_sidebar(providers, default_provider, defaults, prompt_types)
 
     # -- Main area --
-    st.markdown('<h1 class="main-header">SUMMARIZE</h1>', unsafe_allow_html=True)
+    st.markdown(
+        '<header class="app-head">'
+        '<h1 class="app-title">Summarize</h1>'
+        '<p class="app-tagline">Turn a long video into a distilled markdown document.</p>'
+        "</header>",
+        unsafe_allow_html=True,
+    )
 
-    tab_url, tab_file = st.tabs(["URL", "FILE"])
+    tab_url, tab_file = st.tabs(["URL", "File"])
     with tab_url:
         _render_url_tab(sidebar, defaults)
     with tab_file:

@@ -42,12 +42,14 @@ def _extract_label(text: str, source: str) -> str:
 
 def add_to_history(source: str, provider: str, prompt_type: str, summary: str):
     """Push a new summary onto the in-memory history (most-recent first, capped at 10)."""
-    label = _extract_label(summary, source) or provider
+    label = (_extract_label(summary, source) or provider).strip()
+    if len(label) > 30:
+        label = label[:29].rstrip() + "…"
     st.session_state.history.insert(
         0,
         {
             "source": source[:50],
-            "provider": label[:30],
+            "provider": label,
             "prompt_type": prompt_type,
             "summary": summary,
             "timestamp": datetime.now().strftime("%H:%M"),

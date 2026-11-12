@@ -24,13 +24,13 @@ def test_jev_controls_only_appear_after_enabling():
     with patch("webapp.ui.load_config_raw", return_value=""):
         app.run()
         assert not app.exception
-        assert "JEV PROVIDER" not in [box.label for box in app.selectbox]
+        assert "JEV provider" not in [box.label for box in app.selectbox]
         assert "I want to include only…" not in [box.label for box in app.text_area]
         assert "I want to exclude…" not in [box.label for box in app.text_area]
-        assert next(box for box in app.selectbox if box.label == "PROVIDER").options == ["groq", "openrouter"]
+        assert next(box for box in app.selectbox if box.label == "Provider").options == ["groq", "openrouter"]
         next(box for box in app.checkbox if box.label == "Use JEV prefiltering").check().run()
         assert not app.exception
-        assert next(box for box in app.selectbox if box.label == "JEV PROVIDER").options == ["openrouter"]
+        assert next(box for box in app.selectbox if box.label == "JEV provider").options == ["openrouter"]
         next(box for box in app.text_area if box.label == "I want to include only…").input("X").run()
         next(box for box in app.text_area if box.label == "I want to exclude…").input("Sponsorship").run()
         assert app.session_state["result"]["jev_include"] == "X"
@@ -45,6 +45,6 @@ def test_yaml_enabled_prefilter_shows_openrouter():
     with patch("webapp.ui.load_config_raw", return_value=""):
         app = AppTest.from_string(SCRIPT.replace("DEFAULTS", repr(defaults))).run()
     assert not app.exception
-    assert next(box for box in app.selectbox if box.label == "JEV PROVIDER").value == "openrouter"
+    assert next(box for box in app.selectbox if box.label == "JEV provider").value == "openrouter"
     assert next(box for box in app.text_area if box.label == "I want to include only…").value == "X"
     assert next(box for box in app.text_area if box.label == "I want to exclude…").value == "Sponsorship"

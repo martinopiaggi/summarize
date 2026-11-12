@@ -55,6 +55,26 @@ def test_checkbox_box_uses_theme_colors(theme):
 
 
 @pytest.mark.parametrize("theme", ["dark", "system", "light"])
+def test_checked_checkbox_fills_with_accent(theme):
+    """A checked box must be filled: leaving it transparent put the dark
+    check mark straight on the sidebar background (invisible in dark mode,
+    so the "TranscriptFetch sidecar" checkbox never looked ticked)."""
+    css = get_custom_css(theme)
+    blocks = _block_for(css, ".stCheckbox label > span:has(input:checked) + div")
+    assert any("background-color: var(--accent) !important;" in b for b in blocks)
+
+
+@pytest.mark.parametrize("theme", ["dark", "system", "light"])
+def test_checkmark_style_is_scoped_to_the_box(theme):
+    """Only the check mark may use --on-accent. The help (?) icon is a
+    separate svg in the widget label, and painting it with --on-accent made
+    it black on the dark panel."""
+    css = get_custom_css(theme)
+    assert '[data-testid="stCheckbox"] svg {' not in css
+    assert '[data-testid="stCheckbox"] label > span + div svg {' in css
+
+
+@pytest.mark.parametrize("theme", ["dark", "system", "light"])
 def test_sidebar_collapse_arrows_use_accent_color(theme):
     """Both sidebar arrows must be accent-colored, and beat the generic
     header-button rule that paints them with the text color."""

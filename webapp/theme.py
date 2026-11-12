@@ -4,8 +4,9 @@ The visual rules live in ``theme.css`` next to this module. This keeps
 the Python side tiny: we just pick the right CSS custom-property block
 for the active theme and prepend it to the shared stylesheet.
 
-Tokens mirror the RaggioProietto theme (Raycast-derived: coral #ff6363
-on grayscale surfaces with hairline borders).
+Tokens are a warm graphite ramp with one coral grease-pencil accent
+(#ff6363); Inter carries the interface and JetBrains Mono is reserved for
+the slate metadata under the provider.
 """
 
 from pathlib import Path
@@ -19,21 +20,21 @@ _FONT_IMPORT = (
 )
 
 _DARK_VARS = """:root {
-    --bg: #101010;
-    --text: #f4f4f6;
-    --secondary: #141414;
-    --elevated: #1a1a1a;
-    --row: rgba(255, 255, 255, 0.06);
-    --border: rgba(255, 255, 255, 0.08);
-    --border-strong: #242728;
-    --muted: #9c9c9d;
-    --faint: #8f8f90;
+    --bg: #141312;
+    --text: #f3efe9;
+    --secondary: #1b1917;
+    --elevated: #24211d;
+    --row: rgba(255, 248, 240, 0.05);
+    --border: rgba(255, 248, 240, 0.10);
+    --border-strong: #322e29;
+    --muted: #a59d94;
+    --faint: #8f877d;
     --accent: #ff6363;
-    --accent-hover: #ff8585;
-    --on-accent: #101010;
-    --link: #ff6363;
-    --link-hover: #ff8585;
-    --selection: rgba(255, 99, 99, 0.28);
+    --accent-hover: #ff8577;
+    --on-accent: #141312;
+    --link: #f29183;
+    --link-hover: #ffb0a5;
+    --selection: rgba(255, 99, 99, 0.26);
     --focus: rgba(255, 99, 99, 0.55);
     --radius-s: 6px;
     --radius-m: 8px;
@@ -43,22 +44,22 @@ _DARK_VARS = """:root {
 }"""
 
 _LIGHT_VARS = """:root {
-    --bg: #ffffff;
-    --text: #1a1a1a;
-    --secondary: #f7f7f7;
-    --elevated: #efefef;
-    --row: rgba(0, 0, 0, 0.045);
-    --border: rgba(0, 0, 0, 0.08);
-    --border-strong: #e4e4e4;
-    --muted: #6b6b6b;
-    --faint: #707070;
+    --bg: #fbfaf8;
+    --text: #1c1a17;
+    --secondary: #f5f2ee;
+    --elevated: #eeeae4;
+    --row: rgba(28, 25, 22, 0.05);
+    --border: rgba(28, 25, 22, 0.10);
+    --border-strong: #e0dbd3;
+    --muted: #6a645c;
+    --faint: #766f66;
     --accent: #ff6363;
-    --accent-hover: #e23e3e;
-    --on-accent: #101010;
-    --link: #b12424;
-    --link-hover: #8f1c1c;
+    --accent-hover: #ec4f45;
+    --on-accent: #1c1a17;
+    --link: #9d332b;
+    --link-hover: #7f2822;
     --selection: rgba(255, 99, 99, 0.18);
-    --focus: rgba(255, 99, 99, 0.55);
+    --focus: rgba(255, 99, 99, 0.45);
     --radius-s: 6px;
     --radius-m: 8px;
     --radius-l: 12px;
@@ -101,12 +102,12 @@ def mermaid_theme_vars(theme: str) -> str:
     ``--secondary``), so it needs its own block.
     """
     if theme == "dark":
-        return ":root { --bg: #101010; --fg: #f4f4f6; }"
+        return ":root { --bg: #141312; --fg: #f3efe9; }"
     if theme == "light":
-        return ":root { --bg: #ffffff; --fg: #1a1a1a; }"
+        return ":root { --bg: #fbfaf8; --fg: #1c1a17; }"
     return (
-        ":root { --bg: #ffffff; --fg: #1a1a1a; }\n"
+        ":root { --bg: #fbfaf8; --fg: #1c1a17; }\n"
         "@media (prefers-color-scheme: dark) {"
-        " :root { --bg: #101010; --fg: #f4f4f6; }"
+        " :root { --bg: #141312; --fg: #f3efe9; }"
         " }"
     )

@@ -1,48 +1,24 @@
-/* RaggioProietto palette (Raycast-derived: coral #ff6363 on grayscale
-   surfaces, hairline borders, 6/8/12px radii). Tokens are injected by
-   theme.py; this file only maps them onto Streamlit's DOM. */
+/* Summarize — Streamlit theme.
+
+   Direction: a cutting room. Warm graphite surfaces, one coral
+   grease-pencil accent, Inter for the interface, JetBrains Mono only for
+   the slate line. Tokens come from theme.py; this file maps them onto
+   Streamlit's DOM and nothing else. */
+
+/* ---- Base ------------------------------------------------------------ */
 
 .stApp {
-    font-family: var(--font-ui, 'Inter', sans-serif) !important;
-    font-feature-settings: "ss03" 1, "calt" 1, "kern" 1, "liga" 1;
+    font-family: var(--font-ui, Inter, sans-serif) !important;
     background-color: var(--bg) !important;
     color: var(--text) !important;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 .stApp [data-testid="stAppViewContainer"] {
     background-color: var(--bg) !important;
     color: var(--text) !important;
-}
-
-.stApp [data-testid="stSidebar"] {
-    background-color: var(--bg) !important;
-    color: var(--text) !important;
-    border-right: 1px solid var(--border) !important;
-}
-
-header[data-testid="stHeader"],
-[data-testid="stToolbar"],
-[data-testid="stDecoration"] {
-    background-color: var(--bg) !important;
-    color: var(--text) !important;
-    border-bottom: 1px solid var(--border) !important;
-}
-
-[data-testid="stHeader"] svg,
-[data-testid="stToolbar"] svg {
-    fill: var(--text) !important;
-    color: var(--text) !important;
-}
-
-.main-header {
-    font-family: var(--font-ui, 'Inter', sans-serif) !important;
-    font-size: 1.5rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.02em !important;
-    border-bottom: 1px solid var(--border) !important;
-    color: var(--text) !important;
-    padding-bottom: 0.75rem !important;
-    margin-bottom: 1.5rem !important;
 }
 
 ::selection {
@@ -55,41 +31,207 @@ header[data-testid="stHeader"],
     outline-offset: 2px !important;
 }
 
-.stTextInput > div > div > input,
-.stNumberInput > div {
-    border-radius: var(--radius-m) !important;
-    background-color: var(--secondary) !important;
-    border: 1px solid var(--border) !important;
+/* The app owns its own header; Streamlit's chrome stays out of the way. */
+header[data-testid="stHeader"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"] {
+    background-color: var(--bg) !important;
     color: var(--text) !important;
-    caret-color: var(--text) !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
 }
 
-.stTextInput [data-baseweb="input"] input {
-    background-color: transparent !important;
-    color: var(--text) !important;
-    caret-color: var(--text) !important;
+[data-testid="stHeader"] svg,
+[data-testid="stToolbar"] svg {
+    fill: var(--muted) !important;
+    color: var(--muted) !important;
 }
 
+/* ---- Layout ---------------------------------------------------------- */
+
+[data-testid="stMainBlockContainer"] {
+    max-width: 920px !important;
+    margin: 0 auto !important;
+    padding: 56px 40px 40px !important;
+}
+
+[data-testid="stSidebar"] {
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
+    border-right: 1px solid var(--border) !important;
+}
+
+[data-testid="stSidebarContent"] {
+    padding: 20px 20px 32px !important;
+}
+
+/* ---- Wordmark, slate, footer ---------------------------------------- */
+
+.app-head {
+    margin: 0 0 28px;
+}
+
+.app-title {
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 26px !important;
+    font-weight: 600 !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.015em !important;
+    color: var(--text) !important;
+    margin: 0 0 6px !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.app-tagline {
+    margin: 0 !important;
+    max-width: 58ch;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    color: var(--muted) !important;
+}
+
+.slate {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-family: var(--font-mono, "JetBrains Mono", monospace) !important;
+    font-size: 10.5px !important;
+    line-height: 1.5 !important;
+    letter-spacing: 0.01em;
+    color: var(--faint) !important;
+    margin: 6px 0 10px !important;
+}
+
+.slate span {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.composer-note {
+    margin: 10px 0 0 !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    color: var(--faint) !important;
+}
+
+.app-footer {
+    margin: 64px 0 8px !important;
+    font-size: 12.5px !important;
+    color: var(--faint) !important;
+}
+
+.app-footer a {
+    color: var(--muted) !important;
+    text-decoration: underline !important;
+    text-decoration-thickness: 1px !important;
+    text-underline-offset: 3px !important;
+}
+
+.app-footer a:hover {
+    color: var(--text) !important;
+}
+
+/* ---- Labels ---------------------------------------------------------- */
+
+[data-testid="stWidgetLabel"] p,
+[data-testid="stWidgetLabel"] label,
+label[data-testid="stWidgetLabel"],
+.stRadio label,
+.stCheckbox label,
+.stSelectbox label {
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    color: var(--muted) !important;
+}
+
+[data-testid="stWidgetLabel"] {
+    margin-bottom: 2px !important;
+}
+
+[data-testid="stCaptionContainer"] > p,
+.stMarkdown [data-testid="stCaptionContainer"] p {
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 12px !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    color: var(--faint) !important;
+}
+
+/* ---- Text inputs, selects, textareas -------------------------------- */
+
+[data-testid="stTextInputRootElement"],
+[data-testid="stNumberInputContainer"],
+[data-testid="stTextAreaRootElement"],
+.stSelectbox .react-aria-ComboBox > div[role="group"],
 .stTextInput [data-baseweb="input"],
 .stTextInput [data-baseweb="input"] > div {
     background-color: var(--secondary) !important;
     border: 1px solid var(--border) !important;
     border-radius: var(--radius-m) !important;
+    box-shadow: none !important;
 }
 
-.stTextInput [data-baseweb="input"]:focus-within,
-.stTextInput [data-baseweb="input"]:focus-within > div {
+[data-testid="stTextInputRootElement"] {
+    min-height: 44px !important;
+}
+
+[data-testid="stTextInputRootElement"]:focus-within,
+[data-testid="stNumberInputContainer"]:focus-within,
+[data-testid="stTextAreaRootElement"]:focus-within,
+.stSelectbox .react-aria-ComboBox > div[role="group"]:focus-within,
+.stTextInput [data-baseweb="input"]:focus-within {
     border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px var(--focus) !important;
 }
 
-.stNumberInput > div > div > input {
-    border-radius: var(--radius-m) !important;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+[data-testid="stTextInputField"],
+[data-testid="stNumberInputField"],
+[data-testid="stTextInputRootElement"] input,
+[data-testid="stTextArea"] textarea,
+[data-testid="stTextAreaRootElement"] textarea {
     background-color: transparent !important;
     color: var(--text) !important;
-    border: none !important;
+    -webkit-text-fill-color: var(--text) !important;
+    caret-color: var(--text) !important;
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 14px !important;
 }
 
+[data-testid="stTextArea"] textarea,
+[data-testid="stTextAreaRootElement"] textarea {
+    line-height: 1.6 !important;
+}
+
+[data-testid="stNumberInputField"],
+[data-testid="stNumberInput"] input {
+    font-family: var(--font-mono, "JetBrains Mono", monospace) !important;
+    font-size: 13px !important;
+}
+
+[data-testid="stNumberInput"] button {
+    background-color: transparent !important;
+    border: none !important;
+    color: var(--muted) !important;
+}
+
+[data-testid="stNumberInput"] [data-testid^="stNumberInputStep"] svg {
+    fill: var(--muted) !important;
+}
+
+.stTextInput input::placeholder,
+.stTextArea textarea::placeholder,
+.stSelectbox input[role="combobox"]::placeholder {
+    color: var(--faint) !important;
+    opacity: 1 !important;
+}
+
+/* Sidebar number input (React-aria + BaseWeb): Streamlit ships light fills. */
 [data-testid="stSidebar"] [data-testid="stNumberInput"] [data-baseweb="input"],
 [data-testid="stSidebar"] [data-testid="stNumberInput"] [data-baseweb="input"] > div,
 [data-testid="stSidebar"] [data-testid="stNumberInput"] input,
@@ -104,32 +246,71 @@ header[data-testid="stHeader"],
     border: 1px solid var(--border) !important;
 }
 
-[data-testid="stSidebar"] [data-testid="stNumberInput"] button svg {
+[data-testid="stSidebar"] [data-testid^="stNumberInputStep"] svg {
     fill: var(--text) !important;
     color: var(--text) !important;
 }
 
+/* Selectbox */
+.stSelectbox input[role="combobox"] {
+    background-color: transparent !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 14px !important;
+}
+
+.stSelectbox button[aria-label="Open"] {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+.stSelectbox button[aria-label="Open"] svg {
+    fill: var(--muted) !important;
+}
+
+[role="listbox"] {
+    background-color: var(--elevated) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-m) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18) !important;
+}
+
+[role="option"] {
+    background-color: transparent !important;
+    color: var(--text) !important;
+    font-size: 13.5px !important;
+}
+
+[role="option"]:hover,
+[role="option"][aria-selected="true"] {
+    background-color: var(--row) !important;
+}
+
+/* ---- Buttons --------------------------------------------------------- */
+
 .stButton > button,
 .stDownloadButton > button {
-    border-radius: var(--radius-s) !important;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
-    font-weight: 500 !important;
-    font-size: 0.6875rem !important;
-    letter-spacing: 0.02em !important;
-    line-height: 1.5 !important;
-    text-transform: uppercase !important;
-    background-color: var(--secondary) !important;
-    color: var(--text) !important;
-    border: 1px solid var(--border-strong) !important;
-    min-height: 2.5rem !important;
-    padding: 0.55rem 0.65rem !important;
     width: 100% !important;
-    box-sizing: border-box !important;
+    min-height: 44px !important;
+    padding: 0 16px !important;
+    border-radius: var(--radius-m) !important;
+    border: 1px solid var(--border-strong) !important;
+    background-color: transparent !important;
+    color: var(--text) !important;
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    line-height: 1.2 !important;
+    text-transform: none !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
-    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease !important;
+    box-shadow: none !important;
+    transition: background-color 0.12s ease, border-color 0.12s ease,
+        color 0.12s ease !important;
 }
 
 .stButton > button p,
@@ -138,12 +319,14 @@ header[data-testid="stHeader"],
     line-height: inherit !important;
     text-transform: inherit !important;
     color: inherit !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Button hover states */
 .stButton > button:hover,
 .stDownloadButton > button:hover {
-    background-color: var(--elevated) !important;
+    background-color: var(--row) !important;
     border-color: var(--border-strong) !important;
     color: var(--text) !important;
 }
@@ -155,6 +338,12 @@ header[data-testid="stHeader"],
     color: var(--on-accent) !important;
 }
 
+.stButton > button[kind="primary"] p,
+.stDownloadButton > button[kind="primary"] p {
+    color: var(--on-accent) !important;
+    font-weight: 500 !important;
+}
+
 .stButton > button[kind="primary"]:hover,
 .stDownloadButton > button[kind="primary"]:hover {
     background-color: var(--accent-hover) !important;
@@ -162,85 +351,13 @@ header[data-testid="stHeader"],
     color: var(--on-accent) !important;
 }
 
-.stSelectbox > div > div {
-    border-radius: var(--radius-m) !important;
-    background-color: var(--secondary) !important;
-    color: var(--text) !important;
-    border: 1px solid var(--border) !important;
+.stButton > button:disabled,
+.stButton > button[kind="primary"]:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
 }
 
-.stSelectbox [data-baseweb="select"] > div {
-    background-color: var(--secondary) !important;
-    color: var(--text) !important;
-}
-
-.stSelectbox input {
-    cursor: pointer !important;
-    caret-color: transparent !important;
-    user-select: none !important;
-    color: var(--text) !important;
-}
-
-.stSelectbox [role="button"],
-.stSelectbox [data-baseweb="select"] [data-baseweb="popover"] {
-    background-color: var(--secondary) !important;
-    color: var(--text) !important;
-}
-
-/* Dropdown menu items */
-.stSelectbox ul[data-baseweb="menu"],
-.stSelectbox li[data-baseweb="menu"] {
-    background-color: var(--secondary) !important;
-    color: var(--text) !important;
-}
-
-/* Selectbox menu popover (portal) */
-[data-baseweb="popover"] ul[data-baseweb="menu"],
-[data-baseweb="popover"] li[data-baseweb="menu"],
-[data-baseweb="popover"] [role="listbox"],
-[data-baseweb="popover"] [role="option"] {
-    background-color: var(--secondary) !important;
-    color: var(--text) !important;
-}
-
-[data-baseweb="popover"] [role="option"]:hover,
-[data-baseweb="popover"] li[data-baseweb="menu"]:hover {
-    background-color: var(--elevated) !important;
-}
-
-.stSelectbox [data-baseweb="select"] span {
-    color: var(--text) !important;
-}
-
-/* Selectbox hover */
-.stSelectbox > div > div:hover {
-    border: 1px solid var(--border-strong) !important;
-}
-
-.stRadio [data-baseweb="radio"] > div > div {
-    border: 1px solid var(--border-strong) !important;
-    background-color: transparent !important;
-}
-
-.stRadio [data-baseweb="radio"] [aria-checked="true"] > div {
-    border-color: var(--accent) !important;
-}
-
-.stCheckbox [data-baseweb="checkbox"] > div > div {
-    border: 1px solid var(--border-strong) !important;
-    background-color: transparent !important;
-    border-radius: 5px !important;
-}
-
-.stCheckbox [data-baseweb="checkbox"] [aria-checked="true"] > div {
-    border-color: var(--accent) !important;
-}
-
-.stExpander {
-    background-color: var(--bg) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-m) !important;
-}
+/* ---- Tabs ------------------------------------------------------------ */
 
 .stTabs [data-baseweb="tab-highlight"],
 .stTabs [data-baseweb="tab-border"] {
@@ -248,216 +365,289 @@ header[data-testid="stHeader"],
 }
 
 .stTabs [data-baseweb="tab-list"] {
-    gap: 0.3rem !important;
+    gap: 0 !important;
     border-bottom: 1px solid var(--border) !important;
+    background: transparent !important;
 }
 
+.stTabs [data-testid="stTab"],
 .stTabs [data-baseweb="tab"] {
-    border-radius: var(--radius-s) !important;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
-    font-size: 0.6875rem !important;
+    position: relative !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 24px 0 0 !important;
+    padding: 6px 0 12px !important;
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 13.5px !important;
     font-weight: 500 !important;
-    letter-spacing: 0.04em !important;
-    text-transform: uppercase !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
     color: var(--muted) !important;
-    border-bottom: none !important;
-    padding: 0.35rem 0.6rem !important;
 }
 
+.stTabs [data-testid="stTab"]:hover,
 .stTabs [data-baseweb="tab"]:hover {
     color: var(--text) !important;
-    background-color: var(--row) !important;
+    background: transparent !important;
 }
 
+.stTabs [data-testid="stTab"][aria-selected="true"],
 .stTabs [data-baseweb="tab"][aria-selected="true"] {
-    background-color: var(--row) !important;
     color: var(--text) !important;
+    background: transparent !important;
 }
 
-.streamlit-expanderHeader {
-    font-family: var(--font-ui, 'Inter', sans-serif) !important;
-    font-size: 0.8125rem !important;
-    font-weight: 500 !important;
-    border-radius: var(--radius-s) !important;
-    color: var(--text) !important;
-    background-color: transparent !important;
+.stTabs [data-testid="stTab"][aria-selected="true"]::after,
+.stTabs [data-baseweb="tab"][aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 22px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
 }
 
-.streamlit-expanderHeader:hover {
-    background-color: var(--row) !important;
-    color: var(--text) !important;
+.stTabs [data-testid="stTab"] p {
+    color: inherit !important;
+    font-size: inherit !important;
 }
 
-.stSidebar [data-baseweb="radio"] {
-    background-color: transparent !important;
-    box-shadow: none !important;
-}
+/* ---- Theme segmented control (the only radio group) ------------------ */
 
-.stSidebar [data-baseweb="radio"] > div {
-    background-color: transparent !important;
-    box-shadow: none !important;
-}
-
-.stSidebar [role="radiogroup"],
-.stSidebar [data-baseweb="radiogroup"] {
-    background-color: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-}
-
-.stSidebar .stRadio [data-baseweb="button-group"],
-.stSidebar .stRadio [data-baseweb="button-group"] > div {
-    background-color: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    outline: 0 !important;
-}
-
-.stSidebar .stRadio [data-baseweb="radio"] > div > div {
-    border: none !important;
-}
-
-/* Theme toggle - clean segmented control */
-.stSidebar [key="theme_selector"] [data-baseweb="button-group"] {
+[data-testid="stRadioGroup"] {
     display: flex !important;
-    gap: 0 !important;
-    background: transparent !important;
-    border: 1px solid var(--border-strong) !important;
-    border-radius: var(--radius-m) !important;
+    width: 100% !important;
+    gap: 2px !important;
     padding: 2px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 9px !important;
+    background-color: var(--secondary) !important;
 }
 
-.stSidebar [key="theme_selector"] [data-baseweb="button-group"] > div {
+[data-testid="stRadioGroup"] [data-testid="stRadioOption"] {
     flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 30px !important;
     margin: 0 !important;
+    padding: 0 6px !important;
+    border: 1px solid transparent !important;
     border-radius: var(--radius-s) !important;
-    background: transparent !important;
+    background-color: transparent !important;
     color: var(--muted) !important;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
-    font-size: 0.6875rem !important;
-    letter-spacing: 0.02em !important;
-    text-transform: uppercase !important;
-    border: none !important;
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
     cursor: pointer !important;
     transition: background-color 0.12s ease, color 0.12s ease !important;
-    padding: 0.4rem 0.2rem !important;
 }
 
-.stSidebar [key="theme_selector"] [data-baseweb="button-group"] > div:hover {
-    background: var(--row) !important;
-    color: var(--text) !important;
-}
-
-.stSidebar [key="theme_selector"] [data-baseweb="button-group"] > div[aria-checked="true"] {
-    background: var(--accent) !important;
-    color: var(--on-accent) !important;
-}
-
-.stSidebar [key="theme_selector"] [role="radio"] {
+[data-testid="stRadioGroup"] [data-testid="stRadioOption"] > div > div:not([data-testid]) {
     display: none !important;
 }
 
-.stSidebar [data-testid="stExpander"] {
-    border-radius: var(--radius-m) !important;
-    border: 1px solid var(--border) !important;
+[data-testid="stRadioGroup"] [data-testid="stRadioOption"] p {
+    color: inherit !important;
+    font-size: inherit !important;
 }
 
-.stSidebar [data-testid="stExpander"] summary,
-.stSidebar [data-testid="stExpander"] details {
-    background-color: var(--bg) !important;
+[data-testid="stRadioGroup"] [data-testid="stRadioOption"]:hover {
     color: var(--text) !important;
-    border-radius: var(--radius-s) !important;
-}
-
-.stSidebar [data-testid="stExpander"] summary {
-    display: flex !important;
-    align-items: center !important;
-    padding: 0.4rem 0.6rem !important;
-    text-align: left !important;
-    color: var(--text) !important;
-}
-
-.stSidebar [data-testid="stExpander"] summary:hover {
     background-color: var(--row) !important;
 }
 
-.stSidebar [data-testid="stExpander"] summary p,
-.stSidebar [data-testid="stExpander"] summary span {
+[data-testid="stRadioGroup"] [data-testid="stRadioOption"][data-selected="true"] {
+    background-color: var(--bg) !important;
+    border-color: var(--border) !important;
     color: var(--text) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
 }
 
-.stSidebar [data-testid="stExpander"] summary * {
-    color: var(--text) !important;
+/* ---- Checkboxes ------------------------------------------------------ */
+
+.stCheckbox label > span + div {
+    background-color: transparent !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 4px !important;
 }
 
-[data-testid="stTextAreaRootElement"],
-[data-testid="stTextArea"] textarea {
-    background-color: var(--secondary) !important;
-    color: var(--text) !important;
-    -webkit-text-fill-color: var(--text) !important;
-    caret-color: var(--text) !important;
-    border-radius: var(--radius-m) !important;
-}
-
-[data-testid="stTextAreaRootElement"] {
-    border: 1px solid var(--border) !important;
-}
-
-[data-testid="stTextAreaRootElement"]:focus-within {
+/* A checked box fills with the accent so the dark check mark reads as a
+   positive state; leaving it transparent hid the tick against the dark
+   sidebar because Streamlit's own fill is the only other one. */
+.stCheckbox label > span:has(input:checked) + div {
+    background-color: var(--accent) !important;
     border-color: var(--accent) !important;
 }
 
-.stSidebar .stCheckbox [data-baseweb="checkbox"] > div,
-.stSidebar .stCheckbox [data-baseweb="checkbox"] svg {
-    background-color: transparent !important;
+[data-testid="stCheckbox"] {
+    color: var(--text) !important;
+}
+
+[data-testid="stCheckbox"] .e15oan335,
+[data-testid="stCheckbox"] .e15oan337 {
+    background-color: var(--secondary) !important;
+    transition: background-color 0.12s ease, border-color 0.12s ease !important;
+}
+
+[data-testid="stCheckbox"] .e15oan335 {
     border-color: var(--border-strong) !important;
+}
+
+/* Streamlit only renders the check svg when the box is selected. */
+[data-testid="stCheckbox"] .e15oan335:has(> svg),
+[data-testid="stCheckbox"][aria-checked="true"] .e15oan337,
+[data-testid="stCheckbox"][data-selected="true"] .e15oan337 {
+    background-color: var(--accent) !important;
+    border-color: var(--accent) !important;
+}
+
+/* Only the check mark inside the box svg. The help (?) icon is a separate
+   svg in the widget label: forcing --on-accent on it painted the icon black
+   on the dark panel, so it disappeared in dark mode. */
+[data-testid="stCheckbox"] label > span + div svg {
+    fill: none !important;
+    stroke: var(--on-accent) !important;
+}
+
+/* ---- Expanders, status, alerts, tooltips ----------------------------- */
+
+[data-testid="stExpander"] {
+    background-color: transparent !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-l) !important;
+}
+
+[data-testid="stExpander"] summary {
+    background-color: var(--secondary) !important;
     color: var(--text) !important;
-    fill: var(--text) !important;
+    padding: 10px 14px !important;
+    border-radius: var(--radius-s) !important;
 }
 
-.stCaption {
-    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
-    font-size: 0.6875rem !important;
-    letter-spacing: 0.04em !important;
-    text-transform: uppercase !important;
-    color: var(--faint) !important;
-}
-
-.stSidebar .stCaption {
-    color: var(--faint) !important;
-}
-
-.stMarkdown {
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary span {
     color: var(--text) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
 }
 
-.stMarkdown a {
-    color: var(--link) !important;
-    text-decoration: underline !important;
-    text-decoration-thickness: 1px !important;
-    text-underline-offset: 0.16em !important;
+[data-testid="stExpander"] summary svg {
+    fill: var(--muted) !important;
+    stroke: var(--muted) !important;
 }
 
-.stMarkdown a:hover {
-    color: var(--link-hover) !important;
+[data-testid="stExpander"] summary:hover {
+    background-color: var(--elevated) !important;
 }
 
-label, .stRadio label, .stCheckbox label, .stSelectbox label {
+[data-testid="stExpander"] [data-testid="stExpanderIcon"],
+[data-testid="stExpander"] [data-testid="stExpanderIconSpinner"],
+[data-testid="stExpander"] [data-testid="stIconMaterial"] {
     color: var(--muted) !important;
-    font-size: 0.8125rem !important;
 }
+
+/* Settings and Edit config read as quiet rows in the sidebar. */
+.stSidebar [data-testid="stExpander"],
+.stSidebar [data-testid="stExpander"] details,
+.stSidebar [data-testid="stExpander"] summary {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+.stSidebar [data-testid="stExpander"] summary {
+    background-color: transparent !important;
+    padding: 6px 0 !important;
+}
+
+.stSidebar [data-testid="stExpander"] summary:hover {
+    background-color: transparent !important;
+    color: var(--text) !important;
+}
+
+.stSidebar [data-testid="stExpander"] summary svg {
+    fill: var(--muted) !important;
+    stroke: var(--muted) !important;
+}
+
+/* Help tooltip icon + hover bubble */
+[data-testid="stTooltipIcon"] button,
+[data-testid="stTooltipHoverTarget"] button {
+    color: var(--muted) !important;
+    background-color: transparent !important;
+}
+
+/* Help icons are stroke drawings. The number-input button rule below
+   fills every svg with --text, which turned the Speed help icon into a
+   solid disc (the ? was a hole, so it read as black on light and white
+   on dark). Keep these unfilled. */
+[data-testid="stTooltipIcon"] svg,
+[data-testid="stTooltipHoverTarget"] svg {
+    fill: none !important;
+    stroke: var(--muted) !important;
+    color: var(--muted) !important;
+}
+
+[data-testid="stTooltipIcon"] button:hover svg {
+    stroke: var(--text) !important;
+    color: var(--text) !important;
+}
+
+[data-testid="stTooltipContent"] {
+    background-color: var(--elevated) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-s) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+    color: var(--text) !important;
+    font-size: 12.5px !important;
+}
+
+[data-testid="stTooltipContent"] p {
+    color: var(--text) !important;
+    font-size: 12.5px !important;
+}
+
+/* Alerts */
+[data-testid="stAlertContainer"] {
+    background-color: var(--elevated) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-m) !important;
+}
+
+[data-testid="stAlertContentSuccess"],
+[data-testid="stAlertContentInfo"],
+[data-testid="stAlertContentWarning"],
+[data-testid="stAlertContentError"] {
+    color: var(--text) !important;
+    font-size: 13.5px !important;
+}
+
+[data-testid="stAlert"] [data-testid="stMarkdownContainer"] {
+    color: var(--text) !important;
+}
+
+/* ---- File uploader --------------------------------------------------- */
 
 .stFileUploader label,
 .stFileUploader [data-testid="stFileUploaderDropzone"] span,
 .stFileUploader [data-testid="stFileUploaderDropzone"] small,
 .stFileUploader [data-testid="stFileUploaderDropzone"] p {
-    color: var(--text) !important;
+    color: var(--muted) !important;
+    font-size: 13px !important;
 }
 
 .stFileUploader [data-testid="stFileUploaderDropzone"] {
     background-color: var(--secondary) !important;
     border: 1px dashed var(--border-strong) !important;
     border-radius: var(--radius-l) !important;
+    padding: 18px !important;
 }
 
 .stFileUploader [data-testid="stFileUploaderDropzone"]:hover {
@@ -465,69 +655,202 @@ label, .stRadio label, .stCheckbox label, .stSelectbox label {
 }
 
 .stFileUploader button {
-    background-color: var(--secondary) !important;
+    background-color: transparent !important;
     border: 1px solid var(--border-strong) !important;
     border-radius: var(--radius-s) !important;
     color: var(--text) !important;
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
 }
 
 .stFileUploader button p,
 .stFileUploader button span {
     color: var(--text) !important;
+    font-size: 12.5px !important;
 }
 
 .stFileUploader button svg {
-    fill: var(--text) !important;
+    fill: var(--muted) !important;
 }
 
 .stFileUploader button:hover {
-    background-color: var(--elevated) !important;
+    background-color: var(--row) !important;
 }
 
-.stTextInput input::placeholder,
-.stTextArea textarea::placeholder {
+/* The uploaded-file chip: white on white in light, black icon in both. */
+[data-testid="stFileChip"] {
+    background-color: var(--bg) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-m) !important;
+}
+
+/* The icon tile is painted black by Streamlit; drop the tile and keep
+   just a muted line icon next to the name. */
+[data-testid="stFileChip"] > div:first-child {
+    background-color: transparent !important;
+    border-radius: 0 !important;
+}
+
+[data-testid="stFileChip"] svg {
+    fill: var(--muted) !important;
+    color: var(--muted) !important;
+}
+
+[data-testid="stFileChipName"] {
+    color: var(--text) !important;
+    font-size: 12.5px !important;
+}
+
+[data-testid="stFileChipName"] + div {
     color: var(--faint) !important;
-    opacity: 1 !important;
+    font-size: 11.5px !important;
 }
 
-.stSidebar .stRadio [data-baseweb="radio"] span,
-.stSidebar .stRadio [data-baseweb="radio"] label,
-.stSidebar .stRadio [data-baseweb="radio"] p {
+[data-testid="stFileChipDeleteBtn"] button {
+    color: var(--muted) !important;
+}
+
+[data-testid="stFileChipDeleteBtn"] svg {
+    fill: var(--muted) !important;
+}
+
+/* ---- Markdown document ----------------------------------------------- */
+
+.stMarkdown {
     color: var(--text) !important;
 }
 
-.element-container .stMarkdown h1,
-.element-container .stMarkdown h2,
-.element-container .stMarkdown h3 {
-    font-family: var(--font-ui, 'Inter', sans-serif) !important;
+.stMarkdown p,
+.stMarkdown li {
+    font-size: 15px !important;
+    line-height: 1.7 !important;
+    color: var(--text) !important;
+}
+
+.stMarkdown p {
+    max-width: 72ch;
+}
+
+.stMarkdown h1 {
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 26px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.015em !important;
+    color: var(--text) !important;
+    margin: 0 0 12px !important;
+}
+
+.stMarkdown h2 {
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 19px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    letter-spacing: -0.01em !important;
+    color: var(--text) !important;
+    margin: 32px 0 10px !important;
+}
+
+.stMarkdown h3 {
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+    color: var(--text) !important;
+    margin: 24px 0 8px !important;
+}
+
+.stMarkdown h4,
+.stMarkdown h5,
+.stMarkdown h6 {
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 14.5px !important;
     font-weight: 600 !important;
     color: var(--text) !important;
+    margin: 20px 0 6px !important;
 }
 
-.app-footer {
-    text-align: center;
-    margin: 0;
-    font-size: 0.8125rem;
-    color: var(--faint);
-    opacity: 1;
+.stMarkdown ul,
+.stMarkdown ol {
+    padding-left: 20px !important;
+    margin: 8px 0 16px !important;
 }
 
-.app-footer a {
-    color: var(--link);
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.16em;
+.stMarkdown li {
+    margin: 4px 0 !important;
 }
 
-.app-footer a:hover {
-    color: var(--link-hover);
+.stMarkdown a {
+    color: var(--link) !important;
+    text-decoration: underline !important;
+    text-decoration-thickness: 1px !important;
+    text-underline-offset: 3px !important;
 }
 
-/* ---- Streamlit 1.64 react-aria mappings -------------------------------
-   Streamlit >= 1.60 renders widgets with react-aria instead of
-   BaseWeb. The selectors above (data-baseweb, .streamlit-expanderHeader)
-   stay for older installs; these match the current DOM so the theme
-   is not defeated by the light theme baked into Streamlit's runtime. */
+.stMarkdown a:hover {
+    color: var(--link-hover) !important;
+}
+
+.stMarkdown table {
+    border-color: var(--border) !important;
+    border-collapse: collapse !important;
+    font-size: 13.5px !important;
+}
+
+.stMarkdown th {
+    background-color: var(--secondary) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+    font-weight: 500 !important;
+    font-size: 12.5px !important;
+    text-align: left !important;
+}
+
+.stMarkdown td {
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+    font-size: 13.5px !important;
+}
+
+.stMarkdown blockquote {
+    margin: 16px 0 !important;
+    padding: 2px 0 2px 16px !important;
+    border-left: 2px solid var(--border-strong) !important;
+    color: var(--muted) !important;
+}
+
+.stMarkdown hr {
+    border: none !important;
+    border-top: 1px solid var(--border) !important;
+    margin: 28px 0 !important;
+}
+
+.stMarkdown code:not([class*="language-"]) {
+    background-color: var(--row) !important;
+    color: var(--text) !important;
+    border-radius: 4px !important;
+    font-family: var(--font-mono, "JetBrains Mono", monospace) !important;
+    font-size: 12.5px !important;
+    padding: 1px 5px !important;
+}
+
+[data-testid="stCode"] {
+    background-color: var(--secondary) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-m) !important;
+}
+
+[data-testid="stCode"] pre,
+[data-testid="stCode"] code,
+[data-testid="stCode"] .token {
+    background-color: transparent !important;
+    color: var(--text) !important;
+    font-size: 12.5px !important;
+}
+
+/* ---- Header chrome and the sidebar arrows ---------------------------- */
 
 /* Buttons: header / collapse */
 button[kind="headerNoPadding"],
@@ -569,358 +892,24 @@ button[kind="headerNoPadding"][data-testid="stExpandSidebarButton"] svg,
     stroke: var(--accent) !important;
 }
 
-/* Text input (root element wrapper) */
-[data-testid="stTextInputRootElement"],
-[data-testid="stNumberInputContainer"] {
-    background-color: var(--secondary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-m) !important;
-}
-
-[data-testid="stTextInputRootElement"]:focus-within,
-[data-testid="stNumberInputContainer"]:focus-within {
-    border-color: var(--accent) !important;
-}
-
-[data-testid="stTextInputField"],
-[data-testid="stNumberInputField"] {
-    background-color: transparent !important;
-    color: var(--text) !important;
-    -webkit-text-fill-color: var(--text) !important;
-    caret-color: var(--text) !important;
-}
-
-.stNumberInput button svg {
-    fill: var(--text) !important;
-}
-
-/* Selectbox (react-aria ComboBox) */
-.stSelectbox .react-aria-ComboBox > div[role="group"] {
-    background-color: var(--secondary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-m) !important;
-}
-
-.stSelectbox .react-aria-ComboBox > div[role="group"]:focus-within {
-    border-color: var(--accent) !important;
-}
-
-.stSelectbox input[role="combobox"] {
-    background-color: transparent !important;
-    color: var(--text) !important;
-    -webkit-text-fill-color: var(--text) !important;
-}
-
-.stSelectbox input[role="combobox"]::placeholder {
-    color: var(--faint) !important;
-}
-
-.stSelectbox button[aria-label="Open"] {
-    background-color: transparent !important;
-}
-
-.stSelectbox button[aria-label="Open"] svg {
-    fill: var(--text) !important;
-}
-
-/* Dropdown list (portal) */
-[role="listbox"],
-[data-baseweb="popover"] [role="listbox"] {
-    background-color: var(--elevated) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-m) !important;
-}
-
-[role="option"] {
-    background-color: transparent !important;
-    color: var(--text) !important;
-}
-
-[role="option"]:hover,
-[role="option"][aria-selected="true"] {
-    background-color: var(--row) !important;
-}
-
-/* Radio options */
-[data-testid="stRadioOption"] {
-    color: var(--muted) !important;
-}
-
-[data-testid="stRadioOption"][data-selected="true"] {
-    color: var(--text) !important;
-}
-
-[data-testid="stRadioOption"] > div > div:not([data-testid]) {
-    border: 1px solid var(--border-strong) !important;
-    background-color: transparent !important;
-}
-
-[data-testid="stRadioOption"][data-selected="true"] > div > div:not([data-testid]) {
-    border-color: var(--accent) !important;
-}
-
-[data-testid="stRadioOption"] p {
-    color: inherit !important;
-}
-
-/* Theme toggle: segmented control */
-[data-testid="stRadioGroup"][aria-label="THEME"] {
-    display: flex !important;
-    width: 100% !important;
-    gap: 0.25rem !important;
-    border: 1px solid var(--border-strong) !important;
-    border-radius: var(--radius-m) !important;
-    padding: 3px !important;
-}
-
-[data-testid="stRadioGroup"][aria-label="THEME"] [data-testid="stRadioOption"] {
-    flex: 1 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 0.35rem !important;
-    min-height: 2.25rem !important;
-    border: none !important;
-    border-radius: var(--radius-s) !important;
-    padding: 0.45rem 0.3rem !important;
-    font-family: var(--font-ui, 'Inter', sans-serif) !important;
-    font-size: 0.8125rem !important;
+/* Sidebar section headings ("History") read as group labels. */
+[data-testid="stSidebar"] .stMarkdown h3 {
+    font-family: var(--font-ui, Inter, sans-serif) !important;
+    font-size: 12.5px !important;
     font-weight: 500 !important;
-    letter-spacing: 0.01em !important;
-    text-transform: none !important;
-    cursor: pointer !important;
-    transition: background-color 0.12s ease, color 0.12s ease !important;
-}
-
-[data-testid="stRadioGroup"][aria-label="THEME"] [data-testid="stRadioOption"] > div > div:not([data-testid]) {
-    display: none !important;
-}
-
-[data-testid="stRadioGroup"][aria-label="THEME"] [data-testid="stRadioOption"]:hover {
-    background-color: var(--row) !important;
-}
-
-[data-testid="stRadioGroup"][aria-label="THEME"] [data-testid="stRadioOption"][data-selected="true"] {
-    background-color: var(--accent) !important;
-    color: var(--on-accent) !important;
-    font-weight: 700 !important;
-}
-
-/* Checkbox box */
-.stCheckbox label > span + div {
-    background-color: transparent !important;
-    border: 1px solid var(--border-strong) !important;
-    border-radius: 5px !important;
-}
-
-.stCheckbox label > span:has(input:checked) + div {
-    border-color: var(--accent) !important;
-}
-
-/* Tabs */
-.stTabs [data-testid="stTab"] {
-    border-radius: var(--radius-s) !important;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
-    font-size: 0.6875rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.04em !important;
-    text-transform: uppercase !important;
+    letter-spacing: 0 !important;
     color: var(--muted) !important;
-    padding: 0.35rem 0.6rem !important;
+    margin: 0 0 4px !important;
 }
 
-.stTabs [data-testid="stTab"]:hover {
-    color: var(--text) !important;
-    background-color: var(--row) !important;
-}
+/* ---- Small screens --------------------------------------------------- */
 
-.stTabs [data-testid="stTab"][aria-selected="true"] {
-    background-color: var(--row) !important;
-    color: var(--text) !important;
-}
+@media (max-width: 900px) {
+    [data-testid="stMainBlockContainer"] {
+        padding: 64px 20px 32px !important;
+    }
 
-.stTabs [data-testid="stTab"] p {
-    color: inherit !important;
-}
-
-/* Expander / status */
-[data-testid="stExpander"] summary {
-    background-color: var(--secondary) !important;
-    border-radius: var(--radius-s) !important;
-}
-
-[data-testid="stExpander"] summary,
-[data-testid="stExpander"] summary p,
-[data-testid="stExpander"] summary span {
-    color: var(--text) !important;
-}
-
-[data-testid="stExpander"] summary svg {
-    fill: var(--text) !important;
-    stroke: var(--text) !important;
-}
-
-[data-testid="stExpander"] [data-testid="stExpanderIcon"],
-[data-testid="stExpander"] [data-testid="stExpanderIconSpinner"] {
-    color: var(--text) !important;
-}
-
-[data-testid="stExpander"] summary:hover {
-    background-color: var(--row) !important;
-}
-
-[data-testid="stExpander"] [data-testid="stIconMaterial"] {
-    color: var(--muted) !important;
-}
-
-/* Help tooltip icon + hover bubble */
-[data-testid="stTooltipIcon"] button,
-[data-testid="stTooltipHoverTarget"] button {
-    color: var(--muted) !important;
-    background-color: transparent !important;
-}
-
-[data-testid="stTooltipIcon"] svg {
-    stroke: var(--muted) !important;
-    color: var(--muted) !important;
-}
-
-[data-testid="stTooltipIcon"] button:hover svg {
-    stroke: var(--text) !important;
-    color: var(--text) !important;
-}
-
-[data-testid="stTooltipContent"] {
-    background-color: var(--elevated) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-s) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
-    color: var(--text) !important;
-}
-
-[data-testid="stTooltipContent"] p {
-    color: var(--text) !important;
-}
-
-/* Alerts */
-[data-testid="stAlertContainer"] {
-    background-color: var(--elevated) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-m) !important;
-}
-
-[data-testid="stAlertContentSuccess"],
-[data-testid="stAlertContentInfo"],
-[data-testid="stAlertContentWarning"],
-[data-testid="stAlertContentError"] {
-    color: var(--text) !important;
-}
-
-[data-testid="stAlert"] [data-testid="stMarkdownContainer"] {
-    color: var(--text) !important;
-}
-
-/* Captions */
-[data-testid="stCaptionContainer"] > p,
-.stMarkdown [data-testid="stCaptionContainer"] p,
-.stMarkdown [data-testid="stCaptionContainer"] > p {
-    color: var(--faint) !important;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
-    font-size: 0.6875rem !important;
-    letter-spacing: 0.04em !important;
-    text-transform: uppercase !important;
-}
-
-/* Code blocks and inline code in markdown */
-[data-testid="stCode"] {
-    background-color: var(--secondary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-m) !important;
-}
-
-[data-testid="stCode"] pre,
-[data-testid="stCode"] code,
-[data-testid="stCode"] .token {
-    background-color: transparent !important;
-    color: var(--text) !important;
-}
-
-.stMarkdown code:not([class*="language-"]) {
-    background-color: var(--row) !important;
-    color: var(--text) !important;
-    border-radius: var(--radius-s) !important;
-}
-
-/* Markdown content blocks */
-.stMarkdown table {
-    border-color: var(--border) !important;
-}
-
-.stMarkdown th {
-    background-color: var(--secondary) !important;
-    color: var(--text) !important;
-    border-color: var(--border) !important;
-}
-
-.stMarkdown td {
-    border-color: var(--border) !important;
-    color: var(--text) !important;
-}
-
-.stMarkdown blockquote {
-    border-left-color: var(--border-strong) !important;
-    color: var(--muted) !important;
-}
-
-.stMarkdown hr {
-    border-color: var(--border) !important;
-}
-
-.element-container .stMarkdown h4,
-.element-container .stMarkdown h5,
-.element-container .stMarkdown h6 {
-    font-family: var(--font-ui, 'Inter', sans-serif) !important;
-    font-weight: 600 !important;
-    color: var(--text) !important;
-}
-
-.stMarkdown li,
-.stMarkdown p {
-    color: var(--text) !important;
-}
-
-/* Checkbox + toggle (react-aria, Streamlit >= 1.60). Streamlit paints
-   the box and knob with its baked-in light-theme colors (white over
-   white in light mode); pin them to the theme tokens. The e15oan3xx
-   classes are the emotion targets Streamlit appends to these styled
-   elements; the data-baseweb rules above cover older installs. */
-[data-testid="stCheckbox"] {
-    color: var(--text) !important;
-}
-
-[data-testid="stCheckbox"] .e15oan335,
-[data-testid="stCheckbox"] .e15oan337 {
-    background-color: var(--secondary) !important;
-    transition: background-color 0.12s ease, border-color 0.12s ease !important;
-}
-
-[data-testid="stCheckbox"] .e15oan335 {
-    border-color: var(--border-strong) !important;
-}
-
-/* Streamlit only renders the check svg when the box is selected. */
-[data-testid="stCheckbox"] .e15oan335:has(> svg),
-[data-testid="stCheckbox"][aria-checked="true"] .e15oan337,
-[data-testid="stCheckbox"][data-selected="true"] .e15oan337 {
-    background-color: var(--accent) !important;
-    border-color: var(--accent) !important;
-}
-
-[data-testid="stCheckbox"] svg {
-    fill: none !important;
-    stroke: var(--on-accent) !important;
-}
-
-[data-testid="stCheckbox"] .e15oan338 {
-    background-color: var(--text) !important;
+    .app-title {
+        font-size: 23px !important;
+    }
 }

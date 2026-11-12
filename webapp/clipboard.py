@@ -14,51 +14,51 @@ def _theme_vars(theme: str) -> str:
     if theme == "dark":
         return """
         :root {
-            --copy-bg: #141414;
-            --copy-border: #242728;
-            --copy-text: #f4f4f6;
-            --copy-hover-bg: #1a1a1a;
-            --copy-success-bg: #59d499;
-            --copy-success-text: #101010;
+            --copy-bg: transparent;
+            --copy-border: #322e29;
+            --copy-text: #f3efe9;
+            --copy-hover-bg: #1c1a17;
+            --copy-success-bg: #7fc6a8;
+            --copy-success-text: #141312;
             --copy-danger-bg: #ff6363;
-            --copy-danger-text: #101010;
+            --copy-danger-text: #141312;
         }
         """
     if theme == "light":
         return """
         :root {
-            --copy-bg: #f7f7f7;
-            --copy-border: #e4e4e4;
-            --copy-text: #1a1a1a;
-            --copy-hover-bg: #efefef;
-            --copy-success-bg: #006b4f;
+            --copy-bg: transparent;
+            --copy-border: #e0dbd3;
+            --copy-text: #1c1a17;
+            --copy-hover-bg: #eeeae4;
+            --copy-success-bg: #2f6f57;
             --copy-success-text: #ffffff;
-            --copy-danger-bg: #b12424;
+            --copy-danger-bg: #9d332b;
             --copy-danger-text: #ffffff;
         }
         """
     return """
     :root {
-        --copy-bg: #f7f7f7;
-        --copy-border: #e4e4e4;
-        --copy-text: #1a1a1a;
-        --copy-hover-bg: #efefef;
-        --copy-success-bg: #006b4f;
+        --copy-bg: transparent;
+        --copy-border: #e0dbd3;
+        --copy-text: #1c1a17;
+        --copy-hover-bg: #eeeae4;
+        --copy-success-bg: #2f6f57;
         --copy-success-text: #ffffff;
-        --copy-danger-bg: #b12424;
+        --copy-danger-bg: #9d332b;
         --copy-danger-text: #ffffff;
     }
 
     @media (prefers-color-scheme: dark) {
         :root {
-            --copy-bg: #141414;
-            --copy-border: #242728;
-            --copy-text: #f4f4f6;
-            --copy-hover-bg: #1a1a1a;
-            --copy-success-bg: #59d499;
-            --copy-success-text: #101010;
+            --copy-bg: transparent;
+            --copy-border: #322e29;
+            --copy-text: #f3efe9;
+            --copy-hover-bg: #1c1a17;
+            --copy-success-bg: #7fc6a8;
+            --copy-success-text: #141312;
             --copy-danger-bg: #ff6363;
-            --copy-danger-text: #101010;
+            --copy-danger-text: #141312;
         }
     }
     """
@@ -68,23 +68,23 @@ def _button_style(button_id: str) -> str:
     """Shared CSS for the clipboard buttons injected with ``st.html``."""
     return f'''#{button_id} {{
         width: 100%;
-        min-height: 2.5rem;
-        padding: 0.55rem 0.65rem;
+        min-height: 44px;
+        padding: 0 16px;
         background: var(--copy-bg);
         color: var(--copy-text);
         border: 1px solid var(--copy-border);
-        border-radius: 6px;
+        border-radius: 8px;
         box-sizing: border-box;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         text-align: center;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
         font-weight: 500;
-        font-size: 0.6875rem;
-        letter-spacing: 0.02em;
-        line-height: 1.5;
-        text-transform: uppercase;
+        font-size: 13px;
+        letter-spacing: 0;
+        line-height: 1.2;
+        text-transform: none;
         cursor: pointer;
         transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
     }}
@@ -96,7 +96,7 @@ def _button_style(button_id: str) -> str:
 
 
 def copy_to_clipboard(text: str, theme: str = "system"):
-    """Render a "COPY TO CLIPBOARD" button wired to the given text."""
+    """Render a "Copy to clipboard" button wired to the given text."""
     json_text = json.dumps(text)
     theme_vars = _theme_vars(theme)
 
@@ -114,7 +114,7 @@ def copy_to_clipboard(text: str, theme: str = "system"):
             opacity: 0;
             pointer-events: none;
         "></textarea>
-        <button id="copyBtn">COPY TO CLIPBOARD</button>
+        <button id="copyBtn">Copy to clipboard</button>
     </div>
     <script>
     (() => {{
@@ -157,24 +157,24 @@ def copy_to_clipboard(text: str, theme: str = "system"):
             try {{
                 if (window.isSecureContext && navigator.clipboard?.writeText) {{
                     await navigator.clipboard.writeText(text);
-                    setButtonState("COPIED", successBackground, successColor);
+                    setButtonState("Copied", successBackground, successColor);
                     return;
                 }}
 
                 if (fallbackCopy()) {{
-                    setButtonState("COPIED", successBackground, successColor);
+                    setButtonState("Copied", successBackground, successColor);
                     return;
                 }}
 
-                setButtonState("USE DOWNLOAD", dangerBackground, dangerColor);
+                setButtonState("Use download", dangerBackground, dangerColor);
             }} catch (error) {{
                 if (fallbackCopy()) {{
-                    setButtonState("COPIED", successBackground, successColor);
+                    setButtonState("Copied", successBackground, successColor);
                     return;
                 }}
 
                 setButtonState(
-                    window.isSecureContext ? "FAILED" : "USE DOWNLOAD",
+                    window.isSecureContext ? "Failed" : "Use download",
                     dangerBackground,
                     dangerColor,
                 );
@@ -191,7 +191,7 @@ def paste_from_clipboard_button(
     theme: str = "system",
     notice: str = "",
 ):
-    """Render a "PASTE FROM CLIPBOARD" button that fills a hidden input.
+    """Render a "Paste from clipboard" button that fills a hidden input.
 
     Browsers only expose the clipboard to page scripts, so this is raw
     HTML/JS (``st.html`` is not iframed). The click reads the clipboard,
@@ -219,9 +219,9 @@ def paste_from_clipboard_button(
     #pasteStatus {{
         display: none;
         margin-top: 0.4rem;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.6875rem;
-        letter-spacing: 0.02em;
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
+        font-size: 12px;
+        letter-spacing: 0;
         line-height: 1.5;
     }}
 
@@ -238,7 +238,7 @@ def paste_from_clipboard_button(
     }}
     </style>
     <div style="width: 100%;">
-        <button id="pasteBtn">PASTE FROM CLIPBOARD</button>
+        <button id="pasteBtn">Paste from clipboard</button>
         <div id="pasteStatus" role="status" aria-live="polite"></div>
     </div>
     <script>
@@ -267,7 +267,7 @@ def paste_from_clipboard_button(
         }};
 
         const fail = () => {{
-            setButtonState("FAILED - USE CTRL+V", dangerBackground, dangerColor);
+            setButtonState("Failed, use Ctrl+V", dangerBackground, dangerColor);
             setStatus("Could not read the clipboard. Press Ctrl+V instead.", "bad");
         }};
 
@@ -303,7 +303,7 @@ def paste_from_clipboard_button(
             try {{
                 const text = await navigator.clipboard.readText();
                 if (!text.trim()) {{
-                    setButtonState("CLIPBOARD EMPTY", dangerBackground, dangerColor);
+                    setButtonState("Clipboard is empty", dangerBackground, dangerColor);
                     setStatus("The clipboard is empty - copy something first.", "bad");
                     return;
                 }}
@@ -311,7 +311,7 @@ def paste_from_clipboard_button(
                     fail();
                     return;
                 }}
-                setButtonState("PASTED", successBackground, successColor);
+                setButtonState("Pasted", successBackground, successColor);
                 setStatus(
                     `\u2713 Pasted ${{text.length.toLocaleString()}} characters`,
                     "ok",

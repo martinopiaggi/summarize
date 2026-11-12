@@ -38,6 +38,9 @@ ENV/
 .pytest_cache/
 pytest-cache-files-*/
 
+# Agent verification screenshots (local before/after proof, not shipped)
+.agent/verify/
+
 # Project specific
 *.mp3
 *.m4a

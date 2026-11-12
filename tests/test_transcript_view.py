@@ -37,14 +37,14 @@ def _result_app():
 def test_only_run_buttons_remain_for_url_and_file():
     app = AppTest.from_string(SCRIPT).run()
     assert not app.exception
-    assert [button.label for button in app.button].count("RUN") == 2
+    assert [button.label for button in app.button].count("Run") == 2
     assert "JUST TRANSCRIPT" not in [button.label for button in app.button]
 
 
 def test_tabs_show_output_and_complete_cached_transcript():
     app = _result_app().run()
     assert not app.exception
-    assert [tab.label for tab in app.tabs] == ["OUTPUT", "TRANSCRIPT"]
+    assert [tab.label for tab in app.tabs] == ["Summary", "Transcript"]
     assert not any(getattr(s, "value", "") == "COMPLETE" for s in app.success)
     assert any(area.value == "00:00:00 cached transcript" for area in app.text_area)
 

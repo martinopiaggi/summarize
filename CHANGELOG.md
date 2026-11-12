@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Concise Tweets` summary style: turns a transcript into one tweet or a short series, in the compressed voice of Naval, levelsio, and other short-form X accounts
 
+### Changed
+
+- Streamlit interface: sentence-case labels and buttons, a text-only theme switch (the emoji rendered as missing glyphs), quiet outlined secondary actions, coral reserved for Run and active states, and the provider name, chunk size and parallel calls collapsed into one monospace slate instead of three uppercase captions
+
+### Fixed
+
+- Dark mode: checked sidebar boxes (e.g. "Visual mode") fill with the accent color again, so the dark check mark is visible instead of black on the dark panel
+- Dark mode: the help (?) icons inside checkbox labels (e.g. next to "Visual mode") no longer disappear; the check-mark rule now only targets the box so the icons keep the muted text color
+
 ## [0.4.0] - 2026-09-27
 
 ### Added
