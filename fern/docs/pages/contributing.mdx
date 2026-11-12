@@ -66,6 +66,8 @@ All user-facing surfaces (CLI, API, Streamlit, Docker) should call `summarizer.c
 
 Config flows through `summarizer.config_file.merge_configs()` and `summarizer.api_utils.build_runtime_config()`.
 
+External transcript services plug in as sidecars: one module in `summarizer/sidecars/` that satisfies the `Sidecar` protocol. The pipeline already handles order, fallback, and caching. See [Transcript Sidecar](../integrations/transcript-sidecar).
+
 ## Pull Requests
 
 1. Fork and branch from `main`

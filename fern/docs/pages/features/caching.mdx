@@ -45,6 +45,8 @@ The key is a **SHA-256 hash** of these parameters joined together:
 
 Changing **any** of these values produces a different key and triggers a fresh transcription. Changing the summary style, provider, output language, or JEV include/exclude rules does **not** affect the key, so those re-runs are instant.
 
+The [transcript sidecar](../integrations/transcript-sidecar) settings are not part of the key either. A cached transcript is reused whichever path produced it, so a video fetched through the sidecar is not fetched, or billed, again.
+
 ## In-Memory Cache (Default)
 
 By default, transcripts are cached in **process memory** only. Restarting the CLI or Streamlit server clears the in-memory cache.

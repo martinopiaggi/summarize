@@ -76,6 +76,10 @@ A successful build creates a `dist/` folder and confirms there are no TypeScript
 3. Optionally set:
    - **Provider** — a provider name from your `summarizer.yaml`
    - **Prompt Type** — a summary style such as `Summarization` or `Distill Wisdom`
+   - **Transcript Sidecar** — **Server default**, **None**, or **TranscriptFetch** (see [Transcript Sidecar](transcript-sidecar))
+   - **Sidecar Order** — **Server default**, **Fallback** (when local transcription fails), or **First** (before local transcription)
+
+**Server default** leaves the choice to the `summarizer.yaml` of the machine running the API. The sidecar runs on that machine too, so `TRANSCRIPTFETCH_API_KEY` belongs in its `.env`, not on your laptop.
 
 ## Usage
 

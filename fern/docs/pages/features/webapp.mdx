@@ -16,7 +16,9 @@ python -m streamlit run app.py
 
 Text files bypass audio processing entirely and go straight to summarization.
 
-After running a source, switch between **OUTPUT** and **TRANSCRIPT**. The transcript tab shows the complete cached transcript when available (not the passages selected by JEV). **DOWNLOAD**, **COPY TO CLIPBOARD**, and **PUBLISH AND SHARE WITH TINYPASTE** use whichever tab is selected. If no transcript is available for a result, the transcript actions are hidden. Summaries restored from disk do not include their transcripts.
+Paste a link in the **URL** tab, or drop a file in the **File** tab, then press **Run**. The File tab also has **Paste from clipboard**, which summarizes pasted text as a `.txt` source, and **Clear**, which drops the current file.
+
+After running a source, switch between **Summary** and **Transcript**. The transcript tab shows the complete cached transcript when available (not the passages selected by JEV). **Download**, **Copy to clipboard**, and **Publish** (share on tinypaste) use whichever tab is selected. If no transcript is available for a result, the transcript actions are hidden. Summaries restored from disk do not include their transcripts.
 
 ## Job Lifecycle
 
@@ -36,14 +38,26 @@ stateDiagram-v2
 
 ## Sidebar Controls
 
-- **Provider** — Choose from configured providers in `summarizer.yaml`
-- **Prompt type** — Select summary style from `prompts.json`
-- **Chunk size** — Characters per text chunk (minimum 1000)
-- **Playback speed** — Speed for audio preprocessing or visual-mode video (reduces transcription cost, may reduce accuracy)
-- **Language** — Auto, English, Spanish, French, German, Italian, Portuguese, Chinese, Japanese, Korean
-- **Transcription** — Cloud Whisper or Local Whisper (Whisper-based)
-- **Visual mode** — Toggle video-direct mode
+- **Theme** — **Auto** (follows your system), **Light**, or **Dark**
+- **Provider** — Choose from configured providers in `summarizer.yaml`. The line under it shows the provider's model, chunk size, and parallel calls, all set in `summarizer.yaml`.
+- **Style** — Summary style from `prompts.json`
+- **Language** — Transcript language: Automatic, English, Spanish, French, German, Italian, Portuguese, Chinese, Japanese, Korean
+- **Output language** — Language of the generated summary; `auto` leaves the prompt unchanged
 - **Use JEV prefiltering** — Reveals the scoring provider and **I want to include only…** / **I want to exclude…** fields. See [JEV Prefiltering](jev-prefiltering).
+
+**Settings** holds the less common options:
+
+- **Verbose output** — Detailed progress, including fallback attempts
+- **Force audio download** — Skip captions and transcribe the audio instead
+- **Transcription** — Cloud Whisper or Local Whisper
+- **Whisper model** — Only used with Local Whisper
+- **Speed** — Playback speed for audio preprocessing or visual-mode video (reduces transcription cost, may reduce accuracy)
+- **Visual mode** — Toggle video-direct mode
+- **Transcript sidecar** and **Sidecar order** — An external service that fetches the transcript of a video URL, used as a fallback or first. **Sidecar order** is disabled while the sidecar is **None**. See [Transcript Sidecar](../integrations/transcript-sidecar).
+
+Unlike the other controls, the two sidecar choices are saved to `summarizer.yaml` as soon as you change them. They survive reconnects and become the default for the CLI and HTTP API too. Without a `summarizer.yaml`, they last for the session only.
+
+**Edit config** opens `summarizer.yaml` in the sidebar; **Save** applies it to all defaults above.
 
 ## History
 
@@ -72,8 +86,10 @@ When a summary contains ` ```mermaid ` blocks, the webapp renders them as intera
 
 ## Clipboard
 
-Copy the selected output or full cached transcript to the system clipboard with a single button. Works in both secure and non-secure browser contexts.
+**Copy to clipboard** copies the selected summary or the full cached transcript with a single click, in both secure and non-secure browser contexts.
+
+**Paste from clipboard** reads text into the File tab. Browsers only allow that in a secure context (HTTPS or `localhost`); elsewhere, the button asks you to press Ctrl+V in the paste field instead.
 
 ## Themes
 
-Switch between **Dark**, **Light**, and **System** modes. The theme applies to the entire UI including Mermaid diagrams.
+Switch between **Auto** (follows your system), **Light**, and **Dark** at the top of the sidebar. The theme applies to the entire UI including Mermaid diagrams.

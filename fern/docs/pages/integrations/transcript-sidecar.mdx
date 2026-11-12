@@ -2,7 +2,9 @@
 
 A transcript sidecar is an external service that turns a video URL into a transcript. Summarize uses it alongside its local pipeline (captions, yt-dlp, Cobalt, Whisper). It helps when that pipeline is blocked, for example YouTube refusing requests from cloud servers.
 
-The sidecar is off by default. It only receives public video URLs (`YouTube Video` and `Video URL` sources). Local files, text files, Google Drive and Dropbox links always stay on your machine.
+The sidecar is off by default. When on, it only receives URLs of `YouTube Video` and `Video URL` sources. Local files, text files, Google Drive and Dropbox links always stay on your machine. Any other `http(s)` video link can be sent as-is, including signed or intranet media URLs, so turn the sidecar off when summarizing links you would not share with a third party.
+
+Not to be confused with [Cobalt](cobalt), the download fallback that runs next to the app as a Docker sidecar.
 
 ## TranscriptFetch
 
@@ -29,7 +31,7 @@ The sidecar is off by default. It only receives public video URLs (`YouTube Vide
 | `fallback` (default) | Run the local pipeline. Ask the sidecar only if it fails. |
 | `first` | Ask the sidecar first. Run the local pipeline only if it fails. |
 
-If both fail, the error lists both reasons. Sidecar transcripts are cached like any other transcript, so re-summarizing the same video does not call the sidecar again.
+If both fail, the error lists both reasons; see [Transcript Sidecar Errors](../usage/errors-and-troubleshooting#transcript-sidecar-errors). Sidecar transcripts are cached like any other transcript, so re-summarizing the same video does not call the sidecar again.
 
 ## Every interface
 
@@ -45,7 +47,7 @@ The CLI, API, and Raycast settings apply to one run and fall back to `summarizer
 
 ## Adding a sidecar
 
-A sidecar is one module in `summarizer/sidecars/`:
+A sidecar is one module in `summarizer/sidecars/` that satisfies the `Sidecar` protocol defined in `summarizer/sidecars/__init__.py`:
 
 ```python
 # summarizer/sidecars/example.py
@@ -58,7 +60,7 @@ def fetch(url, config):
 Register it in `summarizer/sidecars/__init__.py`:
 
 ```python
-SIDECARS = {"transcriptfetch": transcriptfetch, "example": example}
+SIDECARS: dict[str, Sidecar] = {"transcriptfetch": transcriptfetch, "example": example}
 ```
 
 It then becomes a valid `sidecar` value in the YAML, CLI, HTTP API, and Streamlit. To offer it in Raycast, add it to the `sidecar` dropdown in `extensions/raycast-summarize/package.json`. The pipeline handles order, fallback, timestamps, and caching.

@@ -66,6 +66,19 @@ YouTube captions are plain text and cannot be sped up. When `speed` is not `1.0`
   The legacy `audio-speed` / `audio_speed` / `--audio-speed` names are no longer supported. Use `speed` in YAML, `--speed` on the CLI, or `speed` in API requests.
 </Callout>
 
+## When Local Transcription Fails
+
+Captions, downloads, and Whisper all run from your machine, and some hosts get blocked, especially cloud servers on YouTube. Two ways around it:
+
+- Route requests through a [proxy](../integrations/proxy).
+- Enable a [transcript sidecar](../integrations/transcript-sidecar): an external service such as TranscriptFetch returns the transcript instead, either as a fallback when the local pipeline fails or before it.
+
+```bash
+python -m summarizer --source "URL" --sidecar transcriptfetch
+```
+
+Sidecar transcripts are timestamped and cached like local ones.
+
 ## Docker Note
 
 The Docker image does **not** include Local Whisper or GPU-oriented PyTorch. It targets lightweight VPS deployments where GPUs are usually unavailable. In Docker, Cloud Whisper is the practical default. Use Local Whisper on the host machine if you have the hardware.

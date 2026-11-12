@@ -184,7 +184,7 @@ For comprehensive analysis, chain multiple styles on the same video:
 
 - **Windows + `--no-save`**: Do NOT use `--no-save` on Windows — Unicode output crashes stdout. Always let the tool save to file, then read it.
 - **Social media**: TikTok, Instagram, Twitter/X, Reddit, and Facebook are handled by **yt-dlp** by default. Cobalt is only used as a fallback if yt-dlp fails or does not support the URL.
-- **Transcript sidecar**: Optional and off by default. `--sidecar transcriptfetch` needs `TRANSCRIPTFETCH_API_KEY` in `.env`. Only public video URLs are sent to it; local files and Drive/Dropbox links always stay on your machine.
+- **Transcript sidecar**: Optional and off by default. `--sidecar transcriptfetch` needs `TRANSCRIPTFETCH_API_KEY` in `.env`. Video URLs are sent to it as-is, including signed or intranet links; local files and Drive/Dropbox links always stay on your machine.
 - **Transcription fallback**: If YouTube captions are unavailable, the tool tries the sidecar when enabled, then falls back to audio download + Whisper transcription.
 - **Cloud Whisper**: Requires a Groq API key (free tier available).
 - Use `--verbose` for detailed progress and debugging.

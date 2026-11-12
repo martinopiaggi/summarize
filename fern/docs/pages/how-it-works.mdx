@@ -11,6 +11,7 @@ flowchart TD
   core --> cfg[(yaml, .env, prompts)]
   core --> dl[downloaders] --> src[sources]
   core --> tr[transcription and cache] --> prov[LLM, Whisper, Cobalt]
+  tr -.-> side[transcript sidecar, optional]
   core --> jev[chunking and JEV] --> prov
   core --> vis[visual mode] --> prov
   core --> out[summaries]
@@ -22,7 +23,7 @@ The default transcript path runs in two stages.
 
 ### 1. Acquire the transcript
 
-Cache first, then the downloader fallback chain, then captions or Whisper.
+Cache first, then the local pipeline: the downloader fallback chain, then captions or Whisper. An optional [transcript sidecar](../integrations/transcript-sidecar) can step in when the local pipeline fails.
 
 ```mermaid
 sequenceDiagram
@@ -32,6 +33,7 @@ sequenceDiagram
   participant Handlers as handlers
   participant DM as DownloadManager
   participant Trans as transcription
+  participant Side as transcript sidecar
   Caller->>Core: main(config)
   Core->>Cache: get_cached_transcript()
   alt hit
@@ -42,11 +44,17 @@ sequenceDiagram
     DM-->>Handlers: temp path
     Handlers->>Trans: captions or Whisper
     Trans-->>Handlers: transcript
+    opt sidecar on and local pipeline failed
+      Handlers->>Side: fetch(url)
+      Side-->>Handlers: timestamped segments
+    end
     Handlers-->>Core: transcript
     Core->>Cache: put_cached_transcript()
   end
   Core-->>Caller: transcript
 ```
+
+With `sidecar-order: first`, the sidecar is asked before the local pipeline, which then runs only if the sidecar fails. Either way the result is cached the same way.
 
 ### 2. Chunk, filter, summarize
 
@@ -89,6 +97,7 @@ If a downloader does not support a URL or fails, the next one is tried automatic
 | `summarizer.yaml` | Provider settings and defaults. Generate with `python -m summarizer --init-config`. |
 | `.env` | API keys matched by URL keyword or conventional env var names |
 | `summarizer/prompts.json` | Summary style templates |
+| `summarizer/sidecars/` | Optional transcript sidecars, one module each |
 
 ## Processing Paths
 
@@ -100,6 +109,8 @@ See [Visual Mode](../features/visual-mode) for provider setup and [Transcription
 ## Notes
 
 > **Tip:** If YouTube captions are unavailable, the tool automatically falls back to audio download + Whisper transcription.
+>
+> **Tip:** If the whole local pipeline is blocked, for example YouTube refusing a cloud server, enable a [transcript sidecar](../integrations/transcript-sidecar).
 >
 > **Tip:** Transcripts are cached in memory by default. Re-summarizing the same source with a different style, provider, or JEV selection skips transcription entirely. Disable with `cache-transcript: false` in `summarizer.yaml`.
 

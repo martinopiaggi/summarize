@@ -69,6 +69,22 @@ See [Installation](../getting-started/installation) for the full install method 
 | `VideoValidationError` | Video exceeds provider duration/size/format limits |
 | `AudioProcessingError` | ffmpeg or audio conversion failed |
 
+## Transcript Sidecar Errors
+
+With `sidecar-order: fallback`, the sidecar only runs after the local pipeline fails, so both reasons are reported together: `Local transcription: … | TranscriptFetch: …`. With `first`, a sidecar failure is shown only with `--verbose` (`[!] TranscriptFetch failed: …`) and the local pipeline takes over.
+
+| Message | Fix |
+|---------|-----|
+| `TRANSCRIPTFETCH_API_KEY is not set in .env` | Add the key to the `.env` of the machine that runs the summarizer. For Raycast and the HTTP API, that is the server. |
+| `Unknown sidecar '…'; use one of: none, transcriptfetch` | Fix `sidecar` in `summarizer.yaml`. The CLI and HTTP API reject invalid values before running. |
+| `Unknown sidecar order '…'; use one of: fallback, first` | Fix `sidecar-order` in `summarizer.yaml` |
+| `TranscriptFetch <code>: <message>` | The service refused the request, for example a private video or no credits left. The code and message come from TranscriptFetch. |
+| `TranscriptFetch is still transcribing after 15 minutes` | Videos without captions are transcribed by a background job. Run the same source again later to collect the result. |
+| `TranscriptFetch is unreachable: …` | Network or DNS problem between your machine and transcriptfetch.com |
+| `TranscriptFetch returned HTTP …` or `returned no transcript segments` | Unexpected response from the service. Retry later. |
+
+See [Transcript Sidecar](../integrations/transcript-sidecar) for setup.
+
 ## Configuration Errors
 
 Requests that include the removed `audio_speed` field return HTTP `422` on the API. YAML configs with `audio-speed` or `audio_speed` raise a `ConfigurationError` at merge time. Use `speed` everywhere instead.
@@ -79,6 +95,7 @@ Requests that include the removed `audio_speed` field return HTTP `422` on the A
 |----------|-----|
 | Instagram / TikTok / Twitter | Set per-platform cookie files in `.env`, or run Cobalt as a fallback |
 | YouTube (no captions) | Tool falls back to audio download + Whisper automatically |
+| YouTube (blocks your server) | Use a [proxy](../integrations/proxy) or a [transcript sidecar](../integrations/transcript-sidecar) |
 | Rate limits | Reduce `parallel-calls` in `summarizer.yaml` or retry later |
 
 See [Cobalt](../integrations/cobalt) for downloader fallback setup and [Proxy](../integrations/proxy) for HTTP proxy configuration.
