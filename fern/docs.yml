@@ -111,6 +111,8 @@ navigation:
         path: ./docs/pages/integrations/raycast.mdx
       - page: Share a Summary
         path: ./docs/pages/integrations/tinypaste.mdx
+      - page: Transcript Sidecar
+        path: ./docs/pages/integrations/transcript-sidecar.mdx
       - page: Cobalt
         path: ./docs/pages/integrations/cobalt.mdx
       - page: Proxy

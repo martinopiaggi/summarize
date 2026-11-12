@@ -155,6 +155,8 @@ def build_runtime_config(
         "parallel_api_calls": merged.get("parallel_api_calls", 30),
         "max_output_tokens": merged.get("max_output_tokens", 4096),
         "cobalt_base_url": merged.get("cobalt_base_url", "http://localhost:9000"),
+        "sidecar": merged.get("sidecar"),
+        "sidecar_order": merged.get("sidecar_order"),
         "base_url": merged.get("base_url"),
         "model": merged.get("model"),
         "verbose": verbose,

@@ -8,6 +8,7 @@ Public surface:
 """
 
 import os
+import re
 from pathlib import Path
 
 import yaml
@@ -119,3 +120,47 @@ def save_config_raw(content: str):
         CONFIG_PATH.write_text(content, encoding="utf-8")
     except OSError as e:
         raise OSError(f"Cannot save config {CONFIG_PATH}: {e}")
+
+
+def save_defaults(updates):
+    """Set simple keys in the ``defaults:`` block of summarizer.yaml, keeping its comments.
+
+    Deliberate line surgery instead of a YAML round-trip so user comments
+    survive. It only handles flat scalar values inside ``defaults:`` (all it
+    is used for); the result is re-parsed and verified before anything is
+    written, so a bad match raises instead of corrupting the file.
+
+    Returns False when there is no config file to update.
+    """
+    # Without a config file the app runs on built-in providers; writing one would hide them.
+    if not CONFIG_PATH.exists():
+        return False
+
+    lines = load_config_raw().splitlines()
+    start = next((i for i, line in enumerate(lines) if line.split("#")[0].rstrip() == "defaults:"), None)
+    if start is None:
+        lines.append("defaults:")
+        start = len(lines) - 1
+    end = start + 1  # just after the last indented line of the block
+    for i in range(start + 1, len(lines)):
+        if lines[i][:1].isspace() and lines[i].strip():
+            end = i + 1
+        elif lines[i].strip() and not lines[i].startswith("#"):
+            break
+
+    for key, value in updates.items():
+        pattern = re.compile(rf"^(\s+{key.replace('_', '[-_]')}\s*:\s*)[^#]*?(\s+#.*)?$")
+        row = next((i for i in range(start + 1, end) if pattern.match(lines[i])), None)
+        if row is None:
+            lines.insert(end, f"  {key.replace('_', '-')}: {value}")
+            end += 1
+        else:
+            match = pattern.match(lines[row])
+            lines[row] = f"{match.group(1)}{value}{match.group(2) or ''}"
+
+    content = "\n".join(lines) + "\n"
+    saved = normalize_config_section((yaml.safe_load(content) or {}).get("defaults"))
+    if any(saved.get(key) != value for key, value in updates.items()):
+        raise ValueError(f"Could not update the defaults block in {CONFIG_PATH}")
+    save_config_raw(content)
+    return True

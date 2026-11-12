@@ -14,6 +14,8 @@ interface Preferences {
   apiEndpoint: string;
   provider?: string;
   promptType?: string;
+  sidecar?: string;
+  sidecarOrder?: string;
 }
 
 interface SummarizeResponse {
@@ -82,6 +84,12 @@ export default function SummarizeClipboardCommand() {
         }
         if (preferences.promptType) {
           body.prompt_type = preferences.promptType;
+        }
+        if (preferences.sidecar && preferences.sidecar !== "default") {
+          body.sidecar = preferences.sidecar;
+        }
+        if (preferences.sidecarOrder && preferences.sidecarOrder !== "default") {
+          body.sidecar_order = preferences.sidecarOrder;
         }
 
         const response = await fetch(`${endpoint}/summarize`, {

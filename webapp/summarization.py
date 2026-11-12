@@ -39,6 +39,8 @@ def build_runtime_config(
     jev_provider=None,
     jev_include=None,
     jev_exclude=None,
+    sidecar=None,
+    sidecar_order=None,
 ) -> dict:
     """Build the runtime config shared by summary and transcript-only actions."""
     providers, _, defaults = load_config()
@@ -81,6 +83,8 @@ def build_runtime_config(
         "parallel_api_calls": parallel_api_calls,
         "max_output_tokens": max_output_tokens,
         "cobalt_base_url": get_cobalt_url(),
+        "sidecar": defaults.get("sidecar") if sidecar is None else sidecar,
+        "sidecar_order": defaults.get("sidecar_order") if sidecar_order is None else sidecar_order,
         "use_proxy": bool(defaults.get("use_proxy", False)),
         "base_url": provider_config.get("base_url"),
         "model": provider_config.get("model"),
@@ -155,6 +159,8 @@ def run_summarization(
     jev_provider=None,
     jev_include=None,
     jev_exclude=None,
+    sidecar=None,
+    sidecar_order=None,
 ) -> str:
     """Run the summarizer pipeline and return the generated markdown."""
     from summarizer.core import main
@@ -164,7 +170,7 @@ def run_summarization(
         source, provider_config, prompt_type, chunk_size, force_download,
         language, output_language, speed, source_type, transcription_method,
         whisper_model, verbose, visual, use_jev_prefiltering, jev_provider,
-        jev_include, jev_exclude,
+        jev_include, jev_exclude, sidecar, sidecar_order,
     )
 
     if status_container is not None:

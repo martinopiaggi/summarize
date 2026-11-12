@@ -1,0 +1,64 @@
+# Transcript Sidecar
+
+A transcript sidecar is an external service that turns a video URL into a transcript. Summarize uses it alongside its local pipeline (captions, yt-dlp, Cobalt, Whisper). It helps when that pipeline is blocked, for example YouTube refusing requests from cloud servers.
+
+The sidecar is off by default. It only receives public video URLs (`YouTube Video` and `Video URL` sources). Local files, text files, Google Drive and Dropbox links always stay on your machine.
+
+## TranscriptFetch
+
+[TranscriptFetch](https://transcriptfetch.com) returns transcripts for YouTube, TikTok, Instagram, and direct media URLs. Videos without captions are transcribed with AI. See [pricing](https://transcriptfetch.com/pricing).
+
+1. Create an API key at [transcriptfetch.com](https://transcriptfetch.com) and add it to `.env`:
+
+   ```ini
+   TRANSCRIPTFETCH_API_KEY = tf_live_YOUR_KEY
+   ```
+
+2. Turn it on in `summarizer.yaml`:
+
+   ```yaml
+   defaults:
+     sidecar: transcriptfetch   # or none
+     sidecar-order: fallback    # or first
+   ```
+
+## Order
+
+| `sidecar-order` | Behavior |
+|-----------------|----------|
+| `fallback` (default) | Run the local pipeline. Ask the sidecar only if it fails. |
+| `first` | Ask the sidecar first. Run the local pipeline only if it fails. |
+
+If both fail, the error lists both reasons. Sidecar transcripts are cached like any other transcript, so re-summarizing the same video does not call the sidecar again.
+
+## Every interface
+
+| Interface | Setting |
+|-----------|---------|
+| `summarizer.yaml` | `sidecar`, `sidecar-order` under `defaults` |
+| CLI | `--sidecar transcriptfetch --sidecar-order first` |
+| HTTP API | `"sidecar": "transcriptfetch", "sidecar_order": "first"` |
+| Streamlit | Settings → **Transcript sidecar** and **Sidecar order**, saved to `summarizer.yaml` |
+| Raycast | Extension preferences → **Transcript Sidecar** and **Sidecar Order** |
+
+The CLI, API, and Raycast settings apply to one run and fall back to `summarizer.yaml`.
+
+## Adding a sidecar
+
+A sidecar is one module in `summarizer/sidecars/`:
+
+```python
+# summarizer/sidecars/example.py
+LABEL = "Example"
+
+def fetch(url, config):
+    """Return [(start_seconds, text), ...] or raise a SummarizerError."""
+```
+
+Register it in `summarizer/sidecars/__init__.py`:
+
+```python
+SIDECARS = {"transcriptfetch": transcriptfetch, "example": example}
+```
+
+It then becomes a valid `sidecar` value in the YAML, CLI, HTTP API, and Streamlit. To offer it in Raycast, add it to the `sidecar` dropdown in `extensions/raycast-summarize/package.json`. The pipeline handles order, fallback, timestamps, and caching.

@@ -83,6 +83,8 @@ defaults:
   keep-history: false
   cache-transcript: true
   cache-transcript-persist: false
+  sidecar: none
+  sidecar-order: fallback
   use-jev-prefiltering: false
   jev-provider: openrouter
   jev-include: ""
@@ -101,6 +103,7 @@ defaults:
     - `cache-transcript: false` disables the transcript cache entirely.
     - `cache-transcript-persist: true` stores transcripts on disk under `{output-dir}/.cache/transcripts/` (survives restarts).
     - `keep-history: true` persists GUI summaries to disk for the Streamlit sidebar.
+    - `sidecar: transcriptfetch` fetches transcripts of video URLs from an external service, either as a `fallback` or `first`. See [Transcript Sidecar](integrations/transcript-sidecar).
     - `use-jev-prefiltering: true` selects transcript passages before summarization. See [JEV Prefiltering](features/jev-prefiltering).
     - `visual-input-mode: url` on a provider sends YouTube URLs directly to the model without downloading (see [Visual Mode](features/visual-mode)).
     - Docker: use `summarizer.docker.yaml` or set `SUMMARIZER_KEEP_HISTORY` / `SUMMARIZER_CACHE_PERSIST` when a YAML key is omitted.
@@ -125,6 +128,9 @@ openrouter = YOUR_OPENROUTER_KEY
 perplexity = YOUR_PERPLEXITY_KEY
 hyperbolic = YOUR_HYPERBOLIC_KEY
 NVIDIA_API_KEY = YOUR_NVIDIA_KEY
+
+# Optional: TranscriptFetch transcript sidecar
+TRANSCRIPTFETCH_API_KEY = tf_live_YOUR_KEY
 
 # Optional: HTTP proxy
 PROXY_URL = http://username:password@proxy.example.com:8080

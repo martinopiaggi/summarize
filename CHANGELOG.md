@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `Concise Tweets` summary style: turns a transcript into one tweet or a short series, in the compressed voice of Naval, levelsio, and other short-form X accounts
+- Optional transcript sidecar for video URLs, with [TranscriptFetch](https://transcriptfetch.com) built in: `sidecar` and `sidecar-order` (`fallback` or `first`) in `summarizer.yaml`, `--sidecar` and `--sidecar-order` on the CLI, the same fields in the HTTP API, Streamlit settings that are saved to `summarizer.yaml`, and Raycast preferences. New sidecars are one module in `summarizer/sidecars/`. See [Transcript sidecar](https://summarize.martino.im/integrations/transcript-sidecar)
 
 ### Changed
 

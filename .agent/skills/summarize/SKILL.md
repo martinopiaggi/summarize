@@ -72,7 +72,9 @@ python -m summarizer [OPTIONS]
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--type` | `YouTube Video`, `Video URL`, `Local File`, `Google Drive Video Link`, `Dropbox Video Link` | `YouTube Video` |
+| `--type` | `YouTube Video`, `Video URL`, `Local File`, `Google Drive Video Link`, `Dropbox Video Link`, `TXT` | `YouTube Video` |
+| `--sidecar` | Transcript sidecar for video URLs: `none` or `transcriptfetch` | From YAML (`none`) |
+| `--sidecar-order` | `fallback` (after local transcription fails) or `first` (before it) | From YAML (`fallback`) |
 | `--force-download` | Skip YouTube captions, download audio instead | `False` |
 | `--transcription` | `Cloud Whisper` (Groq API) or `Local Whisper` | `Cloud Whisper` |
 | `--whisper-model` | `tiny`, `base`, `small`, `medium`, `large` | `tiny` |
@@ -156,6 +158,10 @@ python -m summarizer --type "Local File" --source "./lecture.mp4" --provider gro
 # Batch process
 python -m summarizer --source "URL1" "URL2" "URL3" --provider gemini
 
+# Optional transcript sidecar (requires TRANSCRIPTFETCH_API_KEY in .env)
+python -m summarizer --sidecar transcriptfetch --source "URL"
+python -m summarizer --sidecar transcriptfetch --sidecar-order first --source "URL"
+
 # No config file (all explicit)
 python -m summarizer \
   --source "URL" \
@@ -179,6 +185,7 @@ For comprehensive analysis, chain multiple styles on the same video:
 
 - **Windows + `--no-save`**: Do NOT use `--no-save` on Windows — Unicode output crashes stdout. Always let the tool save to file, then read it.
 - **Social media**: TikTok, Instagram, Twitter/X, Reddit, and Facebook are handled by **yt-dlp** by default. Cobalt is only used as a fallback if yt-dlp fails or does not support the URL.
-- **Transcription fallback**: If YouTube captions are unavailable, the tool automatically falls back to audio download + Whisper transcription.
+- **Transcript sidecar**: Optional and off by default. `--sidecar transcriptfetch` needs `TRANSCRIPTFETCH_API_KEY` in `.env`. Only public video URLs are sent to it; local files and Drive/Dropbox links always stay on your machine.
+- **Transcription fallback**: If YouTube captions are unavailable, the tool tries the sidecar when enabled, then falls back to audio download + Whisper transcription.
 - **Cloud Whisper**: Requires a Groq API key (free tier available).
 - Use `--verbose` for detailed progress and debugging.

@@ -4,11 +4,12 @@ import os
 import re
 from typing import Optional
 
-from .exceptions import TranscriptError, APIKeyError
+from .exceptions import TranscriptError, APIKeyError, SummarizerError
 from .progress import ProgressSpinner, print_status
 from .handlers import get_handler, is_dropbox_url, is_google_drive_url
 from .downloaders import DownloadManager, is_youtube_url
 from .proxy import get_youtube_transcript_proxy_config
+from .sidecars import SIDECARS, resolve_sidecar
 from .transcript_cache import get_cached_transcript, put_cached_transcript
 
 
@@ -248,7 +249,57 @@ def get_transcript(config: dict) -> str:
 
 
 def _fetch_transcript(config: dict) -> str:
-    """Fetch transcript from the source (no cache)."""
+    """Fetch transcript from the source (no cache), using the sidecar in its configured order."""
+    sidecar, order = resolve_sidecar(config)
+    if sidecar == "none" or not _sidecar_accepts(config):
+        return _fetch_local_transcript(config)
+
+    module = SIDECARS[sidecar]
+    sources = [
+        ("Local transcription", lambda: _fetch_local_transcript(config)),
+        (module.LABEL, lambda: _fetch_sidecar_transcript(module, config)),
+    ]
+    if order == "first":
+        sources.reverse()
+
+    errors = []
+    for label, fetch in sources:
+        try:
+            return fetch()
+        except SummarizerError as exc:
+            errors.append(f"{label}: {exc}")
+            print_status(f"{label} failed: {exc}", "WARNING", config.get("verbose", False))
+    raise TranscriptError(" | ".join(errors))
+
+
+def _sidecar_accepts(config: dict) -> bool:
+    # Only public video URLs go to a third-party service; files and private share links stay local.
+    source = str(config.get("source_url_or_path") or "")
+    return (
+        config.get("type_of_source") in ("YouTube Video", "Video URL")
+        and source.startswith(("http://", "https://"))
+        and not is_dropbox_url(source)
+        and not is_google_drive_url(source)
+    )
+
+
+def _fetch_sidecar_transcript(module, config: dict) -> str:
+    verbose = config.get("verbose", False)
+    print_status(f"Fetching transcript from {module.LABEL}", "PROCESSING", verbose)
+    segments = module.fetch(config["source_url_or_path"], config)
+    transcript = "\n".join(
+        f"{format_timestamp(start)} {' '.join(text.split())}"
+        for start, text in segments
+        if text.strip()
+    )
+    if not transcript:
+        raise TranscriptError(f"{module.LABEL} returned an empty transcript")
+    print_status(f"Transcript fetched from {module.LABEL}", "SUCCESS", verbose)
+    return transcript
+
+
+def _fetch_local_transcript(config: dict) -> str:
+    """Fetch transcript with captions, downloads and Whisper on this machine."""
     source_type = config.get("type_of_source")
     source_path = config.get("source_url_or_path")
     transcription_method = config.get("transcription_method", "Cloud Whisper")

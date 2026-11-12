@@ -38,6 +38,7 @@ from summarizer.api_utils import (
     DEFAULT_MAX_UPLOAD_MB,
     redact_config_response,
 )
+from summarizer.sidecars import SIDECAR_CHOICES, SIDECAR_ORDERS
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -48,6 +49,8 @@ SourceType = Literal[tuple(SOURCE_TYPES)]  # type: ignore[misc]
 OutputFormat = Literal[tuple(OUTPUT_FORMATS)]  # type: ignore[misc]
 TranscriptionMethod = Literal[tuple(TRANSCRIPTION_METHODS)]  # type: ignore[misc]
 WhisperModel = Literal[tuple(WHISPER_MODELS)]  # type: ignore[misc]
+Sidecar = Literal[SIDECAR_CHOICES]  # type: ignore[misc]
+SidecarOrder = Literal[SIDECAR_ORDERS]  # type: ignore[misc]
 
 
 def _reject_legacy_audio_speed_field(data: Any) -> Any:
@@ -63,7 +66,14 @@ class JevOptions(BaseModel):
     jev_exclude: Optional[str] = Field(None, max_length=2000)
 
 
-class SummarizeRequest(JevOptions):
+class SidecarOptions(BaseModel):
+    sidecar: Optional[Sidecar] = Field(None, description="External transcript service for video URLs")
+    sidecar_order: Optional[SidecarOrder] = Field(
+        None, description="fallback: after local transcription fails; first: before it"
+    )
+
+
+class SummarizeRequest(JevOptions, SidecarOptions):
     source: str = Field(..., description="Video URL or file path")
     type: SourceType = Field("YouTube Video", description="Source type")
     provider: Optional[str] = Field(None, description="Provider name from config")
@@ -113,7 +123,7 @@ class SummarizeResponse(BaseModel):
     error_type: Optional[str] = None
 
 
-class BatchRequest(JevOptions):
+class BatchRequest(JevOptions, SidecarOptions):
     sources: List[str] = Field(..., min_length=1, description="List of URLs or file paths")
     type: SourceType = Field("YouTube Video", description="Source type for all items")
     provider: Optional[str] = Field(None, description="Provider name from config")
@@ -200,6 +210,8 @@ SNAKE_OVERRIDES = {
     "whisper_model": "whisper_model",
     "speed": "speed",
     "cobalt_url": "cobalt_base_url",
+    "sidecar": "sidecar",
+    "sidecar_order": "sidecar_order",
     "use_proxy": "use_proxy",
     "visual": "visual",
     "use_jev_prefiltering": "use_jev_prefiltering",
@@ -548,6 +560,8 @@ def create_app(allow_origins: Optional[List[str]] = None) -> FastAPI:
                     base_url=req.base_url,
                     model=req.model,
                     cobalt_url=req.cobalt_url,
+                    sidecar=req.sidecar,
+                    sidecar_order=req.sidecar_order,
                     verbose=req.verbose,
                 )
                 config = _build_runtime_config_from_request(single_req)

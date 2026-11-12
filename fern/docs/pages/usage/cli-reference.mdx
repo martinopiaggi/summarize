@@ -100,6 +100,8 @@
 | `--parallel-calls` | Concurrent API requests | `10` (from `summarizer.yaml`; code fallback `30`) |
 | `--max-tokens` | Max output tokens per chunk | `4096` |
 | `--cobalt-url` | Cobalt base URL for fallback downloads | `http://localhost:9000` |
+| `--sidecar` | Transcript sidecar for video URLs: `none` or `transcriptfetch` | From YAML (`none`) |
+| `--sidecar-order` | `fallback` (after local transcription fails) or `first` (before it) | From YAML (`fallback`) |
 | `--output-dir` | Output directory | `summaries` |
 | `--no-save` | Print to stdout only, no file output | `False` |
 | `--verbose`, `-v` | Detailed output | `False` |

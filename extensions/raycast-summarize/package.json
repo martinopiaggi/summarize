@@ -55,6 +55,32 @@
       "title": "Prompt Type",
       "description": "Summary style (optional)",
       "placeholder": "Summarization"
+    },
+    {
+      "name": "sidecar",
+      "type": "dropdown",
+      "required": false,
+      "title": "Transcript Sidecar",
+      "description": "External transcript service for video URLs",
+      "default": "default",
+      "data": [
+        { "title": "Server default", "value": "default" },
+        { "title": "None", "value": "none" },
+        { "title": "TranscriptFetch", "value": "transcriptfetch" }
+      ]
+    },
+    {
+      "name": "sidecarOrder",
+      "type": "dropdown",
+      "required": false,
+      "title": "Sidecar Order",
+      "description": "When the sidecar runs",
+      "default": "default",
+      "data": [
+        { "title": "Server default", "value": "default" },
+        { "title": "Fallback: when local transcription fails", "value": "fallback" },
+        { "title": "First: before local transcription", "value": "first" }
+      ]
     }
   ],
   "dependencies": {

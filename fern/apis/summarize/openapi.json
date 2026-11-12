@@ -480,6 +480,38 @@
             "description": "Cobalt base URL",
             "title": "Cobalt Url"
           },
+          "sidecar": {
+            "anyOf": [
+              {
+                "enum": [
+                  "none",
+                  "transcriptfetch"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Transcript sidecar for video URLs",
+            "title": "Sidecar"
+          },
+          "sidecar_order": {
+            "anyOf": [
+              {
+                "enum": [
+                  "fallback",
+                  "first"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "fallback: after local transcription fails; first: before it",
+            "title": "Sidecar Order"
+          },
           "verbose": {
             "default": false,
             "description": "Verbose progress output",
@@ -1168,6 +1200,38 @@
             ],
             "description": "Cobalt base URL",
             "title": "Cobalt Url"
+          },
+          "sidecar": {
+            "anyOf": [
+              {
+                "enum": [
+                  "none",
+                  "transcriptfetch"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Transcript sidecar for video URLs",
+            "title": "Sidecar"
+          },
+          "sidecar_order": {
+            "anyOf": [
+              {
+                "enum": [
+                  "fallback",
+                  "first"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "fallback: after local transcription fails; first: before it",
+            "title": "Sidecar Order"
           },
           "verbose": {
             "default": false,

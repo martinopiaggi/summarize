@@ -13,6 +13,7 @@ from .config_file import (
     create_example_config,
 )
 from .api_utils import build_runtime_config, format_output, get_file_extension
+from .sidecars import SIDECAR_CHOICES, SIDECAR_ORDERS
 
 
 def parse_args():
@@ -111,6 +112,16 @@ Examples:
     parser.add_argument(
         "--cobalt-url",
         help="Cobalt base URL for non-YouTube platforms (default: http://localhost:9000)",
+    )
+    parser.add_argument(
+        "--sidecar",
+        choices=SIDECAR_CHOICES,
+        help="External transcript service for video URLs (default: from YAML, else none)",
+    )
+    parser.add_argument(
+        "--sidecar-order",
+        choices=SIDECAR_ORDERS,
+        help="fallback: use the sidecar when local transcription fails; first: try it before",
     )
 
     # Output configuration
@@ -337,6 +348,8 @@ def cli():
         "speed": args.speed,
         "output_dir": args.output_dir,
         "cobalt_base_url": args.cobalt_url,
+        "sidecar": args.sidecar,
+        "sidecar_order": args.sidecar_order,
         "use_proxy": args.use_proxy,
         "visual": args.visual,
         "use_jev_prefiltering": args.use_jev_prefiltering,

@@ -19,6 +19,7 @@ import yaml
 from summarizer.downloaders import is_youtube_url
 from summarizer.prompts import get_available_prompts
 from summarizer.jev import JEV_DEFAULTS, enabled, supports_systemone
+from summarizer.sidecars import SIDECAR_CHOICES, SIDECAR_ORDERS, SIDECARS
 
 from webapp.clipboard import copy_to_clipboard, paste_from_clipboard_button
 from webapp.config import (
@@ -28,6 +29,7 @@ from webapp.config import (
     load_config,
     load_config_raw,
     save_config_raw,
+    save_defaults,
 )
 from webapp.history import add_to_history, save_summary_to_disk
 from webapp.jobs import SummarizeJob
@@ -81,6 +83,17 @@ DOCS_URL = "https://summarize.martino.im"
 
 def _change_theme():
     st.session_state.theme = st.session_state.theme_selector
+
+
+def _choice_index(choices, value):
+    value = str(value or "").strip().lower()
+    return choices.index(value) if value in choices else 0
+
+
+def _save_sidebar_default(key):
+    # Persisted so the choice survives reconnects and applies to the CLI and API too.
+    if not save_defaults({key: st.session_state[key]}):
+        st.toast("No summarizer.yaml found; this choice lasts for this session only.")
 
 
 def _render_sidebar(providers, default_provider, defaults, prompt_types):
@@ -235,6 +248,30 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
                 ),
             )
 
+            sidecar = st.selectbox(
+                "Transcript sidecar",
+                SIDECAR_CHOICES,
+                index=_choice_index(SIDECAR_CHOICES, defaults.get("sidecar")),
+                format_func=lambda name: SIDECARS[name].LABEL if name in SIDECARS else "None",
+                key="sidecar",
+                on_change=_save_sidebar_default,
+                args=("sidecar",),
+                help="External service that fetches the transcript of a video URL. Saved to summarizer.yaml.",
+            )
+            sidecar_order = st.selectbox(
+                "Sidecar order",
+                SIDECAR_ORDERS,
+                index=_choice_index(SIDECAR_ORDERS, defaults.get("sidecar_order")),
+                format_func=lambda order: {
+                    "fallback": "Fallback: when local transcription fails",
+                    "first": "First: before local transcription",
+                }[order],
+                key="sidecar_order",
+                on_change=_save_sidebar_default,
+                args=("sidecar_order",),
+                disabled=sidecar == "none",
+            )
+
         use_jev_prefiltering = st.checkbox(
             "Use JEV prefiltering",
             value=bool(defaults.get("use_jev_prefiltering", False)),
@@ -313,6 +350,8 @@ def _render_sidebar(providers, default_provider, defaults, prompt_types):
         "whisper_model": whisper_model,
         "speed": speed,
         "visual": visual,
+        "sidecar": sidecar,
+        "sidecar_order": sidecar_order,
         "use_jev_prefiltering": use_jev_prefiltering,
         "jev_provider": jev_provider,
         "jev_include": jev_include,
@@ -353,6 +392,8 @@ def _start_job(source, display_name, source_type, force_download, sidebar, defau
             jev_provider=sidebar.get("jev_provider"),
             jev_include=sidebar.get("jev_include"),
             jev_exclude=sidebar.get("jev_exclude"),
+            sidecar=sidebar.get("sidecar"),
+            sidecar_order=sidebar.get("sidecar_order"),
         )
 
     job = SummarizeJob(

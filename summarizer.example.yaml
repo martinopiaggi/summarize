@@ -86,6 +86,9 @@ defaults:
   output-dir: summaries
   keep-history: false
   cobalt-base-url: http://localhost:9000
+  # Optional transcript sidecar for video URLs (set TRANSCRIPTFETCH_API_KEY in .env)
+  sidecar: none  # or: transcriptfetch
+  sidecar-order: fallback  # fallback = after local transcription fails; first = before it
   cache-transcript: true
   cache-transcript-persist: false
   # cache-transcript-dir: summaries/.cache/transcripts

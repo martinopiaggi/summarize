@@ -12,6 +12,7 @@ https://github.com/user-attachments/assets/d59e4879-f527-47c0-bdcc-bc512a87ce94
 - **Bring your own API keys**: Works with any OpenAI-compatible LLM, Perplexity models, LiteLLM
 - **CLI · Streamlit · HTTP API · Docker · Raycast · Agent skill**
 - **Transcript cache** + optional JEV prefiltering + optional Cobalt sidecar for yt-dlp fallbacks + optional vision mode
+- **Optional transcript sidecar**: [TranscriptFetch](https://transcriptfetch.com) fetches YouTube, TikTok, and Instagram transcripts from servers where YouTube blocks downloads
 
 ## Documentation
  
@@ -38,6 +39,8 @@ summarizer --source "https://www.youtube.com/watch?v=arj7oStGLkU"
 Output: `summaries/watch_YYYYMMDD_HHMMSS.md`. 
 
 Configuration lives in `summarizer.yaml` and `.env`. 
+
+To use the TranscriptFetch sidecar, add `TRANSCRIPTFETCH_API_KEY` to `.env` and run with `--sidecar transcriptfetch` (or set `sidecar: transcriptfetch` in `summarizer.yaml`). See [Transcript sidecar](https://summarize.martino.im/integrations/transcript-sidecar).
 
 Prefer Docker? 
 

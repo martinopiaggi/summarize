@@ -194,6 +194,8 @@ curl -X POST http://localhost:8000/summarize \
 | `base_url` | string | Override API base URL |
 | `model` | string | Override model name |
 | `cobalt_url` | string | Cobalt base URL |
+| `sidecar` | string | Transcript sidecar for video URLs: `none` or `transcriptfetch` ([details](../integrations/transcript-sidecar)) |
+| `sidecar_order` | string | `fallback` or `first` |
 | `verbose` | boolean | Verbose progress output |
 
 ### `POST /summarize/upload`

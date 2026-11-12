@@ -24,7 +24,7 @@ Two ways to provide the URL:
 
 2. Open Raycast Preferences → Extensions → Summarize.
 3. Set the **Summarize API Endpoint** (default: `http://localhost:8000`).
-4. Optionally set a **Provider** and **Prompt Type**.
+4. Optionally set a **Provider**, **Prompt Type**, **Transcript Sidecar**, and **Sidecar Order**. "Server default" uses the server's `summarizer.yaml`.
 
 ## Usage
 
