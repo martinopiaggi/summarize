@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Concise Tweets` summary style: turns a transcript into one tweet or a short series, in the compressed voice of Naval, levelsio, and other short-form X accounts
+
 ## [0.4.0] - 2026-09-27
 
 ### Added

@@ -123,6 +123,7 @@ Use with `--prompt-type`. Defined in `summarizer/prompts.json`.
 | `Essay Writing in Paul Graham Style` | 250-word essay in Paul Graham's style |
 | `Only grammar correction with highlights` | Grammar cleanup with bold highlights |
 | `Distill Wisdom with diagrams` | Textual insights with optional Mermaid diagrams |
+| `Concise Tweets` | One tweet or a short series, Naval / levelsio / short-form X voice |
 
 ## Examples
 
