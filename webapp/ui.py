@@ -477,7 +477,7 @@ def _render_active_job():
         except Exception as e:
             status_ctx.update(label="Failed", state="error", expanded=True)
             st.error(f"Error: {str(e)}")
-            with st.expander("DETAILS"):
+            with st.expander("Details"):
                 st.code(job.traceback_text or traceback.format_exc())
 
 
