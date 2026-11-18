@@ -2,12 +2,12 @@
 
 ## Architecture
 
-Three surfaces — the CLI, the Streamlit webapp, and the HTTP API — all drive the same engine.
+Four surfaces — the CLI, the Streamlit webapp, the HTTP API, and the [Telegram bot](../integrations/telegram) — all drive the same engine.
 
 ```mermaid
 flowchart TD
-  user([User or agent]) --> cli[CLI] & ui[Streamlit :8501] & api[HTTP API :8000]
-  cli & ui & api --> core[core.main]
+  user([User or agent]) --> cli[CLI] & ui[Streamlit :8501] & api[HTTP API :8000] & tg[Telegram bot]
+  cli & ui & api & tg --> core[core.main]
   core --> cfg[(yaml, .env, prompts)]
   core --> dl[downloaders] --> src[sources]
   core --> tr[transcription and cache] --> prov[LLM, Whisper, Cobalt]

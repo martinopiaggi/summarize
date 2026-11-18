@@ -85,6 +85,10 @@ With `sidecar-order: fallback`, the sidecar only runs after the local pipeline f
 
 See [Transcript Sidecar](../integrations/transcript-sidecar) for setup.
 
+## Telegram Bot Errors
+
+A job that fails in the Telegram bot shows the same error messages as the CLI, in place of its status message. Problems with the bot itself (a rejected token, `409 Conflict`, a bot that never answers in a group, files over 20 MB) are covered in [Telegram Bot → Troubleshooting](../integrations/telegram#troubleshooting).
+
 ## Configuration Errors
 
 Requests that include the removed `audio_speed` field return HTTP `422` on the API. YAML configs with `audio-speed` or `audio_speed` raise a `ConfigurationError` at merge time. Use `speed` everywhere instead.

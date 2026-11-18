@@ -131,7 +131,12 @@ Each of those tools may depend on **pydantic**. When one package upgrades `pydan
 
     # Named Docker volume instead of ./summaries/
     docker compose -f docker-compose.yml -f docker-compose.named-volume.yml up -d
+
+    # Telegram bot instead of the GUI (needs TELEGRAM_BOT_TOKEN in .env)
+    docker compose -f docker-compose.telegram.yml up -d
     ```
+
+    See [Telegram Bot](../integrations/telegram#docker) for the bot's setup.
 
     Or pull the pre-built image:
 
