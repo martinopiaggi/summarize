@@ -1,10 +1,12 @@
 """Config file support for the summarizer package."""
 
+import json
 import os
+import re
 from pathlib import Path
 from typing import Dict, Optional, Any
 from .exceptions import ConfigurationError
-from .runtime_env import fill_env_defaults, normalize_explicit_keys
+from .runtime_env import fill_env_defaults, normalize_config_key, normalize_explicit_keys
 
 
 def find_config_file() -> Optional[Path]:
@@ -129,10 +131,8 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
     explicit_keys = normalize_explicit_keys(raw_defaults.keys())
     defaults = raw_defaults
     for key, value in defaults.items():
-        # Convert kebab-case to snake_case
-        snake_key = key.replace("-", "_")
-        if snake_key == "cobalt_url":
-            snake_key = "cobalt_base_url"
+        # kebab-case and aliases (parallel-calls, max-tokens, cobalt-url) → code names
+        snake_key = normalize_config_key(key)
         _reject_legacy_audio_speed_key(snake_key)
         merged[snake_key] = value
 
@@ -154,7 +154,7 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
             # Provider-specific defaults
             for key, value in provider_config.items():
                 if key not in ("base_url", "model"):
-                    snake_key = key.replace("-", "_")
+                    snake_key = normalize_config_key(key)
                     _reject_legacy_audio_speed_key(snake_key)
                     merged[snake_key] = value
 
@@ -174,6 +174,101 @@ def merge_configs(file_config: Dict, cli_args: Dict) -> Dict:
         merged.setdefault(key, value)
     merged["jev_provider_config"] = resolve_provider(merged, file_config.get("providers", {}))
     return merged
+
+
+def format_yaml_scalar(value: Any) -> str:
+    """Render a scalar for a ``key: value`` line so it reads back unchanged."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return "null"
+    if isinstance(value, (int, float)):
+        return str(value)
+    import yaml
+
+    text = str(value)
+    try:
+        if text and yaml.safe_load(f"key: {text}") == {"key": text}:
+            return text
+    except yaml.YAMLError:
+        pass
+    # A JSON string is a valid double-quoted YAML scalar.
+    return json.dumps(text, ensure_ascii=False)
+
+
+def update_config_file(
+    path: Path, updates: Dict[str, Any], section: Optional[str] = "defaults"
+) -> None:
+    """Set flat scalar keys in summarizer.yaml without losing its comments.
+
+    ``section`` names a top-level block (``defaults``); ``None`` edits top-level
+    keys such as ``default_provider``. Deliberate line surgery instead of a YAML
+    round-trip so user comments survive. The result is re-parsed and verified
+    before anything is written, so a bad match raises instead of corrupting the
+    file. The file is rewritten in place, which keeps Docker bind mounts working.
+    """
+    import yaml
+
+    path = Path(path)
+    lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+
+    if section is None:
+        start, end, indent = -1, len(lines), ""
+    else:
+        start = next(
+            (i for i, line in enumerate(lines) if line.split("#")[0].rstrip() == f"{section}:"),
+            None,
+        )
+        if start is None:
+            lines.append(f"{section}:")
+            start = len(lines) - 1
+        end = start + 1  # just after the last indented line of the block
+        for i in range(start + 1, len(lines)):
+            if lines[i][:1].isspace() and lines[i].strip():
+                end = i + 1
+            elif lines[i].strip() and not lines[i].startswith("#"):
+                break
+        indent = "  "
+
+    for key, value in updates.items():
+        key_pattern = re.escape(key).replace("_", "[-_]").replace("\\-", "[-_]")
+        leading = r"\s+" if section is not None else ""
+        pattern = re.compile(rf"^({leading}{key_pattern}\s*:\s*)[^#]*?(\s+#.*)?$")
+        rendered = format_yaml_scalar(value)
+        row = next((i for i in range(start + 1, end) if pattern.match(lines[i])), None)
+        if row is not None:
+            match = pattern.match(lines[row])
+            prefix = match.group(1)
+            if not prefix[-1:].isspace():  # "key:" with no value yet
+                prefix += " "
+            lines[row] = f"{prefix}{rendered}{match.group(2) or ''}"
+            continue
+        new_line = f"{indent}{key.replace('_', '-') if section is not None else key}: {rendered}"
+        if section is not None:
+            lines.insert(end, new_line)
+            end += 1
+        else:
+            # New top-level keys go above the first mapping key (after header comments).
+            first = next(
+                (i for i, line in enumerate(lines) if line.strip() and not line.startswith("#")),
+                len(lines),
+            )
+            lines.insert(first, new_line)
+            end += 1
+
+    content = "\n".join(lines) + "\n"
+    try:
+        loaded = yaml.safe_load(content) or {}
+    except yaml.YAMLError as exc:
+        raise ConfigurationError(f"Could not update {path}: {exc}") from exc
+    block = loaded if section is None else (loaded.get(section) or {})
+    saved = {normalize_config_key(k): v for k, v in block.items()} if isinstance(block, dict) else {}
+    if any(saved.get(normalize_config_key(k)) != v for k, v in updates.items()):
+        raise ConfigurationError(f"Could not update the {section or 'top-level'} keys in {path}")
+    try:
+        path.write_text(content, encoding="utf-8")
+    except OSError as exc:
+        raise ConfigurationError(f"Cannot save config {path}: {exc}") from exc
 
 
 def create_example_config() -> str:

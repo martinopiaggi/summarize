@@ -16,13 +16,15 @@ def _env_truthy(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in _TRUTHY
 
 
+def normalize_config_key(key: Any) -> str:
+    """Map a YAML key (kebab-case, snake_case or alias) to the name used in code."""
+    normalized = str(key).replace("-", "_")
+    return _CONFIG_KEY_ALIASES.get(normalized, normalized)
+
+
 def normalize_explicit_keys(keys: Iterable[str]) -> Set[str]:
     """Normalize YAML default keys to snake_case names used in code."""
-    explicit: Set[str] = set()
-    for key in keys:
-        normalized = str(key).replace("-", "_")
-        explicit.add(_CONFIG_KEY_ALIASES.get(normalized, normalized))
-    return explicit
+    return {normalize_config_key(key) for key in keys}
 
 
 def fill_env_defaults(defaults: Dict[str, Any], explicit_keys: Set[str]) -> Dict[str, Any]:

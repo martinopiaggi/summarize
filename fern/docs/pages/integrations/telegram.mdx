@@ -1,0 +1,238 @@
+# Telegram Bot
+
+Attach a Telegram bot to Summarize. Send it a link, a video, an audio file or a voice message; it replies with the summary as a formatted Markdown message. Headings, lists, tables, code and quotes render natively thanks to Telegram [rich messages](https://core.telegram.org/bots/api#rich-message-formatting-options) (Bot API 10.1+).
+
+The bot runs on your machine like the CLI: it uses your `summarizer.yaml`, your `.env` keys and the same pipeline. No extra dependencies are needed.
+
+## Before You Start
+
+The bot runs the same pipeline as the CLI, so get the CLI working first:
+
+- Summarize is [installed](../getting-started/installation) and `summarizer --source "https://www.youtube.com/watch?v=..."` works from a folder with your `summarizer.yaml` and `.env`. Start the bot from that same folder.
+- For **voice messages, audio and video files** (and videos without captions): **ffmpeg** on `PATH`, plus a Groq key for [Cloud Whisper](../features/transcription) in `.env`, under the exact name `groq`:
+
+  ```ini
+  groq = gsk_YOUR_KEY
+  ```
+
+  Or set `transcription-method: Local Whisper` to transcribe on your machine. YouTube links with captions need neither.
+
+## Quick Start
+
+1. In Telegram, open [@BotFather](https://t.me/BotFather), send `/newbot`, pick a name and a username ending in `bot`, and copy the token it gives you.
+2. Add it to `.env` next to `summarizer.yaml`:
+
+   ```ini
+   TELEGRAM_BOT_TOKEN = 123456789:AA...
+   ```
+
+3. Start the bot:
+
+   ```bash
+   summarizer telegram
+   ```
+
+   The terminal prints `Telegram bot @yourbot is running`. Keep it open: the bot works while this process runs.
+
+4. Open `t.me/yourbot` (or search its username) and press **Start**. The bot is private by default, so it answers with your user ID and the line to add to `.env`:
+
+   ```ini
+   TELEGRAM_ALLOWED_USERS = 123456789
+   ```
+
+5. Stop the bot (Ctrl+C) and start it again. Send it a YouTube link: a status message shows the progress, then the summary arrives as a reply. Send `/help` for everything else.
+
+<Callout type="info">
+  The first user in `TELEGRAM_ALLOWED_USERS` is the admin, the only one who can change `summarizer.yaml` from Telegram. Set `TELEGRAM_ADMIN_USERS` to choose admins explicitly.
+</Callout>
+
+## What It Accepts
+
+| Send | Summarized as |
+|------|---------------|
+| A message with links (up to 5) | Each link: YouTube, X, TikTok, Instagram, Reddit, Facebook, Google Drive, Dropbox, other video pages via Cobalt |
+| Video, round video message, audio file, voice message | Local file: audio is transcribed (Whisper), or the video is sent to the model in [visual mode](../features/visual-mode) |
+| Video or audio sent as a file | Same as above (`.mp4`, `.mkv`, `.mov`, `.webm`, `.mp3`, `.m4a`, `.wav`, `.ogg`, `.flac`…) |
+| Text file (`.txt`, `.srt`, `.vtt`, `.md`, `.csv`…) | Text, no transcription |
+| Text of 800+ characters without links | Text |
+
+Each job shows a status message with live progress, deleted when the summary arrives as a reply to your message. Jobs run one at a time; `/status` shows the queue and `/cancel` drops your queued jobs. Files you send are downloaded to a temporary folder only your OS user can read, and deleted when the job ends.
+
+Under every summary:
+
+- **Markdown** sends the summary as a `.md` file.
+- **Transcript** sends the cached transcript as a `.txt` file.
+- **Restyle** redoes the summary in another [style](../usage/summary-styles). The transcript is cached, so only the LLM runs again.
+
+Long summaries are split at block boundaries into several messages. If Telegram rejects a rich message, or your Bot API server predates rich messages, that part is sent as plain text, so a summary is never lost.
+
+## Commands
+
+| Command | Who | What |
+|---------|-----|------|
+| `/summarize [link]`, `/s` | everyone | Summarize a link, or reply to a message (video, audio, link, text) with it. `/s` is the short form |
+| `/settings` | everyone | Provider, style, summary and transcript language, visual mode, captions, `.md` attachment for this chat |
+| `/style [name]` | everyone | Pick the style (buttons), or set it directly: `/style fact checker` |
+| `/provider [name]`, `/language [name]` | everyone | Same for the provider and the summary language (`/language Italian`) |
+| `/status`, `/cancel` | everyone | Queue status, drop your queued jobs |
+| `/id` | everyone | Your user ID and the chat ID |
+| `/config` | admin | Show `summarizer.yaml`, download it (API keys hidden), pick the default provider, style or sidecar |
+| `/set key value` | admin | Change one value, e.g. `/set chunk-size 50000`. `/set` alone lists the keys |
+
+**Chat settings** only affect that chat and fall back to `summarizer.yaml` for everything you did not change. **Admin changes** edit `summarizer.yaml` itself, so they also apply to the CLI, HTTP API and Streamlit. Comments in the file are kept.
+
+To replace the whole file, an admin sends an edited `summarizer.yaml` to the bot. It is validated first (YAML syntax, providers with `base_url` and `model`, a valid `default_provider`), then applied after you confirm; the previous version is kept as `summarizer.yaml.bak`.
+
+<Callout type="warning">
+  Whoever edits `summarizer.yaml` decides which server receives which API key from `.env`: a provider `base_url` picks the key. Only make trusted people admins.
+</Callout>
+
+## Groups
+
+To add the bot, send it `/help` in private and press **➕ Add me to a group**, or open `https://t.me/yourbot?startgroup=summarize` (with your bot's username). Telegram asks which group and adds exactly this bot. Searching for it in *Add members* also works, but other public bots have similar names.
+
+Once added, the bot posts a short greeting with the exact command to use, and tells you if the group still needs to be allowed. No greeting means the bot is not in the group: check the member list.
+
+Who can use it there:
+
+- People in `TELEGRAM_ALLOWED_USERS` can use it in any group they share with it.
+- To let **every member** use it, add the group ID to `TELEGRAM_ALLOWED_CHATS` (the greeting shows it; group IDs are negative) and restart the bot. Several groups go on **one line**, separated by commas:
+
+  ```ini
+  TELEGRAM_ALLOWED_CHATS = -1001234567890,-4987654321
+  ```
+
+  If the same key appears on two lines of `.env`, only the last one counts (the bot warns about it at startup).
+- Anyone else who sends the bot a command gets a short reply with their user ID and the group ID, so the owner can allow them. Other messages are ignored.
+
+The bot does not summarize every link people share. Ask it:
+
+- Reply to a video, voice message or link with `/s` (short for `/summarize`).
+- Send `/s https://…`, or send a video with `/s` as its caption.
+
+If the bot stays silent, another bot spoke last in the group: add its name, `/s@yourbot`. Telegram adds the name for you when you pick `/summarize` from the list it shows as you type `/` in a group with several bots.
+
+<Callout type="info">
+  Telegram bots have **privacy mode** on by default: in groups they only receive commands that name them (`/s@yourbot`), replies to their messages, and plain commands like `/s` while they are the last bot that posted in the group. Every message of the bot makes it so, starting with its greeting. A plain mention such as `@yourbot https://…` is not delivered.
+</Callout>
+
+### Just Tag the Bot
+
+To skip commands and only tag the bot, let it read the group's messages: turn privacy mode off (@BotFather → `/mybots` → Bot Settings → Group Privacy → Turn off, then remove the bot from the group and add it again), or make the bot an admin of the group. Then:
+
+- Reply to a video, voice message or link with `@yourbot` and nothing else.
+- Send `@yourbot https://…`.
+
+Telegram then delivers every message of the group to the bot. It still acts only on commands, mentions and replies to its own messages, and `/s` keeps working without the name. With privacy mode off, the greeting and `/help` suggest `@yourbot` instead of `/s`.
+
+If you post as an anonymous admin (“Remain anonymous”), Telegram hides who you are, so the bot only answers you when the whole group is in `TELEGRAM_ALLOWED_CHATS`.
+
+In a group, summaries, buttons and `/settings` are shared: settings changed there apply to the whole group, and any allowed member can press the buttons. Jobs from all chats share one queue. In forum groups, replies stay in the topic. Avoid `/config` in groups: the panel is visible to everyone (API keys stay hidden in the downloaded file).
+
+## Settings
+
+All settings are environment variables (or `.env`); the flags of `summarizer telegram` override them.
+
+| Variable | Flag | Default | Meaning |
+|----------|------|---------|---------|
+| `TELEGRAM_BOT_TOKEN` | `--token` | required | Token from @BotFather |
+| `TELEGRAM_ALLOWED_USERS` | `--allowed-users` | none | Comma-separated user IDs. The first is the admin |
+| `TELEGRAM_ALLOWED_CHATS` | `--allowed-chats` | none | Comma-separated group IDs whose members may use the bot |
+| `TELEGRAM_ADMIN_USERS` | `--admin-users` | first allowed user | Who may edit `summarizer.yaml` |
+| `TELEGRAM_API_URL` | `--api-url` | `https://api.telegram.org` | A [local Bot API server](#files-over-20-mb) |
+| `TELEGRAM_MAX_FILE_MB` | `--max-file-mb` | 20 (2000 with a local server) | Largest file the bot downloads |
+| `TELEGRAM_STATE_FILE` | `--state-file` | `{output-dir}/.telegram/chat_settings.json` | Per-chat settings |
+| `TELEGRAM_DEBUG` | `--debug` | off | Log every update Telegram delivers |
+| | `--config` | `./summarizer.yaml` | Config file to use and edit |
+
+With no allowed users or chats the bot runs in setup mode: it only tells people their user ID. When `keep-history: true`, summaries are also saved to `output-dir` like the CLI does.
+
+## Files Over 20 MB
+
+Telegram lets bots download files up to 20 MB, so longer videos are refused with a hint to send a link instead. To lift the limit, run your own [Bot API server](https://github.com/tdlib/telegram-bot-api) in `--local` mode and point the bot at it:
+
+```ini
+TELEGRAM_API_ID = 12345          # from https://my.telegram.org
+TELEGRAM_API_HASH = abcdef...
+TELEGRAM_API_URL = http://telegram-bot-api:8081
+```
+
+The server returns paths on its own disk, so the bot must see its data directory at the same path (the Compose file below does this). Before moving a bot to a local server, call [`logOut`](https://core.telegram.org/bots/api#logout) once on the cloud API.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| `Missing bot token` at startup | `TELEGRAM_BOT_TOKEN` is not in the environment or in the `.env` of the folder you started from |
+| `Telegram rejected the bot token` | Copy the token again from @BotFather (`/mybots` → your bot → API Token) |
+| The bot never answers | Check the terminal: every command it receives is logged. Nothing logged means Telegram did not deliver it: in groups use `/s@yourbot` (see [Groups](#groups)). `409 Conflict` means another process (or a webhook) uses the same token; stop it |
+| No greeting when you add it to a group | The bot was not added (often a different bot with a similar name). Use the **Add me to a group** button from `/help`. With `--debug` the terminal logs every update, including `Bot status in supergroup …: left -> member` |
+| Only one of your groups works | `TELEGRAM_ALLOWED_CHATS` is on two lines of `.env`: put all the IDs on one line, separated by commas |
+| The service stopped and does not restart | Exit status 2 means a configuration error (missing or rejected token). Fix `.env`, then restart it |
+| It answers with your ID again | Your ID is not in `TELEGRAM_ALLOWED_USERS`, or the bot was not restarted after editing `.env` |
+| `Groq API key not found` on voice messages or files | Add `groq = ...` to `.env` (see [Before You Start](#before-you-start)), or use Local Whisper |
+| `No such file or directory: 'ffmpeg'` | Install ffmpeg (`apt install ffmpeg`, `brew install ffmpeg`, `winget install ffmpeg`) |
+| `No LLM provider is configured` | `summarizer.yaml` is missing or has no providers: run `summarizer --init-config`, or send the file to the bot as admin |
+| `over the 20 MB download limit` | Send a link instead, or see [Files Over 20 MB](#files-over-20-mb) |
+| The summary looks like raw Markdown | Your Bot API server has no rich messages (older local server); update it |
+
+The error of a failed job replaces its status message, and the terminal logs each job.
+
+## Run It Permanently
+
+`summarizer telegram` runs while its terminal is open. To keep it running, restart it if it crashes and start it at boot, run it as a service. With [Docker](#docker) the Compose file already does this (`restart: unless-stopped`). On Linux without Docker, use a systemd user service:
+
+```ini
+# ~/.config/systemd/user/summarize-telegram.service
+[Unit]
+Description=Summarize Telegram bot
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+# The folder with your .env and summarizer.yaml
+WorkingDirectory=%h/summarize
+# pipx install; for a clone use the venv: %h/summarize/.venv/bin/summarizer
+ExecStart=%h/.local/bin/summarizer telegram
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=10
+# Exit status 2 = configuration error: retrying cannot help
+RestartPreventExitStatus=2
+
+[Install]
+WantedBy=default.target
+```
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now summarize-telegram
+loginctl enable-linger "$USER"   # keep running after logout, start at boot
+journalctl --user -u summarize-telegram -f
+```
+
+The bot only connects out to Telegram, so it needs no open port. If network is not ready at boot, it exits with status 1 and systemd tries again. If `ffmpeg` is not in a standard location, add its folder with `Environment=PATH=...`.
+
+<Callout type="warning">
+  Run **one** copy per bot token. If you also start `summarizer telegram` in a terminal, both get `409 Conflict` and messages go to whichever copy asked last. Stop the service first, for example to debug with `--debug`.
+</Callout>
+
+## Docker
+
+```bash
+cp summarizer.docker.yaml summarizer.yaml
+echo "TELEGRAM_BOT_TOKEN=..." >> .env
+docker compose -f docker-compose.telegram.yml up -d
+# with a local Bot API server for big files:
+docker compose -f docker-compose.telegram.yml --profile local-bot-api up -d
+```
+
+Or run the published image directly:
+
+```bash
+docker run -d --name summarizer-telegram \
+  -v "$PWD/.env:/app/.env:ro" -v "$PWD/summarizer.yaml:/app/summarizer.yaml" \
+  -v "$PWD/summaries:/app/summaries" \
+  ghcr.io/martinopiaggi/summarize:latest summarizer telegram
+```

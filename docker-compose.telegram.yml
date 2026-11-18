@@ -1,0 +1,51 @@
+# Telegram bot (no web UI). Put TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USERS in .env.
+# Usage: docker compose -f docker-compose.telegram.yml up -d
+#
+# Files over 20 MB: also start a local Bot API server (needs TELEGRAM_API_ID and
+# TELEGRAM_API_HASH from https://my.telegram.org, and TELEGRAM_API_URL=http://telegram-bot-api:8081):
+#   docker compose -f docker-compose.telegram.yml --profile local-bot-api up -d
+services:
+  summarizer-telegram:
+    image: ghcr.io/martinopiaggi/summarize:latest
+    build: .
+    container_name: summarizer-telegram
+    command: ["summarizer", "telegram"]
+    volumes:
+      - ./summaries:/app/summaries
+      - ./.env:/app/.env:ro
+      # Writable: admins can edit it from the bot (/config, /set)
+      - ./summarizer.yaml:/app/summarizer.yaml
+      # Only used with the local Bot API server: same path in both containers
+      - telegram-bot-api-data:/var/lib/telegram-bot-api
+    environment:
+      - COBALT_BASE_URL=http://cobalt:9000
+      - SUMMARIZER_CACHE_PERSIST=true
+    depends_on:
+      cobalt:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      disable: true  # the image's check targets Streamlit
+
+  cobalt:
+    image: ghcr.io/wukko/cobalt:latest
+    container_name: cobalt
+    environment:
+      - API_URL=http://cobalt:9000/
+    restart: unless-stopped
+
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
+    container_name: telegram-bot-api
+    profiles: ["local-bot-api"]
+    # Only these two values from .env, not your LLM keys
+    environment:
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID:-}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH:-}
+      - TELEGRAM_LOCAL=1
+    volumes:
+      - telegram-bot-api-data:/var/lib/telegram-bot-api
+    restart: unless-stopped
+
+volumes:
+  telegram-bot-api-data:

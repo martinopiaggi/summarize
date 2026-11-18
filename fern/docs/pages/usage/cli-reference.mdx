@@ -137,6 +137,17 @@ Interactive docs are available at `http://localhost:8000/docs`. See the [HTTP AP
 >
 > **Tip:** `--chunk-size` has a hard minimum of 1000 characters. Values below 1000 are clamped automatically.
 
+## Telegram Bot
+
+Run the [Telegram bot](../integrations/telegram) with the token from `.env` (`TELEGRAM_BOT_TOKEN`):
+
+```bash
+python -m summarizer telegram
+python -m summarizer telegram --allowed-users 123456789 --config ~/summarize/summarizer.yaml
+```
+
+Flags (`--token`, `--allowed-users`, `--allowed-chats`, `--admin-users`, `--api-url`, `--max-file-mb`, `--state-file`, `--config`, `--debug`) override the matching `TELEGRAM_*` variables.
+
 ## Output Formats
 
 ### Markdown (default)

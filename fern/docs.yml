@@ -107,6 +107,9 @@ navigation:
   - section: Integrations
     icon: fa-solid fa-plug
     contents:
+      - page: Telegram Bot
+        path: ./docs/pages/integrations/telegram.mdx
+        slug: telegram
       - page: Raycast
         path: ./docs/pages/integrations/raycast.mdx
       - page: Share a Summary

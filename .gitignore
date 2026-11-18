@@ -62,3 +62,5 @@ cobalt.env
 cobalt.proxy.env
 !cobalt.proxy.env.example
 summarizer.yaml
+# Backup the Telegram bot keeps when an admin replaces the config (may hold API keys)
+summarizer.yaml.bak

@@ -33,6 +33,9 @@ Examples:
 
   # Start HTTP API server
   python -m summarizer serve
+
+  # Start the Telegram bot (TELEGRAM_BOT_TOKEN in .env)
+  python -m summarizer telegram
 """,
     )
 
@@ -54,6 +57,53 @@ Examples:
         type=int,
         default=8000,
         help="Server port (default: 8000)",
+    )
+
+    # ── Telegram bot subcommand ──
+    telegram_parser = subparsers.add_parser(
+        "telegram",
+        help="Run the Telegram bot",
+        description=(
+            "Summarize links, videos, audio and voice messages sent to a Telegram bot. "
+            "Flags override the TELEGRAM_* variables from the environment or .env."
+        ),
+    )
+    telegram_parser.add_argument("--token", help="Bot token from @BotFather (default: TELEGRAM_BOT_TOKEN)")
+    telegram_parser.add_argument(
+        "--allowed-users",
+        help="Comma-separated user IDs allowed to use the bot; the first one is the admin "
+        "(default: TELEGRAM_ALLOWED_USERS)",
+    )
+    telegram_parser.add_argument(
+        "--allowed-chats",
+        help="Comma-separated group chat IDs whose members may use the bot (default: TELEGRAM_ALLOWED_CHATS)",
+    )
+    telegram_parser.add_argument(
+        "--admin-users",
+        help="Comma-separated user IDs allowed to edit summarizer.yaml "
+        "(default: TELEGRAM_ADMIN_USERS, else the first allowed user)",
+    )
+    telegram_parser.add_argument(
+        "--config", dest="bot_config", help="Path to summarizer.yaml (default: ./summarizer.yaml)"
+    )
+    telegram_parser.add_argument(
+        "--api-url",
+        help="Bot API server, e.g. a local telegram-bot-api for files over 20 MB "
+        "(default: TELEGRAM_API_URL or https://api.telegram.org)",
+    )
+    telegram_parser.add_argument(
+        "--max-file-mb",
+        type=float,
+        help="Largest Telegram file to download (default: 20 on the cloud Bot API)",
+    )
+    telegram_parser.add_argument(
+        "--state-file",
+        help="Per-chat settings file (default: <output-dir>/.telegram/chat_settings.json)",
+    )
+    telegram_parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Log every update Telegram delivers, to see what reaches the bot (default: TELEGRAM_DEBUG)",
     )
 
     # ── Summarization arguments (main parser) ──
@@ -300,6 +350,11 @@ def cli():
         print(f"API docs: http://{args.host}:{args.port}/docs")
         uvicorn.run("summarizer.server:app", host=args.host, port=args.port, reload=False)
         return
+
+    if args.command == "telegram":
+        from .telegram_bot import run_from_args
+
+        sys.exit(run_from_args(args))
 
     # Handle --init-config
     if args.init_config:

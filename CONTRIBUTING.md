@@ -36,6 +36,7 @@ Add API keys to `.env`.
 | CLI | `python -m summarizer --source "https://youtube.com/watch?v=VIDEO_ID"` |
 | HTTP API | `python -m summarizer serve` → http://localhost:8000/docs |
 | Streamlit | `python -m streamlit run app.py` → http://localhost:8501 |
+| Telegram bot | `python -m summarizer telegram` (needs `TELEGRAM_BOT_TOKEN` in `.env`) |
 | Docker | `docker compose up -d` |
 
 ## Tests
@@ -48,7 +49,7 @@ Run tests before opening a PR. Add or update tests when changing behavior.
 
 ## Architecture discipline
 
-All user-facing surfaces (CLI, API, Streamlit, Docker) should call `summarizer.core.main(config)`. Do not add parallel summarization pipelines.
+All user-facing surfaces (CLI, API, Streamlit, Telegram bot, Docker) should call `summarizer.core.main(config)`. Do not add parallel summarization pipelines.
 
 Config flows through `summarizer.config_file.merge_configs()` and `summarizer.api_utils.build_runtime_config()`.
 

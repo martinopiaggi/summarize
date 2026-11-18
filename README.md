@@ -10,7 +10,7 @@ https://github.com/user-attachments/assets/d59e4879-f527-47c0-bdcc-bc512a87ce94
 
 - **11+ sources**: Local-first summarization for YouTube, Instagram, TikTok, X, Reddit, Facebook, Drive, Dropbox, local files
 - **Bring your own API keys**: Works with any OpenAI-compatible LLM, Perplexity models, LiteLLM
-- **CLI · Streamlit · HTTP API · Docker · Raycast · Agent skill**
+- **CLI · Streamlit · HTTP API · Telegram bot · Docker · Raycast · Agent skill**
 - **Transcript cache** + optional JEV prefiltering + optional Cobalt sidecar for yt-dlp fallbacks + optional vision mode
 - **Optional transcript sidecar**: [TranscriptFetch](https://transcriptfetch.com) fetches YouTube, TikTok, and Instagram transcripts from servers where YouTube blocks downloads
 
@@ -41,6 +41,8 @@ Output: `summaries/watch_YYYYMMDD_HHMMSS.md`.
 Configuration lives in `summarizer.yaml` and `.env`. 
 
 To use the TranscriptFetch sidecar, add `TRANSCRIPTFETCH_API_KEY` to `.env` and run with `--sidecar transcriptfetch` (or set `sidecar: transcriptfetch` in `summarizer.yaml`). See [Transcript sidecar](https://summarize.martino.im/integrations/transcript-sidecar).
+
+Prefer Telegram? Create a bot with [@BotFather](https://t.me/BotFather), add `TELEGRAM_BOT_TOKEN` to `.env` and run `summarizer telegram`: send it links, videos, audio or voice messages and get formatted Markdown summaries back. See [Telegram Bot](https://summarize.martino.im/integrations/telegram).
 
 Prefer Docker? 
 
