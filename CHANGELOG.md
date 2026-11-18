@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-18
+
 ### Added
 
 - Telegram bot (`summarizer telegram`): send links, videos, round video messages, audio files, voice messages, text files or long text and get the summary back as a Telegram rich message, which renders the Markdown (headings, lists, tables, code) natively. Long summaries are split, with a plain-text fallback. Buttons under each summary send the `.md` file or the transcript, or redo it in another style from the cached transcript. `/settings` picks provider, style, languages, visual mode and captions per chat; admins can view, download (API keys hidden), edit (`/set`) or replace `summarizer.yaml`. In groups, reply to a video, voice message or link with `/s` (short for `/summarize`), or with just `@yourbot` when the bot may read the group (privacy mode off, or the bot is a group admin). Private by default (`TELEGRAM_ALLOWED_USERS`), no new dependencies, `docker-compose.telegram.yml` included. See [Telegram Bot](https://summarize.martino.im/integrations/telegram)
@@ -106,6 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial public development: multi-source video ingest, transcript + visual summarization paths, CLI, FastAPI, Streamlit, Docker, Raycast extension, and agent skill.
 
+[0.6.0]: https://github.com/martinopiaggi/summarize/releases/tag/v0.6.0
 [0.5.0]: https://github.com/martinopiaggi/summarize/releases/tag/v0.5.0
 [0.4.0]: https://github.com/martinopiaggi/summarize/releases/tag/v0.4.0
 [0.3.2]: https://github.com/martinopiaggi/summarize/releases/tag/v0.3.2
