@@ -657,7 +657,7 @@ def _render_result_actions(content, view):
             key=f"download_{file_type}",
         )
     with col_copy:
-        copy_to_clipboard(content, st.session_state.theme)
+        copy_to_clipboard(content, st.session_state.theme, key=f"copy_{file_type}")
     with col_publish:
         if st.button(
             "Publish",

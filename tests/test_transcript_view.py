@@ -65,8 +65,8 @@ def test_each_tab_actions_use_its_own_content():
         assert downloads["download_transcript"]["data"] == "00:00:00 cached transcript"
         assert downloads["download_transcript"]["file_name"].endswith(".txt")
         assert downloads["download_transcript"]["mime"] == "text/plain"
-        copy.assert_any_call("Summary text", "system")
-        copy.assert_any_call("00:00:00 cached transcript", "system")
+        copy.assert_any_call("Summary text", "system", key="copy_summary")
+        copy.assert_any_call("00:00:00 cached transcript", "system", key="copy_transcript")
 
         app.tabs[0].button[0].click().run()
         publish.assert_called_once_with("Summary text")
@@ -118,7 +118,7 @@ def test_history_does_not_show_unrelated_current_transcript():
         app.run()
     assert not app.exception
     assert [call.kwargs["data"] for call in download.call_args_list] == ["old summary"]
-    copy.assert_called_once_with("old summary", "system")
+    copy.assert_called_once_with("old summary", "system", key="copy_summary")
     assert any("No cached transcript" in info.value for info in app.info)
     assert not app.tabs[1].button
 
@@ -135,4 +135,4 @@ def test_history_uses_its_own_transcript():
         app.run()
     assert not app.exception
     assert download.call_args.kwargs["data"] == "old transcript"
-    copy.assert_any_call("old transcript", "system")
+    copy.assert_any_call("old transcript", "system", key="copy_transcript")

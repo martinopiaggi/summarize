@@ -95,8 +95,15 @@ def _button_style(button_id: str) -> str:
     }}'''
 
 
-def copy_to_clipboard(text: str, theme: str = "system"):
-    """Render a "Copy to clipboard" button wired to the given text."""
+def copy_to_clipboard(text: str, theme: str = "system", *, key: str):
+    """Render a "Copy to clipboard" button wired to the given text.
+
+    ``key`` becomes the button's DOM id and must be unique on the page:
+    ``st.html`` is not iframed, so a shared id binds every copy script to
+    the first button on the page.
+    """
+    button_id = key
+    buffer_id = f"{key}_buffer"
     json_text = json.dumps(text)
     theme_vars = _theme_vars(theme)
 
@@ -104,22 +111,22 @@ def copy_to_clipboard(text: str, theme: str = "system"):
     <style>
     {theme_vars}
 
-    {_button_style("copyBtn")}
+    {_button_style(button_id)}
     </style>
     <div style="width: 100%;">
-        <textarea id="copyBuffer" style="
+        <textarea id="{buffer_id}" style="
             position: fixed;
             left: -9999px;
             top: 0;
             opacity: 0;
             pointer-events: none;
         "></textarea>
-        <button id="copyBtn">Copy to clipboard</button>
+        <button id="{button_id}">Copy to clipboard</button>
     </div>
     <script>
     (() => {{
-        const button = document.getElementById("copyBtn");
-        const buffer = document.getElementById("copyBuffer");
+        const button = document.getElementById("{button_id}");
+        const buffer = document.getElementById("{buffer_id}");
         const text = {json_text};
 
         const styles = getComputedStyle(document.documentElement);
